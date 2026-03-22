@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "xmllint-wasm": "^5.1.0"
+  }
+}

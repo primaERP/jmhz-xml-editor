@@ -1,0 +1,1865 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<REGZEC xmlns="http://schemas.cssz.cz/REGZEC/2025" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.cssz.cz/REGZEC/2025 REGZEC25.xsd" version="1.4.0.2" partialAccept="A">
+  <employees>
+    <employee act="1" dat="2026-03-16" sqnr="1" dep="444">
+      <client bno="7751252615" ikmpsv="1705065392">
+        <name fir="Barbora" sur="Jelínková"/>
+        <birth cit="Olomouc" dat="1977-01-25" nam="Šťastná" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Liberec" cnt="CZ" num="221" pnu="75514" str="Školní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-28" contractplace="Praha" fro="2026-02-28" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="33133"/>
+        <position lead="N" name="programátor"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="111"/>
+      <fact highedu="N" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="2" dep="444">
+      <client bno="9452131291" ikmpsv="1705082357">
+        <name fir="Hana" sur="Svobodová"/>
+        <birth cit="Teplice" dat="1994-02-13" nam="Svobodová" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Olomouc" cnt="CZ" num="634" pnu="75925" str="Husova"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-22" contractplace="Praha" fro="2026-01-22" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="51201"/>
+        <position lead="N" name="programátor"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="209"/>
+      <fact highedu="T" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="3" dep="444">
+      <client bno="6657097428" ikmpsv="1705093320">
+        <name fir="Věra" sur="Dvořáková"/>
+        <birth cit="Liberec" dat="1966-07-09" nam="Dvořáková" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Teplice" cnt="CZ" num="380" pnu="33432" str="Školní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-21" contractplace="Praha" fro="2026-03-21" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="72231"/>
+        <position lead="N" name="programátor"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="211"/>
+      <fact highedu="T" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" dep="444" sqnr="4">
+      <client>
+        <name fir="Lucie" sur="Kučerová"/>
+        <birth cit="Berlin" dat="2000-12-18" nam="Němcová" stat="DE"/>
+        <stat/>
+        <adr cit="Liberec" cnt="CZ" num="795" onum="14" pnu="13752" str="Jiráskova"/>
+        <rdr cit="Berlin" cnt="DE" num="146" pnu="51245" str="Namestie"/>
+        <taxidrezid num="803771909" stat="DE" type="D"/>
+        <proofid foreigninst="OAMP Praha" num="DE623481" stat="DE" type="O"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-09" contractplace="Praha" fro="2026-02-09" municode="554782" preplace="Praha" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="24112" edu="V"/>
+        <position lead="N" name="asistent"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="213"/>
+      <fact highedu="V" ztp="N"/>
+      <nocitizen freeacc="N" permfro="2026-04-01" permid="P774079" permto="2026-12-31" permtype="2"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" dep="444" sqnr="5">
+      <client>
+        <name fir="Hana" sur="Procházková"/>
+        <birth cit="Bucuresti" dat="1994-05-24" nam="Fialová" stat="RO"/>
+        <stat/>
+        <adr cit="Most" cnt="CZ" num="371" onum="39" pnu="22266" str="Dlouhá"/>
+        <rdr cit="Bucuresti" cnt="RO" num="175" pnu="65333" str="Namestie"/>
+        <taxidrezid num="168212356" stat="RO" type="D"/>
+        <proofid foreigninst="OAMP Praha" num="RO503457" stat="RO" type="O"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-05" contractplace="Praha" fro="2026-01-05" municode="554782" preplace="Praha" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="31131" edu="H"/>
+        <position lead="N" name="účetní"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="209"/>
+      <fact highedu="H" ztp="N"/>
+      <nocitizen freeacc="N" permfro="2026-04-01" permid="P724834" permto="2026-12-31" permtype="2"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="6" dep="444">
+      <client bno="9501221876" ikmpsv="1705099353">
+        <name fir="Zdeněk" sur="Němec"/>
+        <birth cit="Pardubice" dat="1995-01-22" nam="Němec" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Most" cnt="CZ" num="274" pnu="75573" str="Jiráskova"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-01" contractplace="Praha" fro="2026-02-01" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="72231"/>
+        <position lead="N" name="technik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="111"/>
+      <fact highedu="N" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="7" dep="444">
+      <client bno="7109044889" ikmpsv="1705093748">
+        <name fir="David" sur="Beneš"/>
+        <birth cit="Zlín" dat="1971-09-04" nam="Beneš" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Pardubice" cnt="CZ" num="157" pnu="32646" str="Nádražní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-01" contractplace="Praha" fro="2026-02-01" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="24112"/>
+        <position lead="N" name="asistent"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="209"/>
+      <fact highedu="R" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="8" dep="444">
+      <client bno="9652037962" ikmpsv="1705019071">
+        <name fir="Markéta" sur="Marková"/>
+        <birth cit="Pardubice" dat="1996-02-03" nam="Horáková" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Opava" cnt="CZ" num="129" pnu="27787" str="Jiráskova"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-14" contractplace="Praha" fro="2026-03-14" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="41101"/>
+        <position lead="N" name="mechanik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="209"/>
+      <fact highedu="M" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="9" dep="444">
+      <client bno="7907226118" ikmpsv="1705067422">
+        <name fir="Josef" sur="Veselý"/>
+        <birth cit="Pardubice" dat="1979-07-22" nam="Veselý" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Most" cnt="CZ" num="124" pnu="23681" str="Polní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-08" contractplace="Praha" fro="2026-03-08" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="83441"/>
+        <position lead="N" name="operátor"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="111"/>
+      <fact highedu="H" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="10" dep="444">
+      <client bno="0001081104" ikmpsv="1705014117">
+        <name fir="Jan" sur="Dvořák"/>
+        <birth cit="Liberec" dat="2000-01-08" nam="Dvořák" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Teplice" cnt="CZ" num="527" pnu="24562" str="Hlavní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-24" contractplace="Praha" fro="2026-01-24" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="31131"/>
+        <position lead="N" name="mechanik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="211"/>
+      <fact highedu="K" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="11" dep="444">
+      <client bno="9004267749" ikmpsv="1705063354">
+        <name fir="Miroslav" sur="Šťastný"/>
+        <birth cit="Brno" dat="1990-04-26" nam="Šťastný" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Ostrava" cnt="CZ" num="675" pnu="45804" str="Hlavní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-21" contractplace="Praha" fro="2026-03-21" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="26111"/>
+        <position lead="N" name="účetní"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="207"/>
+      <fact highedu="N" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" dep="444" sqnr="12">
+      <client>
+        <name fir="Tomáš" sur="Svoboda"/>
+        <birth cit="Sofia" dat="1985-12-11" nam="Svoboda" stat="BG"/>
+        <stat/>
+        <adr cit="Ostrava" cnt="CZ" num="460" onum="4" pnu="26912" str="Luční"/>
+        <rdr cit="Sofia" cnt="BG" num="141" pnu="22833" str="Ulitsa"/>
+        <taxidrezid num="800235246" stat="BG" type="D"/>
+        <proofid foreigninst="Cizinecka policie Praha" num="BG666847" stat="BG" type="O"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-15" contractplace="Praha" fro="2026-01-15" municode="554782" preplace="Praha" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="72231" edu="N"/>
+        <position lead="N" name="skladník"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="201"/>
+      <fact highedu="N" ztp="N"/>
+      <nocitizen freeacc="N" permfro="2026-04-01" permid="P197793" permto="2026-12-31" permtype="2"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="13" dep="444">
+      <client bno="8608163502" ikmpsv="1705062565">
+        <name fir="Jakub" sur="Kučera"/>
+        <birth cit="Praha" dat="1986-08-16" nam="Kučera" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Most" cnt="CZ" num="389" pnu="16396" str="Školní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-24" contractplace="Praha" fro="2026-03-24" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="31131"/>
+        <position lead="N" name="správce"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="205"/>
+      <fact highedu="M" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" dep="444" sqnr="14">
+      <client>
+        <name fir="Josef" sur="Růžička"/>
+        <birth cit="Hanoi" dat="1969-04-10" nam="Růžička" stat="VN"/>
+        <stat/>
+        <adr cit="Zlín" cnt="CZ" num="63" onum="6" pnu="65138" str="Luční"/>
+        <rdr cit="Hanoi" cnt="VN" num="15" pnu="76562" str="Namestie"/>
+        <taxidrezid num="299528037" stat="VN" type="D"/>
+        <proofid foreigninst="Cizinecka policie Brno" num="VN171849" stat="VN" type="O"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-28" contractplace="Praha" fro="2026-03-28" municode="554782" preplace="Praha" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="24112" edu="R"/>
+        <position lead="N" name="analytik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="111"/>
+      <fact highedu="R" ztp="N"/>
+      <nocitizen freeacc="N" permfro="2026-04-01" permid="P171262" permto="2026-12-31" permtype="2"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" dep="444" sqnr="15">
+      <client>
+        <name fir="Jakub" sur="Hájek"/>
+        <birth cit="Warszawa" dat="1967-10-08" nam="Hájek" stat="PL"/>
+        <stat/>
+        <adr cit="Praha" cnt="CZ" num="430" onum="9" pnu="69562" str="Hlavní"/>
+        <rdr cit="Warszawa" cnt="PL" num="68" pnu="61876" str="Namestie"/>
+        <taxidrezid num="821221887" stat="PL" type="D"/>
+        <proofid foreigninst="OAMP Praha" num="PL776856" stat="PL" type="O"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-23" contractplace="Praha" fro="2026-03-23" municode="554782" preplace="Praha" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="83441" edu="M"/>
+        <position lead="N" name="skladník"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="209"/>
+      <fact highedu="M" ztp="N"/>
+      <nocitizen freeacc="N" permfro="2026-04-01" permid="P579434" permto="2026-12-31" permtype="2"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="16" dep="444">
+      <client bno="6652183492" ikmpsv="1705076307">
+        <name fir="Eva" sur="Nováková"/>
+        <birth cit="Plzeň" dat="1966-02-18" nam="Šťastná" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Olomouc" cnt="CZ" num="358" pnu="14002" str="Palackého"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-23" contractplace="Praha" fro="2026-03-23" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="72231"/>
+        <position lead="N" name="analytik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="205"/>
+      <fact highedu="K" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="17" dep="444">
+      <client bno="9555221697" ikmpsv="1705027601">
+        <name fir="Zuzana" sur="Nováková"/>
+        <birth cit="Brno" dat="1995-05-22" nam="Nováková" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Olomouc" cnt="CZ" num="110" pnu="69064" str="Palackého"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-23" contractplace="Praha" fro="2026-01-23" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="72231"/>
+        <position lead="N" name="operátor"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="201"/>
+      <fact highedu="M" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" dep="444" sqnr="18">
+      <client>
+        <name fir="Hana" sur="Benešová"/>
+        <birth cit="Berlin" dat="1965-11-14" nam="Svobodová" stat="DE"/>
+        <stat/>
+        <adr cit="Praha" cnt="CZ" num="134" onum="35" pnu="64291" str="Jiráskova"/>
+        <rdr cit="Berlin" cnt="DE" num="177" pnu="29536" str="Hauptstrasse"/>
+        <taxidrezid num="138684919" stat="DE" type="D"/>
+        <proofid foreigninst="OAMP Praha" num="DE975136" stat="DE" type="O"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-01" contractplace="Praha" fro="2026-03-01" municode="554782" preplace="Praha" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="31131" edu="R"/>
+        <position lead="N" name="správce"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="201"/>
+      <fact highedu="R" ztp="N"/>
+      <nocitizen freeacc="N" permfro="2026-04-01" permid="P710805" permto="2026-12-31" permtype="2"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="19" dep="444">
+      <client bno="6205120653" ikmpsv="1705056898">
+        <name fir="Michal" sur="Procházka"/>
+        <birth cit="Jihlava" dat="1962-05-12" nam="Procházka" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Ostrava" cnt="CZ" num="683" pnu="15794" str="Nádražní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-28" contractplace="Praha" fro="2026-01-28" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="26111"/>
+        <position lead="N" name="technik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="213"/>
+      <fact highedu="R" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="20" dep="444">
+      <client bno="8661284065" ikmpsv="1705044970">
+        <name fir="Kateřina" sur="Jelínková"/>
+        <birth cit="Opava" dat="1986-11-28" nam="Pokorná" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Plzeň" cnt="CZ" num="111" pnu="40634" str="Masarykova"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-12" contractplace="Praha" fro="2026-02-12" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="31131"/>
+        <position lead="N" name="skladník"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="213"/>
+      <fact highedu="K" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="21" dep="444">
+      <client bno="8556091137" ikmpsv="1705046585">
+        <name fir="Lucie" sur="Horáková"/>
+        <birth cit="Jihlava" dat="1985-06-09" nam="Veselá" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Liberec" cnt="CZ" num="410" pnu="68785" str="Luční"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-19" contractplace="Praha" fro="2026-01-19" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="24112"/>
+        <position lead="N" name="řidič"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="205"/>
+      <fact highedu="H" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="22" dep="444">
+      <client bno="6610145663" ikmpsv="1705051114">
+        <name fir="David" sur="Svoboda"/>
+        <birth cit="Zlín" dat="1966-10-14" nam="Svoboda" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="České Budějovice" cnt="CZ" num="119" pnu="49446" str="Luční"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-17" contractplace="Praha" fro="2026-01-17" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="72231"/>
+        <position lead="N" name="správce"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="201"/>
+      <fact highedu="H" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="23" dep="444">
+      <client bno="8307035409" ikmpsv="1705091678">
+        <name fir="Josef" sur="Veselý"/>
+        <birth cit="Jihlava" dat="1983-07-03" nam="Veselý" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Liberec" cnt="CZ" num="128" pnu="64920" str="Tyršova"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-13" contractplace="Praha" fro="2026-02-13" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="72231"/>
+        <position lead="N" name="správce"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="209"/>
+      <fact highedu="T" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="24" dep="444">
+      <client bno="7207226211" ikmpsv="1705098777">
+        <name fir="Josef" sur="Procházka"/>
+        <birth cit="Most" dat="1972-07-22" nam="Procházka" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Karlovy Vary" cnt="CZ" num="631" pnu="54930" str="Školní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-14" contractplace="Praha" fro="2026-01-14" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="24112"/>
+        <position lead="N" name="řidič"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="207"/>
+      <fact highedu="M" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="25" dep="444">
+      <client bno="8908153501" ikmpsv="1705077000">
+        <name fir="František" sur="Pokorný"/>
+        <birth cit="Opava" dat="1989-08-15" nam="Pokorný" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Hradec Králové" cnt="CZ" num="983" pnu="72780" str="Palackého"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-21" contractplace="Praha" fro="2026-03-21" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="33133"/>
+        <position lead="N" name="mechanik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="211"/>
+      <fact highedu="M" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="26" dep="444">
+      <client bno="7904263262" ikmpsv="1705029313">
+        <name fir="Martin" sur="Horák"/>
+        <birth cit="Praha" dat="1979-04-26" nam="Horák" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Praha" cnt="CZ" num="487" pnu="51193" str="Nádražní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-23" contractplace="Praha" fro="2026-01-23" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="26111"/>
+        <position lead="N" name="operátor"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="207"/>
+      <fact highedu="T" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="27" dep="444">
+      <client bno="7503210090" ikmpsv="1705023970">
+        <name fir="Vladimír" sur="Hájek"/>
+        <birth cit="České Budějovice" dat="1975-03-21" nam="Hájek" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Opava" cnt="CZ" num="181" pnu="78486" str="Nádražní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-15" contractplace="Praha" fro="2026-01-15" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="24112"/>
+        <position lead="N" name="skladník"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="207"/>
+      <fact highedu="R" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" dep="444" sqnr="28">
+      <client>
+        <name fir="Alena" sur="Benešová"/>
+        <birth cit="Sofia" dat="1998-06-25" nam="Benešová" stat="BG"/>
+        <stat/>
+        <adr cit="Teplice" cnt="CZ" num="517" onum="50" pnu="48976" str="Palackého"/>
+        <rdr cit="Sofia" cnt="BG" num="164" pnu="46347" str="Namestie"/>
+        <taxidrezid num="935021998" stat="BG" type="D"/>
+        <proofid foreigninst="OAMP Praha" num="BG646622" stat="BG" type="O"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-09" contractplace="Praha" fro="2026-02-09" municode="554782" preplace="Praha" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="41101" edu="T"/>
+        <position lead="N" name="analytik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="207"/>
+      <fact highedu="T" ztp="N"/>
+      <nocitizen freeacc="N" permfro="2026-04-01" permid="P757193" permto="2026-12-31" permtype="2"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" dep="444" sqnr="29">
+      <client>
+        <name fir="Alena" sur="Dvořáková"/>
+        <birth cit="Hanoi" dat="1975-05-11" nam="Dvořáková" stat="VN"/>
+        <stat/>
+        <adr cit="Brno" cnt="CZ" num="237" onum="14" pnu="42503" str="Školní"/>
+        <rdr cit="Hanoi" cnt="VN" num="107" pnu="18161" str="Prospekt"/>
+        <taxidrezid num="994310083" stat="VN" type="D"/>
+        <proofid foreigninst="OAMP Praha" num="VN540552" stat="VN" type="O"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-11" contractplace="Praha" fro="2026-02-11" municode="554782" preplace="Praha" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="51201" edu="H"/>
+        <position lead="N" name="správce"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="211"/>
+      <fact highedu="H" ztp="N"/>
+      <nocitizen freeacc="N" permfro="2026-04-01" permid="P907189" permto="2026-12-31" permtype="2"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" dep="444" sqnr="30">
+      <client>
+        <name fir="Jan" sur="Šťastný"/>
+        <birth cit="Kyiv" dat="1984-08-01" nam="Šťastný" stat="UA"/>
+        <stat/>
+        <adr cit="Opava" cnt="CZ" num="914" onum="43" pnu="76865" str="Tyršova"/>
+        <rdr cit="Kyiv" cnt="UA" num="100" pnu="54057" str="Hauptstrasse"/>
+        <taxidrezid num="829223044" stat="UA" type="D"/>
+        <proofid foreigninst="OAMP Praha" num="UA936912" stat="UA" type="O"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-14" contractplace="Praha" fro="2026-02-14" municode="554782" preplace="Praha" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="51201" edu="N"/>
+        <position lead="N" name="skladník"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="209"/>
+      <fact highedu="N" ztp="N"/>
+      <nocitizen freeacc="N" permfro="2026-04-01" permid="P859359" permto="2026-12-31" permtype="2"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="31" dep="444">
+      <client bno="9451139697" ikmpsv="1705083975">
+        <name fir="Alena" sur="Procházková"/>
+        <birth cit="Praha" dat="1994-01-13" nam="Procházková" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Jihlava" cnt="CZ" num="659" pnu="42223" str="Hlavní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-13" contractplace="Praha" fro="2026-02-13" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="31131"/>
+        <position lead="N" name="účetní"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="213"/>
+      <fact highedu="K" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" dep="444" sqnr="32">
+      <client>
+        <name fir="Alena" sur="Pokorná"/>
+        <birth cit="Bratislava" dat="1977-07-09" nam="Hájková" stat="SK"/>
+        <stat/>
+        <adr cit="Praha" cnt="CZ" num="54" onum="10" pnu="33673" str="Luční"/>
+        <rdr cit="Bratislava" cnt="SK" num="6" pnu="91439" str="Ulitsa"/>
+        <taxidrezid num="356135680" stat="SK" type="D"/>
+        <proofid foreigninst="OAMP Praha" num="SK232352" stat="SK" type="O"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-08" contractplace="Praha" fro="2026-01-08" municode="554782" preplace="Praha" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="33133" edu="V"/>
+        <position lead="N" name="účetní"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="211"/>
+      <fact highedu="V" ztp="N"/>
+      <nocitizen freeacc="N" permfro="2026-04-01" permid="P801978" permto="2026-12-31" permtype="2"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="33" dep="444">
+      <client bno="8353209949" ikmpsv="1705025012">
+        <name fir="Petra" sur="Králová"/>
+        <birth cit="Teplice" dat="1983-03-20" nam="Králová" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Opava" cnt="CZ" num="988" pnu="31771" str="Školní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-13" contractplace="Praha" fro="2026-03-13" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="24112"/>
+        <position lead="N" name="operátor"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="209"/>
+      <fact highedu="M" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="34" dep="444">
+      <client bno="0054044941" ikmpsv="1705099687">
+        <name fir="Petra" sur="Dvořáková"/>
+        <birth cit="Opava" dat="2000-04-04" nam="Dvořáková" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Zlín" cnt="CZ" num="816" pnu="50672" str="Hlavní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-17" contractplace="Praha" fro="2026-01-17" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="26111"/>
+        <position lead="N" name="asistent"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="205"/>
+      <fact highedu="T" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="35" dep="444">
+      <client bno="9102145934" ikmpsv="1705093307">
+        <name fir="Jan" sur="Jelínek"/>
+        <birth cit="Teplice" dat="1991-02-14" nam="Jelínek" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Most" cnt="CZ" num="725" pnu="27135" str="Polní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-15" contractplace="Praha" fro="2026-02-15" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="72231"/>
+        <position lead="N" name="mechanik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="201"/>
+      <fact highedu="R" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" dep="444" sqnr="36">
+      <client>
+        <name fir="Michaela" sur="Němcová"/>
+        <birth cit="Sofia" dat="1965-05-15" nam="Horáková" stat="BG"/>
+        <stat/>
+        <adr cit="Zlín" cnt="CZ" num="389" onum="39" pnu="30470" str="Husova"/>
+        <rdr cit="Sofia" cnt="BG" num="88" pnu="46655" str="Aleja"/>
+        <taxidrezid num="852890318" stat="BG" type="D"/>
+        <proofid foreigninst="Cizinecka policie Brno" num="BG389688" stat="BG" type="O"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-12" contractplace="Praha" fro="2026-01-12" municode="554782" preplace="Praha" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="83441" edu="K"/>
+        <position lead="N" name="analytik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="207"/>
+      <fact highedu="K" ztp="N"/>
+      <nocitizen freeacc="N" permfro="2026-04-01" permid="P110644" permto="2026-12-31" permtype="2"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="37" dep="444">
+      <client bno="7512148004" ikmpsv="1705082768">
+        <name fir="Lukáš" sur="Dvořák"/>
+        <birth cit="Ostrava" dat="1975-12-14" nam="Dvořák" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Opava" cnt="CZ" num="488" pnu="68041" str="Masarykova"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-13" contractplace="Praha" fro="2026-01-13" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="24112"/>
+        <position lead="N" name="řidič"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="207"/>
+      <fact highedu="H" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="38" dep="444">
+      <client bno="8308188698" ikmpsv="1705055056">
+        <name fir="Filip" sur="Šťastný"/>
+        <birth cit="Karlovy Vary" dat="1983-08-18" nam="Šťastný" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="České Budějovice" cnt="CZ" num="339" pnu="37434" str="Luční"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-24" contractplace="Praha" fro="2026-01-24" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="72231"/>
+        <position lead="N" name="skladník"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="205"/>
+      <fact highedu="M" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="39" dep="444">
+      <client bno="7154077933" ikmpsv="1705046241">
+        <name fir="Anna" sur="Fialová"/>
+        <birth cit="Zlín" dat="1971-04-07" nam="Fialová" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Karlovy Vary" cnt="CZ" num="538" pnu="54636" str="Jiráskova"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-06" contractplace="Praha" fro="2026-02-06" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="51201"/>
+        <position lead="N" name="skladník"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="111"/>
+      <fact highedu="M" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="40" dep="444">
+      <client bno="9555232068" ikmpsv="1705093606">
+        <name fir="Barbora" sur="Procházková"/>
+        <birth cit="Opava" dat="1995-05-23" nam="Svobodová" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Teplice" cnt="CZ" num="106" pnu="70200" str="Polní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-11" contractplace="Praha" fro="2026-02-11" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="72231"/>
+        <position lead="N" name="analytik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="209"/>
+      <fact highedu="N" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="41" dep="444">
+      <client bno="9052271070" ikmpsv="1705062521">
+        <name fir="Marie" sur="Němcová"/>
+        <birth cit="Brno" dat="1990-02-27" nam="Němcová" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Hradec Králové" cnt="CZ" num="645" pnu="60878" str="Lesní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-03" contractplace="Praha" fro="2026-02-03" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="41101"/>
+        <position lead="N" name="operátor"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="201"/>
+      <fact highedu="V" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="42" dep="444">
+      <client bno="8610203697" ikmpsv="1705078494">
+        <name fir="Tomáš" sur="Fiala"/>
+        <birth cit="Hradec Králové" dat="1986-10-20" nam="Fiala" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="České Budějovice" cnt="CZ" num="454" pnu="39642" str="Palackého"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-20" contractplace="Praha" fro="2026-01-20" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="72231"/>
+        <position lead="N" name="operátor"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="207"/>
+      <fact highedu="R" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="43" dep="444">
+      <client bno="0004091330" ikmpsv="1705030585">
+        <name fir="Tomáš" sur="Veselý"/>
+        <birth cit="Plzeň" dat="2000-04-09" nam="Veselý" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Ostrava" cnt="CZ" num="77" pnu="20043" str="Luční"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-10" contractplace="Praha" fro="2026-02-10" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="31131"/>
+        <position lead="N" name="operátor"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="207"/>
+      <fact highedu="T" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="44" dep="444">
+      <client bno="8952223824" ikmpsv="1705044675">
+        <name fir="Věra" sur="Marková"/>
+        <birth cit="Opava" dat="1989-02-22" nam="Marková" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Opava" cnt="CZ" num="604" pnu="63241" str="Husova"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-05" contractplace="Praha" fro="2026-03-05" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="33133"/>
+        <position lead="N" name="skladník"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="207"/>
+      <fact highedu="R" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="45" dep="444">
+      <client bno="6303265039" ikmpsv="1705087993">
+        <name fir="Pavel" sur="Dvořák"/>
+        <birth cit="Teplice" dat="1963-03-26" nam="Dvořák" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Karlovy Vary" cnt="CZ" num="944" pnu="37195" str="Lesní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-13" contractplace="Praha" fro="2026-03-13" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="31131"/>
+        <position lead="N" name="řidič"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="111"/>
+      <fact highedu="T" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="46" dep="444">
+      <client bno="9108039798" ikmpsv="1705015224">
+        <name fir="Zdeněk" sur="Fiala"/>
+        <birth cit="České Budějovice" dat="1991-08-03" nam="Fiala" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Most" cnt="CZ" num="331" pnu="54102" str="Masarykova"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-01" contractplace="Praha" fro="2026-03-01" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="33133"/>
+        <position lead="N" name="operátor"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="111"/>
+      <fact highedu="K" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="47" dep="444">
+      <client bno="6203168502" ikmpsv="1705095394">
+        <name fir="David" sur="Šťastný"/>
+        <birth cit="Most" dat="1962-03-16" nam="Šťastný" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Hradec Králové" cnt="CZ" num="186" pnu="57141" str="Zahradní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-14" contractplace="Praha" fro="2026-02-14" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="31131"/>
+        <position lead="N" name="analytik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="211"/>
+      <fact highedu="H" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="48" dep="444">
+      <client bno="7861139012" ikmpsv="1705014809">
+        <name fir="Anna" sur="Kučerová"/>
+        <birth cit="Brno" dat="1978-11-13" nam="Růžičková" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Hradec Králové" cnt="CZ" num="259" pnu="31899" str="Krátká"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-22" contractplace="Praha" fro="2026-01-22" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="26111"/>
+        <position lead="N" name="mechanik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="213"/>
+      <fact highedu="V" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="49" dep="444">
+      <client bno="6304175927" ikmpsv="1705091609">
+        <name fir="Karel" sur="Jelínek"/>
+        <birth cit="Hradec Králové" dat="1963-04-17" nam="Jelínek" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Opava" cnt="CZ" num="453" pnu="70845" str="Husova"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-15" contractplace="Praha" fro="2026-02-15" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="72231"/>
+        <position lead="N" name="technik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="201"/>
+      <fact highedu="R" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="50" dep="444">
+      <client bno="6111203920" ikmpsv="1705030758">
+        <name fir="Vladimír" sur="Černý"/>
+        <birth cit="Pardubice" dat="1961-11-20" nam="Černý" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Olomouc" cnt="CZ" num="566" pnu="41527" str="Nová"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-27" contractplace="Praha" fro="2026-03-27" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="33133"/>
+        <position lead="N" name="programátor"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="201"/>
+      <fact highedu="N" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="51" dep="444">
+      <client bno="8658163993" ikmpsv="1705069871">
+        <name fir="Věra" sur="Benešová"/>
+        <birth cit="Plzeň" dat="1986-08-16" nam="Benešová" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Pardubice" cnt="CZ" num="196" pnu="58327" str="Dlouhá"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-25" contractplace="Praha" fro="2026-02-25" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="41101"/>
+        <position lead="N" name="programátor"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="211"/>
+      <fact highedu="V" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="52" dep="444">
+      <client bno="9205270042" ikmpsv="1705047072">
+        <name fir="Michal" sur="Pokorný"/>
+        <birth cit="Olomouc" dat="1992-05-27" nam="Pokorný" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Karlovy Vary" cnt="CZ" num="602" pnu="58022" str="Tyršova"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-12" contractplace="Praha" fro="2026-02-12" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="41101"/>
+        <position lead="N" name="mechanik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="213"/>
+      <fact highedu="N" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="53" dep="444">
+      <client bno="7262089368" ikmpsv="1705060196">
+        <name fir="Barbora" sur="Hájková"/>
+        <birth cit="Teplice" dat="1972-12-08" nam="Pokorná" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Ostrava" cnt="CZ" num="421" pnu="15213" str="Jiráskova"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-22" contractplace="Praha" fro="2026-02-22" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="31131"/>
+        <position lead="N" name="správce"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="211"/>
+      <fact highedu="T" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="54" dep="444">
+      <client bno="6203179669" ikmpsv="1705053515">
+        <name fir="Pavel" sur="Růžička"/>
+        <birth cit="Brno" dat="1962-03-17" nam="Růžička" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Teplice" cnt="CZ" num="866" pnu="41633" str="Tyršova"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-28" contractplace="Praha" fro="2026-02-28" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="31131"/>
+        <position lead="N" name="technik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="209"/>
+      <fact highedu="H" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" dep="444" sqnr="55">
+      <client>
+        <name fir="Pavel" sur="Dvořák"/>
+        <birth cit="Hanoi" dat="1990-05-11" nam="Dvořák" stat="VN"/>
+        <stat/>
+        <adr cit="Brno" cnt="CZ" num="873" onum="44" pnu="68742" str="Krátká"/>
+        <rdr cit="Hanoi" cnt="VN" num="61" pnu="92727" str="Hauptstrasse"/>
+        <taxidrezid num="408570854" stat="VN" type="D"/>
+        <proofid foreigninst="Cizinecka policie Brno" num="VN338536" stat="VN" type="O"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-02" contractplace="Praha" fro="2026-03-02" municode="554782" preplace="Praha" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="83441" edu="T"/>
+        <position lead="N" name="analytik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="207"/>
+      <fact highedu="T" ztp="N"/>
+      <nocitizen freeacc="N" permfro="2026-04-01" permid="P194769" permto="2026-12-31" permtype="2"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="56" dep="444">
+      <client bno="6151110919" ikmpsv="1705048452">
+        <name fir="Anna" sur="Černá"/>
+        <birth cit="Liberec" dat="1961-01-11" nam="Marková" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Liberec" cnt="CZ" num="150" pnu="28702" str="Dlouhá"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-20" contractplace="Praha" fro="2026-01-20" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="41101"/>
+        <position lead="N" name="technik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="207"/>
+      <fact highedu="K" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="57" dep="444">
+      <client bno="9110053804" ikmpsv="1705070443">
+        <name fir="František" sur="Horák"/>
+        <birth cit="Olomouc" dat="1991-10-05" nam="Horák" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Jihlava" cnt="CZ" num="262" pnu="60153" str="Polní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-03" contractplace="Praha" fro="2026-01-03" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="31131"/>
+        <position lead="N" name="mechanik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="213"/>
+      <fact highedu="M" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="58" dep="444">
+      <client bno="7658284949" ikmpsv="1705036111">
+        <name fir="Markéta" sur="Šťastná"/>
+        <birth cit="Teplice" dat="1976-08-28" nam="Jelínková" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="České Budějovice" cnt="CZ" num="110" pnu="26248" str="Polní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-10" contractplace="Praha" fro="2026-03-10" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="83441"/>
+        <position lead="N" name="řidič"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="209"/>
+      <fact highedu="R" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="59" dep="444">
+      <client bno="9862164689" ikmpsv="1705040162">
+        <name fir="Monika" sur="Němcová"/>
+        <birth cit="Opava" dat="1998-12-16" nam="Svobodová" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Zlín" cnt="CZ" num="225" pnu="63115" str="Krátká"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-04" contractplace="Praha" fro="2026-03-04" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="72231"/>
+        <position lead="N" name="technik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="209"/>
+      <fact highedu="T" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="60" dep="444">
+      <client bno="8801195977" ikmpsv="1705027224">
+        <name fir="Petr" sur="Marek"/>
+        <birth cit="Most" dat="1988-01-19" nam="Marek" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Brno" cnt="CZ" num="335" pnu="66807" str="Zahradní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-17" contractplace="Praha" fro="2026-02-17" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="51201"/>
+        <position lead="N" name="mechanik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="201"/>
+      <fact highedu="K" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="61" dep="444">
+      <client bno="7608264835" ikmpsv="1705054396">
+        <name fir="David" sur="Kučera"/>
+        <birth cit="Brno" dat="1976-08-26" nam="Kučera" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Opava" cnt="CZ" num="987" pnu="12306" str="Polní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-12" contractplace="Praha" fro="2026-03-12" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="51201"/>
+        <position lead="N" name="správce"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="213"/>
+      <fact highedu="V" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="62" dep="444">
+      <client bno="8956224295" ikmpsv="1705086619">
+        <name fir="Monika" sur="Nováková"/>
+        <birth cit="Teplice" dat="1989-06-22" nam="Černá" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="České Budějovice" cnt="CZ" num="963" pnu="31775" str="Husova"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-18" contractplace="Praha" fro="2026-03-18" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="51201"/>
+        <position lead="N" name="účetní"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="211"/>
+      <fact highedu="N" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="63" dep="444">
+      <client bno="0058234951" ikmpsv="1705095097">
+        <name fir="Simona" sur="Horáková"/>
+        <birth cit="Brno" dat="2000-08-23" nam="Horáková" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="České Budějovice" cnt="CZ" num="47" pnu="14986" str="Školní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-05" contractplace="Praha" fro="2026-03-05" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="33133"/>
+        <position lead="N" name="skladník"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="207"/>
+      <fact highedu="H" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="64" dep="444">
+      <client bno="8661048017" ikmpsv="1705090694">
+        <name fir="Markéta" sur="Fialová"/>
+        <birth cit="Olomouc" dat="1986-11-04" nam="Procházková" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="České Budějovice" cnt="CZ" num="707" pnu="33559" str="Nová"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-22" contractplace="Praha" fro="2026-01-22" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="31131"/>
+        <position lead="N" name="asistent"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="207"/>
+      <fact highedu="K" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" dep="444" sqnr="65">
+      <client>
+        <name fir="Markéta" sur="Svobodová"/>
+        <birth cit="Sofia" dat="1967-08-03" nam="Veselá" stat="BG"/>
+        <stat/>
+        <adr cit="Jihlava" cnt="CZ" num="52" onum="38" pnu="75464" str="Nová"/>
+        <rdr cit="Sofia" cnt="BG" num="142" pnu="37152" str="Ulitsa"/>
+        <taxidrezid num="331875999" stat="BG" type="D"/>
+        <proofid foreigninst="Cizinecka policie Praha" num="BG952547" stat="BG" type="O"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-03" contractplace="Praha" fro="2026-01-03" municode="554782" preplace="Praha" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="41101" edu="V"/>
+        <position lead="N" name="operátor"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="201"/>
+      <fact highedu="V" ztp="N"/>
+      <nocitizen freeacc="N" permfro="2026-04-01" permid="P444519" permto="2026-12-31" permtype="2"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="66" dep="444">
+      <client bno="7703058850" ikmpsv="1705042853">
+        <name fir="František" sur="Novák"/>
+        <birth cit="Plzeň" dat="1977-03-05" nam="Novák" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Opava" cnt="CZ" num="677" pnu="70422" str="Hlavní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-11" contractplace="Praha" fro="2026-03-11" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="24112"/>
+        <position lead="N" name="skladník"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="201"/>
+      <fact highedu="M" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="67" dep="444">
+      <client bno="9352241041" ikmpsv="1705072422">
+        <name fir="Hana" sur="Svobodová"/>
+        <birth cit="Opava" dat="1993-02-24" nam="Jelínková" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Hradec Králové" cnt="CZ" num="526" pnu="51786" str="Krátká"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-26" contractplace="Praha" fro="2026-03-26" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="51201"/>
+        <position lead="N" name="účetní"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="207"/>
+      <fact highedu="R" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="68" dep="444">
+      <client bno="8911010996" ikmpsv="1705072781">
+        <name fir="Zdeněk" sur="Marek"/>
+        <birth cit="České Budějovice" dat="1989-11-01" nam="Marek" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Teplice" cnt="CZ" num="703" pnu="18032" str="Dlouhá"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-20" contractplace="Praha" fro="2026-02-20" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="31131"/>
+        <position lead="N" name="programátor"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="211"/>
+      <fact highedu="H" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="69" dep="444">
+      <client bno="9759235327" ikmpsv="1705059925">
+        <name fir="Lenka" sur="Němcová"/>
+        <birth cit="Pardubice" dat="1997-09-23" nam="Němcová" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Zlín" cnt="CZ" num="465" pnu="59919" str="Zahradní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-21" contractplace="Praha" fro="2026-03-21" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="33133"/>
+        <position lead="N" name="programátor"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="207"/>
+      <fact highedu="V" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" dep="444" sqnr="70">
+      <client>
+        <name fir="Josef" sur="Veselý"/>
+        <birth cit="Bucuresti" dat="1987-08-08" nam="Veselý" stat="RO"/>
+        <stat/>
+        <adr cit="Teplice" cnt="CZ" num="426" onum="6" pnu="61557" str="Dlouhá"/>
+        <rdr cit="Bucuresti" cnt="RO" num="18" pnu="21957" str="Prospekt"/>
+        <taxidrezid num="200105056" stat="RO" type="D"/>
+        <proofid foreigninst="Cizinecka policie Praha" num="RO552855" stat="RO" type="O"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-05" contractplace="Praha" fro="2026-02-05" municode="554782" preplace="Praha" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="26111" edu="M"/>
+        <position lead="N" name="řidič"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="205"/>
+      <fact highedu="M" ztp="N"/>
+      <nocitizen freeacc="N" permfro="2026-04-01" permid="P880758" permto="2026-12-31" permtype="2"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="71" dep="444">
+      <client bno="6310189202" ikmpsv="1705053207">
+        <name fir="Pavel" sur="Fiala"/>
+        <birth cit="Brno" dat="1963-10-18" nam="Fiala" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Jihlava" cnt="CZ" num="363" pnu="76929" str="Dlouhá"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-12" contractplace="Praha" fro="2026-02-12" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="24112"/>
+        <position lead="N" name="operátor"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="213"/>
+      <fact highedu="M" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" dep="444" sqnr="72">
+      <client>
+        <name fir="Zuzana" sur="Veselá"/>
+        <birth cit="Warszawa" dat="1974-02-12" nam="Růžičková" stat="PL"/>
+        <stat/>
+        <adr cit="Brno" cnt="CZ" num="588" onum="22" pnu="27030" str="Zahradní"/>
+        <rdr cit="Warszawa" cnt="PL" num="196" pnu="50499" str="Strada"/>
+        <taxidrezid num="476908532" stat="PL" type="D"/>
+        <proofid foreigninst="Cizinecka policie Praha" num="PL106402" stat="PL" type="O"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-06" contractplace="Praha" fro="2026-01-06" municode="554782" preplace="Praha" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="24112" edu="R"/>
+        <position lead="N" name="řidič"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="213"/>
+      <fact highedu="R" ztp="N"/>
+      <nocitizen freeacc="N" permfro="2026-04-01" permid="P250210" permto="2026-12-31" permtype="2"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="73" dep="444">
+      <client bno="6912210502" ikmpsv="1705022026">
+        <name fir="Marek" sur="Dvořák"/>
+        <birth cit="Pardubice" dat="1969-12-21" nam="Dvořák" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Karlovy Vary" cnt="CZ" num="386" pnu="47432" str="Nádražní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-11" contractplace="Praha" fro="2026-03-11" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="41101"/>
+        <position lead="N" name="řidič"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="205"/>
+      <fact highedu="M" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="74" dep="444">
+      <client bno="6501052579" ikmpsv="1705090981">
+        <name fir="Miroslav" sur="Kolář"/>
+        <birth cit="Jihlava" dat="1965-01-05" nam="Kolář" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Praha" cnt="CZ" num="279" pnu="46947" str="Hlavní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-25" contractplace="Praha" fro="2026-01-25" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="31131"/>
+        <position lead="N" name="řidič"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="207"/>
+      <fact highedu="N" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="75" dep="444">
+      <client bno="6705229717" ikmpsv="1705073783">
+        <name fir="Adam" sur="Jelínek"/>
+        <birth cit="Jihlava" dat="1967-05-22" nam="Jelínek" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Pardubice" cnt="CZ" num="47" pnu="26475" str="Zahradní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-07" contractplace="Praha" fro="2026-02-07" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="24112"/>
+        <position lead="N" name="skladník"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="209"/>
+      <fact highedu="H" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" dep="444" sqnr="76">
+      <client>
+        <name fir="David" sur="Marek"/>
+        <birth cit="Kyiv" dat="1980-02-01" nam="Marek" stat="UA"/>
+        <stat/>
+        <adr cit="Plzeň" cnt="CZ" num="546" onum="21" pnu="63770" str="Dlouhá"/>
+        <rdr cit="Kyiv" cnt="UA" num="118" pnu="20205" str="Hauptstrasse"/>
+        <taxidrezid num="718216692" stat="UA" type="D"/>
+        <proofid foreigninst="Cizinecka policie Brno" num="UA550137" stat="UA" type="O"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-02" contractplace="Praha" fro="2026-03-02" municode="554782" preplace="Praha" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="83441" edu="H"/>
+        <position lead="N" name="správce"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="209"/>
+      <fact highedu="H" ztp="N"/>
+      <nocitizen freeacc="N" permfro="2026-04-01" permid="P524068" permto="2026-12-31" permtype="2"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="77" dep="444">
+      <client bno="6707015321" ikmpsv="1705032527">
+        <name fir="Michal" sur="Marek"/>
+        <birth cit="Zlín" dat="1967-07-01" nam="Marek" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Opava" cnt="CZ" num="852" pnu="65928" str="Polní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-14" contractplace="Praha" fro="2026-01-14" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="26111"/>
+        <position lead="N" name="programátor"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="111"/>
+      <fact highedu="V" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" dep="444" sqnr="78">
+      <client>
+        <name fir="Zdeněk" sur="Dvořák"/>
+        <birth cit="Sofia" dat="1985-05-24" nam="Dvořák" stat="BG"/>
+        <stat/>
+        <adr cit="Liberec" cnt="CZ" num="79" onum="7" pnu="51868" str="Školní"/>
+        <rdr cit="Sofia" cnt="BG" num="38" pnu="40968" str="Strada"/>
+        <taxidrezid num="257243284" stat="BG" type="D"/>
+        <proofid foreigninst="Cizinecka policie Praha" num="BG368402" stat="BG" type="O"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-24" contractplace="Praha" fro="2026-02-24" municode="554782" preplace="Praha" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="51201" edu="V"/>
+        <position lead="N" name="asistent"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="209"/>
+      <fact highedu="V" ztp="N"/>
+      <nocitizen freeacc="N" permfro="2026-04-01" permid="P281926" permto="2026-12-31" permtype="2"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="79" dep="444">
+      <client bno="0008159236" ikmpsv="1705085952">
+        <name fir="Martin" sur="Kučera"/>
+        <birth cit="Jihlava" dat="2000-08-15" nam="Kučera" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Hradec Králové" cnt="CZ" num="904" pnu="55295" str="Palackého"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-16" contractplace="Praha" fro="2026-01-16" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="83441"/>
+        <position lead="N" name="analytik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="213"/>
+      <fact highedu="K" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="80" dep="444">
+      <client bno="8259035085" ikmpsv="1705070521">
+        <name fir="Věra" sur="Němcová"/>
+        <birth cit="Praha" dat="1982-09-03" nam="Němcová" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Hradec Králové" cnt="CZ" num="378" pnu="74703" str="Nová"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-13" contractplace="Praha" fro="2026-03-13" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="33133"/>
+        <position lead="N" name="operátor"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="111"/>
+      <fact highedu="R" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="81" dep="444">
+      <client bno="7256207792" ikmpsv="1705075715">
+        <name fir="Barbora" sur="Svobodová"/>
+        <birth cit="Praha" dat="1972-06-20" nam="Šťastná" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Plzeň" cnt="CZ" num="106" pnu="75626" str="Polní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-08" contractplace="Praha" fro="2026-01-08" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="33133"/>
+        <position lead="N" name="technik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="211"/>
+      <fact highedu="R" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" dep="444" sqnr="82">
+      <client>
+        <name fir="Karel" sur="Beneš"/>
+        <birth cit="Berlin" dat="1993-10-06" nam="Beneš" stat="DE"/>
+        <stat/>
+        <adr cit="Most" cnt="CZ" num="419" onum="19" pnu="75543" str="Dlouhá"/>
+        <rdr cit="Berlin" cnt="DE" num="174" pnu="60667" str="Duong"/>
+        <taxidrezid num="370578414" stat="DE" type="D"/>
+        <proofid foreigninst="Cizinecka policie Brno" num="DE858889" stat="DE" type="O"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-11" contractplace="Praha" fro="2026-01-11" municode="554782" preplace="Praha" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="24112" edu="V"/>
+        <position lead="N" name="asistent"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="211"/>
+      <fact highedu="V" ztp="N"/>
+      <nocitizen freeacc="N" permfro="2026-04-01" permid="P731977" permto="2026-12-31" permtype="2"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="83" dep="444">
+      <client bno="9711055731" ikmpsv="1705050662">
+        <name fir="Ondřej" sur="Dvořák"/>
+        <birth cit="Karlovy Vary" dat="1997-11-05" nam="Dvořák" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Jihlava" cnt="CZ" num="402" pnu="29749" str="Husova"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-21" contractplace="Praha" fro="2026-02-21" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="33133"/>
+        <position lead="N" name="mechanik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="211"/>
+      <fact highedu="M" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="84" dep="444">
+      <client bno="6511226937" ikmpsv="1705076648">
+        <name fir="Pavel" sur="Beneš"/>
+        <birth cit="Praha" dat="1965-11-22" nam="Beneš" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Liberec" cnt="CZ" num="317" pnu="23509" str="Krátká"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-05" contractplace="Praha" fro="2026-01-05" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="31131"/>
+        <position lead="N" name="skladník"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="205"/>
+      <fact highedu="K" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="85" dep="444">
+      <client bno="9351225517" ikmpsv="1705091006">
+        <name fir="Anna" sur="Benešová"/>
+        <birth cit="Zlín" dat="1993-01-22" nam="Benešová" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Plzeň" cnt="CZ" num="158" pnu="22962" str="Dlouhá"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-14" contractplace="Praha" fro="2026-01-14" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="41101"/>
+        <position lead="N" name="analytik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="213"/>
+      <fact highedu="T" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="86" dep="444">
+      <client bno="8854183918" ikmpsv="1705050562">
+        <name fir="Lucie" sur="Králová"/>
+        <birth cit="Opava" dat="1988-04-18" nam="Králová" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Opava" cnt="CZ" num="926" pnu="73178" str="Polní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-17" contractplace="Praha" fro="2026-02-17" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="31131"/>
+        <position lead="N" name="řidič"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="205"/>
+      <fact highedu="N" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" dep="444" sqnr="87">
+      <client>
+        <name fir="Jiří" sur="Veselý"/>
+        <birth cit="Kyiv" dat="1998-03-28" nam="Veselý" stat="UA"/>
+        <stat/>
+        <adr cit="Jihlava" cnt="CZ" num="381" onum="6" pnu="51680" str="Tyršova"/>
+        <rdr cit="Kyiv" cnt="UA" num="38" pnu="67340" str="Duong"/>
+        <taxidrezid num="338411494" stat="UA" type="D"/>
+        <proofid foreigninst="OAMP Praha" num="UA956375" stat="UA" type="O"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-09" contractplace="Praha" fro="2026-01-09" municode="554782" preplace="Praha" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="33133" edu="M"/>
+        <position lead="N" name="programátor"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="211"/>
+      <fact highedu="M" ztp="N"/>
+      <nocitizen freeacc="N" permfro="2026-04-01" permid="P466566" permto="2026-12-31" permtype="2"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="88" dep="444">
+      <client bno="8509123862" ikmpsv="1705060615">
+        <name fir="Michal" sur="Svoboda"/>
+        <birth cit="Liberec" dat="1985-09-12" nam="Svoboda" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Brno" cnt="CZ" num="29" pnu="31623" str="Nádražní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-02" contractplace="Praha" fro="2026-01-02" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="83441"/>
+        <position lead="N" name="technik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="213"/>
+      <fact highedu="V" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="89" dep="444">
+      <client bno="9058200086" ikmpsv="1705020384">
+        <name fir="Ivana" sur="Procházková"/>
+        <birth cit="Olomouc" dat="1990-08-20" nam="Procházková" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Praha" cnt="CZ" num="856" pnu="28991" str="Nádražní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-10" contractplace="Praha" fro="2026-01-10" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="26111"/>
+        <position lead="N" name="řidič"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="211"/>
+      <fact highedu="H" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="90" dep="444">
+      <client bno="9958031816" ikmpsv="1705075513">
+        <name fir="Lucie" sur="Jelínková"/>
+        <birth cit="Pardubice" dat="1999-08-03" nam="Jelínková" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Zlín" cnt="CZ" num="648" pnu="59421" str="Nová"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-20" contractplace="Praha" fro="2026-01-20" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="41101"/>
+        <position lead="N" name="správce"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="201"/>
+      <fact highedu="M" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="91" dep="444">
+      <client bno="9356038618" ikmpsv="1705081313">
+        <name fir="Michaela" sur="Jelínková"/>
+        <birth cit="Opava" dat="1993-06-03" nam="Dvořáková" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Pardubice" cnt="CZ" num="568" pnu="16397" str="Luční"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-09" contractplace="Praha" fro="2026-02-09" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="31131"/>
+        <position lead="N" name="správce"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="213"/>
+      <fact highedu="H" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="92" dep="444">
+      <client bno="8204241698" ikmpsv="1705086271">
+        <name fir="Adam" sur="Dvořák"/>
+        <birth cit="Opava" dat="1982-04-24" nam="Dvořák" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Karlovy Vary" cnt="CZ" num="137" pnu="15772" str="Krátká"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-15" contractplace="Praha" fro="2026-03-15" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="83441"/>
+        <position lead="N" name="technik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="209"/>
+      <fact highedu="V" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="93" dep="444">
+      <client bno="6802237498" ikmpsv="1705014847">
+        <name fir="Vladimír" sur="Kučera"/>
+        <birth cit="Ostrava" dat="1968-02-23" nam="Kučera" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Olomouc" cnt="CZ" num="811" pnu="20686" str="Nová"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-16" contractplace="Praha" fro="2026-03-16" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="72231"/>
+        <position lead="N" name="správce"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="205"/>
+      <fact highedu="R" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="94" dep="444">
+      <client bno="8155046029" ikmpsv="1705067272">
+        <name fir="Petra" sur="Marková"/>
+        <birth cit="České Budějovice" dat="1981-05-04" nam="Svobodová" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Most" cnt="CZ" num="451" pnu="45554" str="Masarykova"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-26" contractplace="Praha" fro="2026-02-26" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="31131"/>
+        <position lead="N" name="analytik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="201"/>
+      <fact highedu="T" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" dep="444" sqnr="95">
+      <client>
+        <name fir="Martin" sur="Jelínek"/>
+        <birth cit="Kyiv" dat="1965-07-20" nam="Jelínek" stat="UA"/>
+        <stat/>
+        <adr cit="Olomouc" cnt="CZ" num="82" onum="47" pnu="34843" str="Hlavní"/>
+        <rdr cit="Kyiv" cnt="UA" num="115" pnu="15551" str="Aleja"/>
+        <taxidrezid num="478557676" stat="UA" type="D"/>
+        <proofid foreigninst="OAMP Praha" num="UA744718" stat="UA" type="O"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-23" contractplace="Praha" fro="2026-01-23" municode="554782" preplace="Praha" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="31131" edu="R"/>
+        <position lead="N" name="správce"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="205"/>
+      <fact highedu="R" ztp="N"/>
+      <nocitizen freeacc="N" permfro="2026-04-01" permid="P387892" permto="2026-12-31" permtype="2"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="96" dep="444">
+      <client bno="0007128406" ikmpsv="1705099051">
+        <name fir="Petr" sur="Dvořák"/>
+        <birth cit="Praha" dat="2000-07-12" nam="Dvořák" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Plzeň" cnt="CZ" num="870" pnu="57179" str="Školní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-12" contractplace="Praha" fro="2026-03-12" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="41101"/>
+        <position lead="N" name="skladník"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="111"/>
+      <fact highedu="H" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="97" dep="444">
+      <client bno="8856127273" ikmpsv="1705020077">
+        <name fir="Michaela" sur="Svobodová"/>
+        <birth cit="Plzeň" dat="1988-06-12" nam="Svobodová" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Zlín" cnt="CZ" num="376" pnu="45150" str="Luční"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-01-24" contractplace="Praha" fro="2026-01-24" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="72231"/>
+        <position lead="N" name="programátor"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="211"/>
+      <fact highedu="K" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="98" dep="444">
+      <client bno="6755254264" ikmpsv="1705068493">
+        <name fir="Zuzana" sur="Hájková"/>
+        <birth cit="Zlín" dat="1967-05-25" nam="Hájková" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Ostrava" cnt="CZ" num="711" pnu="43279" str="Zahradní"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-02-06" contractplace="Praha" fro="2026-02-06" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="41101"/>
+        <position lead="N" name="programátor"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="111"/>
+      <fact highedu="V" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="99" dep="444">
+      <client bno="8011121063" ikmpsv="1705082089">
+        <name fir="Karel" sur="Dvořák"/>
+        <birth cit="Olomouc" dat="1980-11-12" nam="Dvořák" stat="CZ"/>
+        <stat cnt="CZ" mal="M"/>
+        <adr cit="Pardubice" cnt="CZ" num="308" pnu="72580" str="Palackého"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-08" contractplace="Praha" fro="2026-03-08" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="41101"/>
+        <position lead="N" name="asistent"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="211"/>
+      <fact highedu="V" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+    <employee act="1" dat="2026-03-16" sqnr="100" dep="444">
+      <client bno="6156189376" ikmpsv="1705058353">
+        <name fir="Petra" sur="Procházková"/>
+        <birth cit="Opava" dat="1961-06-18" nam="Růžičková" stat="CZ"/>
+        <stat cnt="CZ" mal="Ž"/>
+        <adr cit="Hradec Králové" cnt="CZ" num="133" pnu="51412" str="Luční"/>
+        <taxidrezid stat="CZ"/>
+      </client>
+      <comp nam="Test firma jhmh 2026-03-10" vs="1152037709"/>
+      <job cit="Praha" cont="N" contractfro="2026-03-14" contractplace="Praha" fro="2026-03-14" municode="554782" rel="1" relDetail="1" relat="1111" sme="N" workmode="1">
+        <prof clas="72231"/>
+        <position lead="N" name="analytik"/>
+      </job>
+      <pens early="N" reducedAge="N"/>
+      <insh cnr="111"/>
+      <fact highedu="N" ztp="N"/>
+      <forinreg juris="N"/>
+    </employee>
+  </employees>
+</REGZEC>

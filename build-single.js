@@ -13,5 +13,5 @@ html = html.replace('<script src="xsd-data.js"></script>', '<script>' + xsd + '<
 html = html.replace('<script src="jmhz-xsd-data.js"></script>', '<script>' + jmhzXsd + '</script>');
 html = html.replace('<script src="formats.js"></script>', '<script>' + formats + '</script>');
 
-fs.writeFileSync('dist/cssz-editor.html', html);
-console.log('Built: dist/cssz-editor.html (' + (html.length / 1024 / 1024).toFixed(2) + ' MB)');
+fs.writeFileSync('dist/jmhz-editor.html', html);
+console.log('Built: dist/jmhz-editor.html (' + (html.length / 1024 / 1024).toFixed(2) + ' MB)');
