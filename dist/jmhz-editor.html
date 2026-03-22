@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>REGZEC Editor</title>
+<title>JMHZ XML Editor</title>
 <script>/**
 * vue v3.5.30
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
@@ -663,7 +663,7 @@ const REGZEC_CONFIG = {
 };
 
 const JMHZ_CONFIG = {
-  name: 'JMHZ (Měsíční hlášení)',
+  name: 'Měsíční hlášení',
   ns: 'http://schemas.cssz.cz/JMHZ/podani/1.0',
   formNs: 'http://schemas.cssz.cz/JMHZ/form/1.0',
   rootElement: 'jmhz',
@@ -1302,7 +1302,7 @@ body {
 <div id="app" class="app">
   <!-- Toolbar -->
   <div class="toolbar">
-    <img src="abra-logo-2026.svg" alt="ABRA" style="flex-shrink: 0; height: 28px; width: auto;">
+    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4gPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjYiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCAxNjYgNDgiIGZpbGw9Im5vbmUiPjxwYXRoIGQ9Ik02OC45NzAzIDM1TDc4LjM1NzcgOC42NzA0SDgzLjUxODlMOTIuOTA2MyAzNUg4Ny4yOTYzTDg1LjM1MTUgMjkuMzE1Mkg3Ni4zMzgxTDc0LjQzMDcgMzVINjguOTcwM1pNNzcuOTgzNyAyNC41MjhIODMuNzA1OUw4MC44NjM1IDE2LjAwMDhMNzcuOTgzNyAyNC41MjhaTTk1Ljg2MTUgMzVWOC44MkgxMDUuNTg1QzEwOC41MDMgOC44MiAxMTAuOTM0IDkuNjA1NCAxMTIuNDMgMTEuMTAxNEMxMTMuNTg5IDEyLjI5ODIgMTE0LjE4NyAxMy43MTk0IDExNC4xODcgMTUuNTUyVjE1LjY2NDJDMTE0LjE4NyAxOC43MzEgMTEyLjUwNCAyMC4zNzY2IDExMC42MzQgMjEuMzg2NEMxMTMuNDM5IDIyLjQ3MSAxMTUuMzA5IDI0LjE5MTQgMTE1LjMwOSAyNy42MzIyVjI3LjgxOTJDMTE1LjMwOSAzMi41MzE2IDExMS41MzIgMzUgMTA1Ljg0NyAzNUg5NS44NjE1Wk0xMDguODM5IDE2LjU2MThWMTYuNTI0NEMxMDguODM5IDE0LjYxNyAxMDcuNDkzIDEzLjYwNzIgMTA1LjE3NCAxMy42MDcySDEwMS4xMzVWMTkuNTE2NEgxMDQuOTEyQzEwNy4zMDYgMTkuNTE2NCAxMDguODM5IDE4LjU0NCAxMDguODM5IDE2LjU2MThaTTEwOS45NjEgMjcuMTA4NkMxMDkuOTYxIDI1LjIzODYgMTA4LjU3NyAyNC4wNzkyIDEwNS44ODUgMjQuMDc5MkgxMDEuMTM1VjMwLjIxMjhIMTA1Ljk5N0MxMDguNDI4IDMwLjIxMjggMTA5Ljk2MSAyOS4xNjU2IDEwOS45NjEgMjcuMTQ2VjI3LjEwODZaTTExOC45NDQgMzVWOC44MkgxMjguNzhDMTMxLjgxIDguODIgMTM0LjI0MSA5LjY4MDIgMTM1Ljg4NiAxMS4zMjU4QzEzNy4zMDggMTIuNzQ3IDEzOC4wOTMgMTQuODA0IDEzOC4wOTMgMTcuMzg0NlYxNy41MzQyQzEzOC4wOTMgMjEuNDk4NiAxMzYuMTExIDI0LjAwNDQgMTMzLjIzMSAyNS4yNzZMMTM4LjgwNCAzNUgxMzIuNTk1TDEyNy43NzEgMjYuMzk4SDEyNC4zNjdWMzVIMTE4Ljk0NFpNMTI0LjM2NyAyMS42MTA4SDEyOC4zNjlDMTMxLjEzNyAyMS42MTA4IDEzMi42MzMgMjAuMDQgMTMyLjYzMyAxNy42ODM4VjE3LjY0NjRDMTMyLjYzMyAxNS4wMjg0IDEzMS4wMjQgMTMuNzE5NCAxMjguMjU3IDEzLjcxOTRIMTI0LjM2N1YyMS42MTA4Wk0xNDAuMTE4IDM1TDE0OS41MDUgOC42NzA0SDE1NC42NjdMMTY0LjA1NCAzNUgxNTguNDQ0TDE1Ni40OTkgMjkuMzE1MkgxNDcuNDg2TDE0NS41NzggMzVIMTQwLjExOFpNMTQ5LjEzMSAyNC41MjhIMTU0Ljg1NEwxNTIuMDExIDE2LjAwMDhMMTQ5LjEzMSAyNC41MjhaIiBmaWxsPSIjMzQzQjRFIj48L3BhdGg+PHBhdGggZD0iTTQzLjYyMDUgNy4yNjk1OEw2NC41MTQ1IDQzLjY0MjZINDIuOTE1NUwzMi44MzQ1IDI2LjAwNzZMNDMuNjIwNSA3LjI2OTU4WiIgZmlsbD0iIzM0M0I0RSI+PC9wYXRoPjxtYXNrIGlkPSJtYXNrMF8xNF82MCIgc3R5bGU9Im1hc2stdHlwZTpsdW1pbmFuY2UiIG1hc2tVbml0cz0idXNlclNwYWNlT25Vc2UiIHg9IjMyIiB5PSI3IiB3aWR0aD0iMzMiIGhlaWdodD0iMzciPjxwYXRoIGQ9Ik0zMi45MjU4IDI1LjkzMzlWMjYuMTMzOUw0Mi45MjU4IDQzLjUzMzlINjQuNTI1OEw0My42MjU4IDcuMjMzODlMMzIuOTI1OCAyNS45MzM5WiIgZmlsbD0id2hpdGUiPjwvcGF0aD48L21hc2s+PGcgbWFzaz0idXJsKCNtYXNrMF8xNF82MCkiPjxwYXRoIGQ9Ik0xMTI0LjkyIC04NzQuMTc5TDY3NzQuMjEgODk5MC4wNEwxNTMuMzM0IDEyNzgxLjhMLTU0OTUuOTYgMjkxNy42M0wxMTI0LjkyIC04NzQuMTc5WiIgZmlsbD0idXJsKCNwYWludDBfbGluZWFyXzE0XzYwKSI+PC9wYXRoPjwvZz48cGF0aCBkPSJNMjEuNDE5IDYuMDk2NThMMCA0My42NDI2SDIxLjQxOUw0Mi44MjYgNi4wOTY1OEgyMS40MTlaIiBmaWxsPSIjMzQzQjRFIj48L3BhdGg+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJwYWludDBfbGluZWFyXzE0XzYwIiB4MT0iMjkuMDc3IiB5MT0iMjIuODMwNiIgeDI9IjQ2Ljc4ODIiIHkyPSI1My43NTYyIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHN0b3Agc3RvcC1jb2xvcj0iI0VBNEM2QiI+PC9zdG9wPjxzdG9wIG9mZnNldD0iMC4xNzI2MTkiIHN0b3AtY29sb3I9IiNFQTRFNkEiPjwvc3RvcD48c3RvcCBvZmZzZXQ9IjAuMzAyMzgxIiBzdG9wLWNvbG9yPSIjRUM2MDY4Ij48L3N0b3A+PHN0b3Agb2Zmc2V0PSIwLjUwMjM4MSIgc3RvcC1jb2xvcj0iI0VGNzc2MCI+PC9zdG9wPjxzdG9wIG9mZnNldD0iMC42MjczODEiIHN0b3AtY29sb3I9IiNGMDg0NTgiPjwvc3RvcD48c3RvcCBvZmZzZXQ9IjAuNzMyMTQzIiBzdG9wLWNvbG9yPSIjRjI4RTRGIj48L3N0b3A+PHN0b3Agb2Zmc2V0PSIwLjc5ODgxIiBzdG9wLWNvbG9yPSIjRjM5NTQ4Ij48L3N0b3A+PHN0b3Agb2Zmc2V0PSIwLjk0MTY2NyIgc3RvcC1jb2xvcj0iI0Y2QTMzNyI+PC9zdG9wPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI0Y3QTgyRCI+PC9zdG9wPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjwvc3ZnPiA=" alt="ABRA" style="flex-shrink: 0; height: 28px; width: auto;">
     <span style="font-weight: 600; font-size: 0.875rem; color: var(--text-primary);">JMHZ XML Editor</span>
     <span class="spacer"></span>
     <span style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 1px; pointer-events: none;">
@@ -1314,7 +1314,6 @@ body {
     <button class="primary" @click="saveFile" v-if="xmlDoc">Uložit XML</button>
     <button @click="validateAll" v-if="xmlDoc">Validovat</button>
     <button @click="toggleViewMode" v-if="xmlDoc" style="margin-left: 4px;">Zobrazení: {{ viewMode === 'cards' ? 'Karty' : 'Tabulka' }}</button>
-    <span class="error-badge" v-if="errors.length">{{ errors.length }} chyb</span>
   </div>
 
   <!-- Stats Bar -->
@@ -1474,8 +1473,7 @@ body {
       <div class="drop-zone" :class="{ dragover: isDragging }"
            @dragover.prevent="isDragging = true" @dragleave="isDragging = false"
            @drop.prevent="handleDrop" @click="loadFile">
-        <h2>CSSZ XML Editor</h2>
-        <p>Přetáhněte nebo klikněte pro načtení REGZEC / JMHZ XML souboru</p>
+        <p>Přetáhněte nebo klikněte pro načtení XML souboru měsíčního hlášení</p>
         <button @click.stop="loadFile" style="margin-top: 16px; padding: 10px 28px; font-size: 15px; font-weight: 500; border: 1px solid #D1D5DB; border-radius: 8px; background: #2563EB; color: #fff; cursor: pointer;">Nahrát XML</button>
       </div>
     </div>
@@ -1608,6 +1606,7 @@ createApp({
     const expandedEmployee = ref(-1);
     const fieldSearch = ref('');
     const valueSearch = ref('');
+    const formatRef = ref(null);
     let _searchTimer = null;
     function onFieldSearchInput(e) {
       clearTimeout(_searchTimer);
@@ -1634,12 +1633,12 @@ createApp({
     const searchInput = ref(null);
     const undoStack = ref([]);
     const redoStack = ref([]);
-    const actionLabels = computed(() => activeFormat ? (activeFormat.actionLabels || {}) : {});
-    const formatName = computed(() => activeFormat ? activeFormat.name : '');
-    const hasActions = computed(() => activeFormat ? activeFormat.hasActions : false);
-    const rowInfoDefs = computed(() => activeFormat ? (activeFormat.getRowInfo || []) : []);
+    const actionLabels = computed(() => { const f = formatRef.value; return f ? (f.actionLabels || {}) : {}; });
+    const formatName = computed(() => { const f = formatRef.value; return f ? f.name : ''; });
+    const hasActions = computed(() => { const f = formatRef.value; return f ? f.hasActions : false; });
+    const rowInfoDefs = computed(() => { const f = formatRef.value; return f ? (f.getRowInfo || []) : []; });
     function getRowLabel(emp) { return activeFormat ? activeFormat.getRowLabel(emp.fields) : (emp.surname + ' ' + emp.firstName); }
-    const rowColumnLabel = computed(() => activeFormat ? (activeFormat.rowColumnLabel || 'Jméno') : 'Jméno');
+    const rowColumnLabel = computed(() => { const f = formatRef.value; return f ? (f.rowColumnLabel || 'Jméno') : 'Jméno'; });
     function fieldXpath(field) { return activeFormat ? activeFormat.fieldXpath(field) : (field.section + '/@' + (field.attr || field.element)); }
 
     function parseXml(xmlText) {
@@ -1649,6 +1648,7 @@ createApp({
       const format = detectFormat(doc);
       if (!format) return;
       rebuildMetadata(format);
+      formatRef.value = format;
       xmlDoc.value = doc;
       employees.value = [];
       errors.value = [];
@@ -1710,7 +1710,8 @@ createApp({
     });
 
     const actionSummary = computed(() => {
-      if (!activeFormat || !activeFormat.hasActions) return '';
+      const f = formatRef.value;
+      if (!f || !f.hasActions) return '';
       if (!employees.value.length) return '';
       const counts = {};
       employees.value.forEach(e => { counts[e.act] = (counts[e.act] || 0) + 1; });
@@ -1718,28 +1719,31 @@ createApp({
       if (!keys.length) return '';
       if (keys.length === 1) {
         const act = keys[0];
-        return (activeFormat.actionLabels || {})[act] || ('A' + act);
+        return (f.actionLabels || {})[act] || ('A' + act);
       }
       return keys.map(a => 'A' + a + ': ' + counts[a]).join(', ');
     });
 
     const employerName = computed(() => {
-      if (!activeFormat || !activeFormat.stats.employer) return '';
+      const f = formatRef.value;
+      if (!f || !f.stats.employer) return '';
       if (!employees.value.length) return '';
-      return employees.value[0].fields[activeFormat.stats.employer]?.value || '';
+      return employees.value[0].fields[f.stats.employer]?.value || '';
     });
 
     const datumVyplneni = computed(() => {
-      if (!activeFormat || !activeFormat.stats.date) return '';
+      const f = formatRef.value;
+      if (!f || !f.stats.date) return '';
       if (!employees.value.length) return '';
       const dates = new Set(employees.value.map(e => e.dat).filter(Boolean));
       return dates.size === 1 ? [...dates][0] : '';
     });
 
     const czForeignerSplit = computed(() => {
-      if (!activeFormat || !activeFormat.stats.citizenship) return '';
+      const f = formatRef.value;
+      if (!f || !f.stats.citizenship) return '';
       if (!employees.value.length) return '';
-      const citizenKey = activeFormat.stats.citizenship;
+      const citizenKey = f.stats.citizenship;
       let cz = 0, foreign = 0;
       employees.value.forEach(e => {
         const cnt = e.fields[citizenKey]?.value || '';
@@ -1751,7 +1755,8 @@ createApp({
     });
 
     const partialAcceptValue = computed(() => {
-      if (!activeFormat || !activeFormat.stats.partialAccept) return '';
+      const f = formatRef.value;
+      if (!f || !f.stats.partialAccept) return '';
       if (!xmlDoc.value) return '';
       const root = xmlDoc.value.documentElement;
       return root ? (root.getAttribute('partialAccept') || '') : '';
@@ -2015,7 +2020,7 @@ createApp({
       const serializer = new XMLSerializer();
       let xmlString = serializer.serializeToString(xmlDoc.value);
       if (!xmlString.startsWith('<?xml')) xmlString = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + xmlString;
-      const suggestedName = filename.value || ((activeFormat ? activeFormat.name : 'REGZEC') + '.xml');
+      const suggestedName = filename.value || 'JMHZ.xml';
       if ('showSaveFilePicker' in window) {
         try {
           const handle = fileHandle.value || await window.showSaveFilePicker({ suggestedName, types: [{ description: 'XML', accept: { 'application/xml': ['.xml'] } }] });
@@ -2029,7 +2034,7 @@ createApp({
       showToast('Staženo: ' + suggestedName); isDirty.value = false; updateTitle();
     }
     function showToast(msg) { toastMessage.value = msg; setTimeout(() => { toastMessage.value = ''; }, 2500); }
-    function updateTitle() { document.title = (isDirty.value ? '* ' : '') + (filename.value || ((activeFormat ? activeFormat.name : 'REGZEC') + ' Editor')); }
+    function updateTitle() { document.title = (isDirty.value ? '* ' : '') + (filename.value || 'JMHZ XML Editor'); }
 
     // === XSD Validation with error mapping ===
     // validationErrors: Map<empIndex, Map<fieldKey, string[]>> for field-level error lookup
@@ -2049,8 +2054,10 @@ createApp({
       const lines = xmlString.split('\n');
       const empStartLines = [];
       let empIdx = 0;
+      const rowElName = activeFormat.rowElement;
+      const rowPattern = new RegExp('<[a-zA-Z0-9]*:?' + rowElName + '[\\s>]');
       lines.forEach((line, i) => {
-        if (activeFormat.rowElementPattern.test(line)) {
+        if (rowPattern.test(line)) {
           empStartLines.push({ line: i + 1, index: empIdx++ });
         }
       });
@@ -2064,7 +2071,8 @@ createApp({
       }
 
       // Build schema array with named files (xs:import resolves by filename)
-      const schemas = window[activeFormat.schemasKey] || DEFAULT_SCHEMAS;
+      const SCHEMA_MAP = { 'DEFAULT_SCHEMAS': DEFAULT_SCHEMAS, 'JMHZ_SCHEMAS': JMHZ_SCHEMAS };
+      const schemas = SCHEMA_MAP[activeFormat.schemasKey] || DEFAULT_SCHEMAS;
       const mainSchemaName = activeFormat.mainSchema || null;
       let validateOpts;
       if (mainSchemaName && schemas[mainSchemaName]) {
@@ -2088,7 +2096,7 @@ createApp({
 
             const ei = lineToEmpIndex(lineNum);
             const emp = ei >= 0 ? employees.value[ei] : null;
-            const employeeName = emp ? (emp.surname + ' ' + emp.firstName) : '';
+            const employeeName = emp ? getRowLabel(emp) : '';
 
             let elementName = '';
             const elemMatch = errMsg.match(/Element '\{[^}]*\}([^']+)'/);
@@ -2101,6 +2109,7 @@ createApp({
             let fieldKey = '';
             let sectionLabel = elementName;
             if (attrName) {
+              // REGZEC: error on attribute within an element
               const attrOrElement = attrName;
               const field = FIELDS.find(f => (f.attr === attrOrElement || f.element === attrOrElement) && (
                 f.section === elementName ||
@@ -2113,6 +2122,15 @@ createApp({
                 sectionLabel = sec ? sec.label : elementName;
               } else {
                 fieldKey = elementName + '/' + attrName;
+              }
+            } else if (elementName) {
+              // JMHZ: error on element itself (element IS the field)
+              const field = FIELDS.find(f => (f.element === elementName || f.attr === elementName));
+              if (field) {
+                fieldKey = field.section + '/' + (activeFormat ? activeFormat.fieldAttrKey(field) : (field.attr || field.element));
+                const sec = SECTION_MAP[field.section];
+                sectionLabel = sec ? sec.label : elementName;
+                attrName = elementName;
               }
             }
 

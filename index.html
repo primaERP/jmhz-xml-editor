@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>REGZEC Editor</title>
+<title>JMHZ XML Editor</title>
 <script src="vue.global.prod.js"></script>
 <script src="xmllint-wasm-bundle.js"></script>
 <script src="xsd-data.js"></script>
@@ -313,7 +313,6 @@ body {
     <button class="primary" @click="saveFile" v-if="xmlDoc">Uložit XML</button>
     <button @click="validateAll" v-if="xmlDoc">Validovat</button>
     <button @click="toggleViewMode" v-if="xmlDoc" style="margin-left: 4px;">Zobrazení: {{ viewMode === 'cards' ? 'Karty' : 'Tabulka' }}</button>
-    <span class="error-badge" v-if="errors.length">{{ errors.length }} chyb</span>
   </div>
 
   <!-- Stats Bar -->
@@ -473,8 +472,7 @@ body {
       <div class="drop-zone" :class="{ dragover: isDragging }"
            @dragover.prevent="isDragging = true" @dragleave="isDragging = false"
            @drop.prevent="handleDrop" @click="loadFile">
-        <h2>CSSZ XML Editor</h2>
-        <p>Přetáhněte nebo klikněte pro načtení REGZEC / JMHZ XML souboru</p>
+        <p>Přetáhněte nebo klikněte pro načtení XML souboru měsíčního hlášení</p>
         <button @click.stop="loadFile" style="margin-top: 16px; padding: 10px 28px; font-size: 15px; font-weight: 500; border: 1px solid #D1D5DB; border-radius: 8px; background: #2563EB; color: #fff; cursor: pointer;">Nahrát XML</button>
       </div>
     </div>
@@ -607,6 +605,7 @@ createApp({
     const expandedEmployee = ref(-1);
     const fieldSearch = ref('');
     const valueSearch = ref('');
+    const formatRef = ref(null);
     let _searchTimer = null;
     function onFieldSearchInput(e) {
       clearTimeout(_searchTimer);
@@ -633,12 +632,12 @@ createApp({
     const searchInput = ref(null);
     const undoStack = ref([]);
     const redoStack = ref([]);
-    const actionLabels = computed(() => activeFormat ? (activeFormat.actionLabels || {}) : {});
-    const formatName = computed(() => activeFormat ? activeFormat.name : '');
-    const hasActions = computed(() => activeFormat ? activeFormat.hasActions : false);
-    const rowInfoDefs = computed(() => activeFormat ? (activeFormat.getRowInfo || []) : []);
+    const actionLabels = computed(() => { const f = formatRef.value; return f ? (f.actionLabels || {}) : {}; });
+    const formatName = computed(() => { const f = formatRef.value; return f ? f.name : ''; });
+    const hasActions = computed(() => { const f = formatRef.value; return f ? f.hasActions : false; });
+    const rowInfoDefs = computed(() => { const f = formatRef.value; return f ? (f.getRowInfo || []) : []; });
     function getRowLabel(emp) { return activeFormat ? activeFormat.getRowLabel(emp.fields) : (emp.surname + ' ' + emp.firstName); }
-    const rowColumnLabel = computed(() => activeFormat ? (activeFormat.rowColumnLabel || 'Jméno') : 'Jméno');
+    const rowColumnLabel = computed(() => { const f = formatRef.value; return f ? (f.rowColumnLabel || 'Jméno') : 'Jméno'; });
     function fieldXpath(field) { return activeFormat ? activeFormat.fieldXpath(field) : (field.section + '/@' + (field.attr || field.element)); }
 
     function parseXml(xmlText) {
@@ -648,6 +647,7 @@ createApp({
       const format = detectFormat(doc);
       if (!format) return;
       rebuildMetadata(format);
+      formatRef.value = format;
       xmlDoc.value = doc;
       employees.value = [];
       errors.value = [];
@@ -709,7 +709,8 @@ createApp({
     });
 
     const actionSummary = computed(() => {
-      if (!activeFormat || !activeFormat.hasActions) return '';
+      const f = formatRef.value;
+      if (!f || !f.hasActions) return '';
       if (!employees.value.length) return '';
       const counts = {};
       employees.value.forEach(e => { counts[e.act] = (counts[e.act] || 0) + 1; });
@@ -717,28 +718,31 @@ createApp({
       if (!keys.length) return '';
       if (keys.length === 1) {
         const act = keys[0];
-        return (activeFormat.actionLabels || {})[act] || ('A' + act);
+        return (f.actionLabels || {})[act] || ('A' + act);
       }
       return keys.map(a => 'A' + a + ': ' + counts[a]).join(', ');
     });
 
     const employerName = computed(() => {
-      if (!activeFormat || !activeFormat.stats.employer) return '';
+      const f = formatRef.value;
+      if (!f || !f.stats.employer) return '';
       if (!employees.value.length) return '';
-      return employees.value[0].fields[activeFormat.stats.employer]?.value || '';
+      return employees.value[0].fields[f.stats.employer]?.value || '';
     });
 
     const datumVyplneni = computed(() => {
-      if (!activeFormat || !activeFormat.stats.date) return '';
+      const f = formatRef.value;
+      if (!f || !f.stats.date) return '';
       if (!employees.value.length) return '';
       const dates = new Set(employees.value.map(e => e.dat).filter(Boolean));
       return dates.size === 1 ? [...dates][0] : '';
     });
 
     const czForeignerSplit = computed(() => {
-      if (!activeFormat || !activeFormat.stats.citizenship) return '';
+      const f = formatRef.value;
+      if (!f || !f.stats.citizenship) return '';
       if (!employees.value.length) return '';
-      const citizenKey = activeFormat.stats.citizenship;
+      const citizenKey = f.stats.citizenship;
       let cz = 0, foreign = 0;
       employees.value.forEach(e => {
         const cnt = e.fields[citizenKey]?.value || '';
@@ -750,7 +754,8 @@ createApp({
     });
 
     const partialAcceptValue = computed(() => {
-      if (!activeFormat || !activeFormat.stats.partialAccept) return '';
+      const f = formatRef.value;
+      if (!f || !f.stats.partialAccept) return '';
       if (!xmlDoc.value) return '';
       const root = xmlDoc.value.documentElement;
       return root ? (root.getAttribute('partialAccept') || '') : '';
@@ -1014,7 +1019,7 @@ createApp({
       const serializer = new XMLSerializer();
       let xmlString = serializer.serializeToString(xmlDoc.value);
       if (!xmlString.startsWith('<?xml')) xmlString = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + xmlString;
-      const suggestedName = filename.value || ((activeFormat ? activeFormat.name : 'REGZEC') + '.xml');
+      const suggestedName = filename.value || 'JMHZ.xml';
       if ('showSaveFilePicker' in window) {
         try {
           const handle = fileHandle.value || await window.showSaveFilePicker({ suggestedName, types: [{ description: 'XML', accept: { 'application/xml': ['.xml'] } }] });
@@ -1028,7 +1033,7 @@ createApp({
       showToast('Staženo: ' + suggestedName); isDirty.value = false; updateTitle();
     }
     function showToast(msg) { toastMessage.value = msg; setTimeout(() => { toastMessage.value = ''; }, 2500); }
-    function updateTitle() { document.title = (isDirty.value ? '* ' : '') + (filename.value || ((activeFormat ? activeFormat.name : 'REGZEC') + ' Editor')); }
+    function updateTitle() { document.title = (isDirty.value ? '* ' : '') + (filename.value || 'JMHZ XML Editor'); }
 
     // === XSD Validation with error mapping ===
     // validationErrors: Map<empIndex, Map<fieldKey, string[]>> for field-level error lookup
@@ -1048,8 +1053,10 @@ createApp({
       const lines = xmlString.split('\n');
       const empStartLines = [];
       let empIdx = 0;
+      const rowElName = activeFormat.rowElement;
+      const rowPattern = new RegExp('<[a-zA-Z0-9]*:?' + rowElName + '[\\s>]');
       lines.forEach((line, i) => {
-        if (activeFormat.rowElementPattern.test(line)) {
+        if (rowPattern.test(line)) {
           empStartLines.push({ line: i + 1, index: empIdx++ });
         }
       });
@@ -1063,7 +1070,8 @@ createApp({
       }
 
       // Build schema array with named files (xs:import resolves by filename)
-      const schemas = window[activeFormat.schemasKey] || DEFAULT_SCHEMAS;
+      const SCHEMA_MAP = { 'DEFAULT_SCHEMAS': DEFAULT_SCHEMAS, 'JMHZ_SCHEMAS': JMHZ_SCHEMAS };
+      const schemas = SCHEMA_MAP[activeFormat.schemasKey] || DEFAULT_SCHEMAS;
       const mainSchemaName = activeFormat.mainSchema || null;
       let validateOpts;
       if (mainSchemaName && schemas[mainSchemaName]) {
@@ -1087,7 +1095,7 @@ createApp({
 
             const ei = lineToEmpIndex(lineNum);
             const emp = ei >= 0 ? employees.value[ei] : null;
-            const employeeName = emp ? (emp.surname + ' ' + emp.firstName) : '';
+            const employeeName = emp ? getRowLabel(emp) : '';
 
             let elementName = '';
             const elemMatch = errMsg.match(/Element '\{[^}]*\}([^']+)'/);
@@ -1100,6 +1108,7 @@ createApp({
             let fieldKey = '';
             let sectionLabel = elementName;
             if (attrName) {
+              // REGZEC: error on attribute within an element
               const attrOrElement = attrName;
               const field = FIELDS.find(f => (f.attr === attrOrElement || f.element === attrOrElement) && (
                 f.section === elementName ||
@@ -1112,6 +1121,15 @@ createApp({
                 sectionLabel = sec ? sec.label : elementName;
               } else {
                 fieldKey = elementName + '/' + attrName;
+              }
+            } else if (elementName) {
+              // JMHZ: error on element itself (element IS the field)
+              const field = FIELDS.find(f => (f.element === elementName || f.attr === elementName));
+              if (field) {
+                fieldKey = field.section + '/' + (activeFormat ? activeFormat.fieldAttrKey(field) : (field.attr || field.element));
+                const sec = SECTION_MAP[field.section];
+                sectionLabel = sec ? sec.label : elementName;
+                attrName = elementName;
               }
             }
 

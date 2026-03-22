@@ -325,7 +325,7 @@ const REGZEC_CONFIG = {
 };
 
 const JMHZ_CONFIG = {
-  name: 'JMHZ (Měsíční hlášení)',
+  name: 'Měsíční hlášení',
   ns: 'http://schemas.cssz.cz/JMHZ/podani/1.0',
   formNs: 'http://schemas.cssz.cz/JMHZ/form/1.0',
   rootElement: 'jmhz',
