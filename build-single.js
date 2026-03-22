@@ -4,10 +4,14 @@ let html = fs.readFileSync('index.html', 'utf8');
 const vue = fs.readFileSync('vue.global.prod.js', 'utf8');
 const xmllint = fs.readFileSync('xmllint-wasm-bundle.js', 'utf8');
 const xsd = fs.readFileSync('xsd-data.js', 'utf8');
+const jmhzXsd = fs.readFileSync('jmhz-xsd-data.js', 'utf8');
+const formats = fs.readFileSync('formats.js', 'utf8');
 
 html = html.replace('<script src="vue.global.prod.js"></script>', '<script>' + vue + '</script>');
 html = html.replace('<script src="xmllint-wasm-bundle.js"></script>', '<script>' + xmllint + '</script>');
 html = html.replace('<script src="xsd-data.js"></script>', '<script>' + xsd + '</script>');
+html = html.replace('<script src="jmhz-xsd-data.js"></script>', '<script>' + jmhzXsd + '</script>');
+html = html.replace('<script src="formats.js"></script>', '<script>' + formats + '</script>');
 
-fs.writeFileSync('dist/regzec-editor.html', html);
-console.log('Built: dist/regzec-editor.html (' + (html.length / 1024 / 1024).toFixed(2) + ' MB)');
+fs.writeFileSync('dist/cssz-editor.html', html);
+console.log('Built: dist/cssz-editor.html (' + (html.length / 1024 / 1024).toFixed(2) + ' MB)');

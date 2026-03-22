@@ -7,6 +7,8 @@
 <script src="vue.global.prod.js"></script>
 <script src="xmllint-wasm-bundle.js"></script>
 <script src="xsd-data.js"></script>
+<script src="jmhz-xsd-data.js"></script>
+<script src="formats.js"></script>
 <style>
 /* === Reset & Base === */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -15,7 +17,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 
 /* === Layout === */
 .app { display: flex; flex-direction: column; height: 100vh; }
-.toolbar { display: flex; align-items: center; gap: 12px; padding: 0 16px; height: 48px; background: #fff; border-bottom: 1px solid #E5E7EB; z-index: 10; flex-shrink: 0; }
+.toolbar { display: flex; align-items: center; gap: 12px; padding: 0 16px; height: 48px; background: #fff; border-bottom: 1px solid #E5E7EB; z-index: 10; flex-shrink: 0; position: relative; }
 .content { flex: 1; overflow-y: auto; padding: 20px 24px; min-height: 0; }
 .validation-panel { background: #fff; border-top: 1px solid #E5E7EB; max-height: 200px; overflow-y: auto; flex-shrink: 0; }
 
@@ -144,7 +146,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 .table-view th.name-col { position: sticky; left: 0; z-index: 4; min-width: 150px; background: #E8EBF0; }
 .table-view td { border: 1px solid #F3F4F6; padding: 3px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; cursor: pointer; font-size: 12px; }
 .table-view td:hover { background: #F0F7FF; }
-.table-view td.name-cell { position: sticky; left: 0; background: #fff; font-weight: 500; z-index: 1; max-width: 150px; min-width: 150px; }
+.table-view td.name-cell { position: sticky; left: 0; background: #fff; font-weight: 500; z-index: 1; min-width: 160px; }
+.table-view tbody tr:nth-child(even) td { background: #F8FAFC; }
+.table-view tbody tr:nth-child(even) td.name-cell { background: #F3F6F9; }
 .table-view tr.matched td { background: #FFFBEB; }
 .table-view tr.matched td.name-cell { background: #FEF9C3; }
 .table-view tr.separator-row td { background: #F8FAFC; text-align: center; color: #9CA3AF; font-size: 11px; border: none; padding: 8px; }
@@ -176,14 +180,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
   <div class="toolbar">
     <img src="abra-logo-2026.svg" alt="ABRA" style="flex-shrink: 0; height: 28px; width: auto;">
     <span class="spacer"></span>
-    <span style="display: flex; flex-direction: column; align-items: center; gap: 1px;">
-      <span class="filename" v-if="filename">{{ filename }}{{ isDirty ? ' *' : '' }}</span>
+    <span style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 1px; pointer-events: none;">
+      <span class="filename" v-if="filename" style="pointer-events: auto;">{{ filename }}{{ isDirty ? ' *' : '' }}</span>
       <span style="font-size: 11px; color: #B0B8C4;">Lokální zpracování v prohlížeči, nic se nikam neposílá</span>
     </span>
     <span class="spacer"></span>
-    <button class="primary" @click="saveFile" :disabled="!xmlDoc">Uložit XML</button>
-    <button @click="validateAll" :disabled="!xmlDoc">Validovat</button>
-    <button @click="toggleViewMode" v-if="xmlDoc" style="margin-left: 4px;">{{ viewMode === 'cards' ? 'Tabulka' : 'Karty' }}</button>
+    <button @click="loadFile" v-if="xmlDoc">Nahrát XML</button>
+    <button class="primary" @click="saveFile" v-if="xmlDoc">Uložit XML</button>
+    <button @click="validateAll" v-if="xmlDoc">Validovat</button>
+    <button @click="toggleViewMode" v-if="xmlDoc" style="margin-left: 4px;">Zobrazení: {{ viewMode === 'cards' ? 'Karty' : 'Tabulka' }}</button>
     <span class="error-badge" v-if="errors.length">{{ errors.length }} chyb</span>
   </div>
 
@@ -191,10 +196,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
   <div class="stats-bar" v-if="xmlDoc && employees.length > 0">
    <div class="stats-bar-inner">
     <div class="stat-row">
-      <span><span class="stat-label">REGZEC</span> <span class="stat-value">{{ xmlVersion }}</span></span>
+      <span><span class="stat-label">{{ formatName }}</span> <span class="stat-value">{{ xmlVersion }}</span></span>
       <span class="stat-sep">|</span>
-      <span class="stat-value">{{ actionSummary }}</span>
-      <span class="stat-sep">|</span>
+      <span class="stat-value" v-if="actionSummary">{{ actionSummary }}</span>
+      <span class="stat-sep" v-if="actionSummary">|</span>
       <span><span class="stat-value">{{ employees.length }}</span> <span class="stat-label">zaměstnanců</span></span>
       <span v-if="hasValidated">
         <span class="stat-sep">|</span>
@@ -202,7 +207,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
       </span>
     </div>
     <div class="stat-row">
-      <span><span class="stat-label">Zaměstnavatel:</span> <span class="stat-value">{{ employerName }}</span></span>
+      <span v-if="employerName"><span class="stat-label">Zaměstnavatel:</span> <span class="stat-value">{{ employerName }}</span></span>
       <span v-if="datumVyplneni"><span class="stat-sep">|</span> <span class="stat-label">Datum:</span> <span class="stat-value">{{ datumVyplneni }}</span></span>
       <span v-if="czForeignerSplit"><span class="stat-sep">|</span> <span class="stat-value">{{ czForeignerSplit }}</span></span>
       <span v-if="partialAcceptValue"><span class="stat-sep">|</span> <span class="stat-label">partialAccept:</span> <span :class="partialAcceptValue === 'A' ? 'stat-ok' : 'stat-warn'">{{ partialAcceptValue }}</span></span>
@@ -224,7 +229,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
       <label v-if="hasSearch" style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
         <input type="checkbox" v-model="showAllFieldsInSearch"> Zobrazit všechna pole
       </label>
-      <span v-if="viewMode === 'table'" style="font-size: 12px; color: #6B7280; display: flex; align-items: center; gap: 4px;">
+      <span v-if="viewMode === 'table' && hasActions" style="font-size: 12px; color: #6B7280; display: flex; align-items: center; gap: 4px;">
         Akce:
         <span class="action-filter">
           <button v-for="a in ['', '1', '2', '3', '4', '8']" :key="a" @click="actionFilter = a" :class="{ active: actionFilter === a }">{{ a ? 'A' + a : 'Vše' }}</button>
@@ -238,9 +243,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
     <table>
       <thead>
         <tr>
-          <th class="name-col">Jméno</th>
-          <th v-for="field in visibleColumns" :key="field.csszId || (field.section + '/' + field.attr)"
-              :title="field.section + '/@' + field.attr">
+          <th class="name-col">{{ rowColumnLabel }}</th>
+          <th v-for="field in visibleColumns" :key="field.csszId || fieldKey(field)"
+              :title="fieldXpath(field)">
             {{ field.label }}<span class="col-id">{{ field.csszId || '' }}</span>
             <span v-if="actionFilter && getFieldReq(field, actionFilter)" class="col-req" :class="reqClass(getFieldReq(field, actionFilter))" :title="REQ_TITLES[getFieldReq(field, actionFilter)] || ''">{{ getFieldReq(field, actionFilter) }}</span>
           </th>
@@ -253,10 +258,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
           </tr>
           <tr v-else :class="{ matched: item.matched }">
             <td class="name-cell">
-              {{ item.emp.surname }} {{ item.emp.firstName }}
+              {{ getRowLabel(item.emp) }}
               <span class="error-dot-sm" v-if="getEmployeeErrorCount(item.emp._index) > 0"></span>
             </td>
-            <td v-for="field in visibleColumns" :key="field.csszId || (field.section + '/' + field.attr)"
+            <td v-for="field in visibleColumns" :key="field.csszId || fieldKey(field)"
                 :class="{ 'has-error': hasFieldError(item.emp, field), 'cell-match': item.matched && isFieldMatch(item.emp, field) }"
                 @click="startEdit(item.emp, field)">
               <template v-if="editingField === item.emp._index + ':' + fieldKey(field)">
@@ -294,12 +299,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
       <!-- Employee card -->
       <div v-else class="emp-card" :class="{ expanded: isEmployeeExpanded(item.emp._index, item.matched), 'has-matches': item.matched }">
         <div class="emp-card-header" @click="toggleEmployee(item.emp._index, item.matched)">
-          <span class="emp-name">{{ item.emp.surname }} {{ item.emp.firstName }}</span>
-          <span class="info-item"><span class="info-label">RČ:</span><span :class="item.emp.fields['client/bno']?.value ? 'info-value' : 'info-empty'">{{ item.emp.fields['client/bno']?.value || '—' }}</span></span>
-          <span class="info-item"><span class="info-label">ZP:</span><span :class="item.emp.fields['insh/cnr']?.value ? 'info-value' : 'info-empty'">{{ item.emp.fields['insh/cnr']?.value || '—' }}</span></span>
-          <span class="info-item"><span class="info-label">Občanství:</span><span :class="item.emp.fields['client/stat/cnt']?.value ? 'info-value' : 'info-empty'">{{ item.emp.fields['client/stat/cnt']?.value || '—' }}</span></span>
-          <span class="info-item"><span class="info-label">PPV:</span><span :class="item.emp.fields['job/relDetail']?.value ? 'info-value' : 'info-empty'">{{ item.emp.fields['job/relDetail']?.value || '—' }}</span></span>
-          <span class="info-item"><span class="info-label">ID PPV:</span><span :class="item.emp.fields['job/oid']?.value ? 'info-value' : 'info-empty'">{{ item.emp.fields['job/oid']?.value || '—' }}</span></span>
+          <span class="emp-name">{{ getRowLabel(item.emp) }}</span>
+          <span class="info-item" v-for="info in rowInfoDefs" :key="info.key"><span class="info-label">{{ info.label }}:</span><span :class="item.emp.fields[info.key]?.value ? 'info-value' : 'info-empty'">{{ item.emp.fields[info.key]?.value || '—' }}</span></span>
           <span class="spacer"></span>
           <span class="error-dot" v-if="getEmployeeErrorCount(item.emp._index) > 0" :title="getEmployeeErrorCount(item.emp._index) + ' chyb'"></span>
           <span class="match-badge" v-if="item.matched && getEmpMatchCount(item.emp._index) > 0">{{ getEmpMatchCount(item.emp._index) }} shod</span>
@@ -315,10 +316,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
               <div class="section-body" :class="{ collapsed: !isSectionExpanded(item.emp._index, section.id, item.matched) }"
                    :style="isSectionExpanded(item.emp._index, section.id, item.matched) ? { maxHeight: (section.fields.length * 38 + 50) + 'px' } : {}">
                 <table class="field-table">
-                  <tr v-for="field in getVisibleFields(item.emp, section, item.matched)" :key="field.csszId || field.attr"
+                  <tr v-for="field in getVisibleFields(item.emp, section, item.matched)" :key="field.csszId || fieldKey(field)"
                       class="field-row" :class="{ 'has-error': hasFieldError(item.emp, field), 'field-match': item.matched && isFieldMatch(item.emp, field) }" :data-field-id="field.csszId">
                     <td class="field-id">{{ field.csszId || '' }}</td>
-                    <td class="field-label">{{ field.label }}<span class="xpath">{{ field.section }}/@{{ field.attr }}</span></td>
+                    <td class="field-label">{{ field.label }}<span class="xpath">{{ fieldXpath(field) }}</span></td>
                     <td class="field-value">
                       <template v-if="editingField === item.emp._index + ':' + fieldKey(field)">
                         <input v-if="field.type === 'date'" type="date" :value="getFieldValue(item.emp, field)" @blur="commitEdit(item.emp, field, $event.target.value)" @keydown.enter="commitEdit(item.emp, field, $event.target.value)" @keydown.escape="cancelEdit" autofocus>
@@ -349,10 +350,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
     <div class="empty-state">
       <div class="drop-zone" :class="{ dragover: isDragging }"
            @dragover.prevent="isDragging = true" @dragleave="isDragging = false"
-           @drop.prevent="handleDrop">
-        <h2>REGZEC XML Editor</h2>
-        <p>Přetáhněte XML soubor</p>
-        <button @click="loadFile" style="margin-top: 16px; padding: 10px 28px; font-size: 15px; font-weight: 500; border: 1px solid #D1D5DB; border-radius: 8px; background: #2563EB; color: #fff; cursor: pointer;">Načíst soubor</button>
+           @drop.prevent="handleDrop" @click="loadFile">
+        <h2>CSSZ XML Editor</h2>
+        <p>Přetáhněte nebo klikněte pro načtení REGZEC / JMHZ XML souboru</p>
+        <button @click.stop="loadFile" style="margin-top: 16px; padding: 10px 28px; font-size: 15px; font-weight: 500; border: 1px solid #D1D5DB; border-radius: 8px; background: #2563EB; color: #fff; cursor: pointer;">Nahrát XML</button>
       </div>
     </div>
   </div>
@@ -381,278 +382,80 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 </div>
 
 <script>
-// === FIELD METADATA ===
-const SECTIONS = [
-  // Core sections (all employees)
-  { id: 'employee', label: 'Hlavička podání', element: null },
-  { id: 'client', label: 'Identifikace', element: 'client' },
-  { id: 'client/name', label: 'Jméno a příjmení', element: 'client', child: 'name' },
-  { id: 'client/birth', label: 'Narození', element: 'client', child: 'birth' },
-  { id: 'client/stat', label: 'Pohlaví a občanství', element: 'client', child: 'stat' },
-  { id: 'client/adr', label: 'Trvalé bydliště', element: 'client', child: 'adr' },
-  { id: 'comp', label: 'Zaměstnavatel', element: 'comp' },
-  { id: 'job', label: 'Pracovní poměr', element: 'job' },
-  { id: 'job/prof', label: 'Profese', element: 'job', child: 'prof' },
-  { id: 'job/position', label: 'Pozice', element: 'job', child: 'position' },
-  { id: 'pens', label: 'Důchod', element: 'pens' },
-  { id: 'insh', label: 'Zdravotní pojišťovna', element: 'insh' },
-  { id: 'inso', label: 'Současný orgán NP mimo ČSSZ', element: 'inso' },
-  { id: 'insp', label: 'Předchozí orgán NP mimo ČSSZ', element: 'insp' },
-  { id: 'unemplcomp', label: 'Podpora v nezaměstnanosti', element: 'unemplcomp' },
-  { id: 'fact', label: 'Další údaje', element: 'fact' },
-  { id: 'fact/healtrest', label: 'Zdravotní omezení', element: 'fact', child: 'healtrest' },
-  { id: 'forinreg', label: 'Cizí právní předpisy', element: 'forinreg' },
-  // Foreigner/conditional sections (at end)
-  { id: 'client/fdr', label: 'Pobyt v ČR', element: 'client', child: 'fdr', _foreign: true },
-  { id: 'client/rdr', label: 'Adresa rezidence', element: 'client', child: 'rdr', _foreign: true },
-  { id: 'client/taxidrezid', label: 'Daňová identifikace', element: 'client', child: 'taxidrezid', _foreign: true },
-  { id: 'client/proofid', label: 'Doklad totožnosti', element: 'client', child: 'proofid', _foreign: true },
-  { id: 'forin', label: 'Cizozemský nositel pojištění', element: 'forin', _foreign: true },
-  { id: 'nocitizen', label: 'Cizinec – pracovní oprávnění', element: 'nocitizen', _foreign: true },
-];
+// === Active format — set on XML load, used everywhere ===
+let activeFormat = null;
+let SECTIONS = [];
+let FIELDS = [];
+let FIELDS_BY_SECTION = {};
+let SECTION_MAP = {};
+let FIELD_META = [];
+let FOREIGN_KEYWORDS = [];
+let ACTION_LABELS = {};
+let ACTION_SECTIONS = null;
+let FIELD_RULES = {};
 
-const FIELDS = [
-  // Core fields (all employees)
-  { section: 'employee', attr: 'sqnr', csszId: null, label: 'Pořadové číslo věty', type: 'number' },
-  { section: 'employee', attr: 'dep', csszId: '10004', label: 'Číslo OSSZ', type: 'text', maxLength: 3 },
-  { section: 'employee', attr: 'act', csszId: '10008', label: 'Číslo akce', type: 'number' },
-  { section: 'employee', attr: 'dat', csszId: '10005', label: 'Datum vyplnění', type: 'date' },
-  { section: 'employee', attr: 'fro', csszId: '10009', label: 'Platnost akce ke dni', type: 'date' },
-  { section: 'client', attr: 'bno', csszId: '10057', label: 'Rodné číslo / EČP', type: 'text', maxLength: 10 },
-  { section: 'client', attr: 'ikmpsv', csszId: '10051', label: 'IK MPSV (OIČ)', type: 'text', maxLength: 10 },
-  { section: 'client', attr: 'vcp', csszId: '10060', label: 'VČP', type: 'text', maxLength: 20 },
-  { section: 'client/name', attr: 'sur', csszId: '10053', label: 'Příjmení', type: 'text', maxLength: 50 },
-  { section: 'client/name', attr: 'fir', csszId: '10054', label: 'Jméno', type: 'text', maxLength: 50 },
-  { section: 'client/name', attr: 'tit', csszId: '10055', label: 'Titul', type: 'text', maxLength: 35 },
-  { section: 'client/name', attr: 'ona', csszId: '10064', label: 'Dřívější příjmení', type: 'text', maxLength: 50 },
-  { section: 'client/birth', attr: 'dat', csszId: '10056', label: 'Datum narození', type: 'date' },
-  { section: 'client/birth', attr: 'nam', csszId: '10063', label: 'Rodné příjmení', type: 'text', maxLength: 50 },
-  { section: 'client/birth', attr: 'cit', csszId: '10066', label: 'Místo narození', type: 'text', maxLength: 50 },
-  { section: 'client/birth', attr: 'stat', csszId: '10065', label: 'Stát narození', type: 'text', maxLength: 2 },
-  { section: 'client/stat', attr: 'mal', csszId: '10059', label: 'Pohlaví', type: 'text', maxLength: 1 },
-  { section: 'client/stat', attr: 'cnt', csszId: '10067', label: 'Státní občanství', type: 'text', maxLength: 2 },
-  { section: 'client/adr', attr: 'str', csszId: '10077', label: 'Ulice', type: 'text', maxLength: 50 },
-  { section: 'client/adr', attr: 'num', csszId: '10078', label: 'Číslo popisné', type: 'text', maxLength: 12 },
-  { section: 'client/adr', attr: 'onum', csszId: '10079', label: 'Číslo orientační', type: 'text', maxLength: 12 },
-  { section: 'client/adr', attr: 'pnu', csszId: '10082', label: 'PSČ', type: 'text', maxLength: 11 },
-  { section: 'client/adr', attr: 'cit', csszId: '10080', label: 'Obec', type: 'text', maxLength: 50 },
-  { section: 'client/adr', attr: 'cnt', csszId: '10083', label: 'Stát', type: 'text', maxLength: 2 },
-  { section: 'client/adr', attr: 'ruianpoint', csszId: '10076', label: 'Kód RUIAN', type: 'number' },
-  { section: 'comp', attr: 'vs', csszId: '10221', label: 'Variabilní symbol', type: 'text', maxLength: 10 },
-  { section: 'comp', attr: 'nvs', csszId: '10222', label: 'Nový variabilní symbol', type: 'text', maxLength: 10 },
-  { section: 'comp', attr: 'nam', csszId: '10120', label: 'Název zaměstnavatele', type: 'text', maxLength: 150 },
-  { section: 'job', attr: 'oid', csszId: '10228', label: 'ID pojistného vztahu', type: 'text', maxLength: 22 },
-  { section: 'job', attr: 'fro', csszId: '10223', label: 'Datum nástupu', type: 'date' },
-  { section: 'job', attr: 'to', csszId: '10224', label: 'Datum skončení', type: 'date' },
-  { section: 'job', attr: 'rel', csszId: '10239', label: 'Druh činnosti', type: 'text', maxLength: 2 },
-  { section: 'job', attr: 'relDetail', csszId: '10502', label: 'Bližší určení PPV', type: 'number' },
-  { section: 'job', attr: 'sme', csszId: '10243', label: 'Malý rozsah', type: 'boolean' },
-  { section: 'job', attr: 'endbydeath', csszId: '10225', label: 'Ukončeno smrtí', type: 'boolean' },
-  { section: 'job', attr: 'notstart', csszId: '10226', label: 'Zaměstnanec nenastoupil', type: 'boolean' },
-  { section: 'job', attr: 'contractfro', csszId: '10227', label: 'Vznik zaměstnání', type: 'date' },
-  { section: 'job', attr: 'relat', csszId: '10249', label: 'Postavení v zaměstnání', type: 'number' },
-  { section: 'job', attr: 'workmode', csszId: '10255', label: 'Pracovní režim', type: 'number' },
-  { section: 'job', attr: 'cont', csszId: '10407', label: 'Nepřetržitý provoz', type: 'boolean' },
-  { section: 'job', attr: 'place', csszId: '10258', label: 'Práce probíhá převážně', type: 'number' },
-  { section: 'job', attr: 'preplace', csszId: '10526', label: 'Předpokládané místo výkonu', type: 'text', maxLength: 500 },
-  { section: 'job', attr: 'contractplace', csszId: '10527', label: 'Místo výkonu práce (smlouva)', type: 'text', maxLength: 200 },
-  { section: 'job', attr: 'cit', csszId: '10528', label: 'Název obce', type: 'text', maxLength: 50 },
-  { section: 'job', attr: 'municode', csszId: '10529', label: 'Kód obce', type: 'text', maxLength: 6 },
-  { section: 'job/prof', attr: 'clas', csszId: '10234', label: 'Kód profese', type: 'text', maxLength: 5 },
-  { section: 'job/prof', attr: 'edu', csszId: '10248', label: 'Vzdělání pro profesi', type: 'text', maxLength: 1 },
-  { section: 'job/position', attr: 'name', csszId: '10235', label: 'Název pozice', type: 'text', maxLength: 100 },
-  { section: 'job/position', attr: 'lead', csszId: '10238', label: 'Vedoucí zaměstnanec', type: 'boolean' },
-  { section: 'pens', attr: 'typ', csszId: '10113', label: 'Druh důchodu', type: 'text', maxLength: 1 },
-  { section: 'pens', attr: 'tak', csszId: '10114', label: 'Důchod pobírán od', type: 'date' },
-  { section: 'pens', attr: 'early', csszId: '10115', label: 'Předčasný důchod', type: 'boolean' },
-  { section: 'pens', attr: 'reducedAge', csszId: '10504', label: 'Snížený důchodový věk', type: 'boolean' },
-  { section: 'insh', attr: 'cnr', csszId: '10102', label: 'Kód zdravotní pojišťovny', type: 'number' },
-  { section: 'inso', attr: 'nam', csszId: '10103', label: 'Název orgánu', type: 'text', maxLength: 100 },
-  { section: 'insp', attr: 'nam', csszId: '10104', label: 'Název orgánu', type: 'text', maxLength: 100 },
-  { section: 'unemplcomp', attr: 'rsn', csszId: '10376', label: 'Důvod neposkytnutí', type: 'number' },
-  { section: 'unemplcomp', attr: 'typeempl', csszId: '10525', label: 'Druh zaměstnání', type: 'number' },
-  { section: 'unemplcomp', attr: 'avgmonear', csszId: '10377', label: 'Průměrný čistý výdělek', type: 'number' },
-  { section: 'unemplcomp', attr: 'belong', csszId: '10378', label: 'Nárok na odstupné', type: 'boolean' },
-  { section: 'unemplcomp', attr: 'fullpay', csszId: '10379', label: 'Vyplaceno v plné výši', type: 'boolean' },
-  { section: 'unemplcomp', attr: 'rsnterempl', csszId: '10380', label: 'Důvod ukončení PPV', type: 'number' },
-  { section: 'unemplcomp', attr: 'rsnterrel', csszId: '10381', label: 'Důvod ukončení sl. poměru', type: 'number' },
-  { section: 'unemplcomp', attr: 'replacement', csszId: '10530', label: 'Jednorázová náhrada §271ca', type: 'number' },
-  { section: 'unemplcomp', attr: 'goldenhandshake', csszId: '10531', label: 'Odstupné §67', type: 'number' },
-  { section: 'unemplcomp', attr: 'severancepay', csszId: '10532', label: 'Odchodné', type: 'number' },
-  { section: 'unemplcomp', attr: 'disposal', csszId: '10533', label: 'Odbytné', type: 'number' },
-  { section: 'unemplcomp', attr: 'earlyterm', csszId: '10534', label: 'Důvod předčasného ukončení', type: 'number' },
-  { section: 'fact', attr: 'ztp', csszId: '10090', label: 'Držitel ZTP/P', type: 'boolean' },
-  { section: 'fact', attr: 'highedu', csszId: '10091', label: 'Vzdělání KKOV', type: 'text', maxLength: 1 },
-  { section: 'fact/healtrest', attr: 'type', csszId: '10085', label: 'Typ zdravotního omezení', type: 'number' },
-  { section: 'fact/healtrest', attr: 'fro', csszId: '10086', label: 'Zdravotní omezení od', type: 'date' },
-  { section: 'fact/healtrest', attr: 'to', csszId: '10087', label: 'Zdravotní omezení do', type: 'date' },
-  { section: 'forinreg', attr: 'juris', csszId: '10427', label: 'Cizí právní předpisy', type: 'boolean' },
-  { section: 'forinreg', attr: 'state', csszId: '10428', label: 'Kód státu', type: 'text', maxLength: 2 },
-  // Foreigner/conditional fields (at end)
-  { section: 'client/fdr', attr: 'str', csszId: '10513', label: 'Ulice', type: 'text', maxLength: 50 },
-  { section: 'client/fdr', attr: 'num', csszId: '10514', label: 'Číslo popisné', type: 'number' },
-  { section: 'client/fdr', attr: 'onum', csszId: '10515', label: 'Číslo orientační', type: 'text', maxLength: 12 },
-  { section: 'client/fdr', attr: 'pnu', csszId: '10517', label: 'PSČ', type: 'text', maxLength: 5 },
-  { section: 'client/fdr', attr: 'cit', csszId: '10516', label: 'Obec', type: 'text', maxLength: 50 },
-  { section: 'client/fdr', attr: 'ruianpoint', csszId: '10512', label: 'Kód RUIAN', type: 'number' },
-  { section: 'client/rdr', attr: 'str', csszId: '10519', label: 'Ulice', type: 'text', maxLength: 50 },
-  { section: 'client/rdr', attr: 'num', csszId: '10520', label: 'Číslo popisné', type: 'text', maxLength: 12 },
-  { section: 'client/rdr', attr: 'onum', csszId: '10521', label: 'Číslo orientační', type: 'text', maxLength: 12 },
-  { section: 'client/rdr', attr: 'pnu', csszId: '10522', label: 'PSČ', type: 'text', maxLength: 11 },
-  { section: 'client/rdr', attr: 'cit', csszId: '10523', label: 'Obec', type: 'text', maxLength: 50 },
-  { section: 'client/rdr', attr: 'cnt', csszId: '10524', label: 'Stát', type: 'text', maxLength: 2 },
-  { section: 'client/taxidrezid', attr: 'type', csszId: '10061', label: 'Typ daňové identifikace', type: 'text', maxLength: 1 },
-  { section: 'client/taxidrezid', attr: 'num', csszId: '10062', label: 'Daňový identifikátor', type: 'text', maxLength: 20 },
-  { section: 'client/taxidrezid', attr: 'stat', csszId: '10068', label: 'Kód státu rezidentství', type: 'text', maxLength: 2 },
-  { section: 'client/taxidrezid', attr: 'statchang', csszId: '10459', label: 'Platnost změny od', type: 'date' },
-  { section: 'client/proofid', attr: 'type', csszId: '10069', label: 'Typ dokladu', type: 'text', maxLength: 2 },
-  { section: 'client/proofid', attr: 'num', csszId: '10070', label: 'Číslo dokladu', type: 'text', maxLength: 20 },
-  { section: 'client/proofid', attr: 'foreigninst', csszId: '10071', label: 'Vydal (orgán v zahraničí)', type: 'text', maxLength: 100 },
-  { section: 'client/proofid', attr: 'stat', csszId: '10072', label: 'Stát vydání', type: 'text', maxLength: 2 },
-  { section: 'forin', attr: 'cur', csszId: '10092', label: 'Specifikace', type: 'text', maxLength: 1 },
-  { section: 'forin', attr: 'nam', csszId: '10093', label: 'Název nositele', type: 'text', maxLength: 100 },
-  { section: 'forin', attr: 'str', csszId: '10094', label: 'Ulice', type: 'text', maxLength: 50 },
-  { section: 'forin', attr: 'num', csszId: '10095', label: 'Č.p.', type: 'text', maxLength: 12 },
-  { section: 'forin', attr: 'onum', csszId: '10096', label: 'Č.o.', type: 'text', maxLength: 12 },
-  { section: 'forin', attr: 'pnu', csszId: '10098', label: 'PSČ', type: 'text', maxLength: 11 },
-  { section: 'forin', attr: 'cit', csszId: '10097', label: 'Obec', type: 'text', maxLength: 50 },
-  { section: 'forin', attr: 'cnt', csszId: '10099', label: 'Stát', type: 'text', maxLength: 2 },
-  { section: 'forin', attr: 'id', csszId: '10100', label: 'Číslo pojištění', type: 'text', maxLength: 25 },
-  { section: 'forin', attr: 'sec', csszId: '10101', label: 'Sektor pojištění', type: 'text', maxLength: 2 },
-  { section: 'nocitizen', attr: 'freeacc', csszId: '10414', label: 'Volný přístup na trh práce', type: 'boolean' },
-  { section: 'nocitizen', attr: 'perm', csszId: '10105', label: 'Důvod volného přístupu', type: 'number' },
-  { section: 'nocitizen', attr: 'permtype', csszId: '10106', label: 'Druh pracovního oprávnění', type: 'number' },
-  { section: 'nocitizen', attr: 'issue', csszId: '10107', label: 'Krajská pobočka ÚP', type: 'text', maxLength: 3 },
-  { section: 'nocitizen', attr: 'permid', csszId: '10108', label: 'Identifikátor oprávnění', type: 'text', maxLength: 20 },
-  { section: 'nocitizen', attr: 'permfro', csszId: '10109', label: 'Oprávnění od', type: 'date' },
-  { section: 'nocitizen', attr: 'permto', csszId: '10110', label: 'Oprávnění do', type: 'date' },
-];
+function rebuildMetadata(format) {
+  activeFormat = format;
+  SECTIONS = format.sections;
+  FIELDS = format.fields;
+  FIELDS_BY_SECTION = {};
+  FIELDS.forEach(f => { const key = f.section; if (!FIELDS_BY_SECTION[key]) FIELDS_BY_SECTION[key] = []; FIELDS_BY_SECTION[key].push(f); });
+  SECTION_MAP = {};
+  SECTIONS.forEach(s => { SECTION_MAP[s.id] = s; });
+  FOREIGN_KEYWORDS = format.foreignKeywords || [];
+  ACTION_LABELS = format.actionLabels || {};
+  ACTION_SECTIONS = format.actionSections || null;
+  FIELD_RULES = format.fieldRules || {};
+  FIELD_META = FIELDS.map(f => ({
+    ...f,
+    _nLabel: norm(f.label),
+    _nId: f.csszId || '',
+    _nXpath: norm(activeFormat.fieldXpath(f)),
+    _nSecLabel: norm((SECTION_MAP[f.section] || {}).label || ''),
+    _isForeign: !!(SECTION_MAP[f.section] || {})._foreign
+  }));
+}
 
-const FIELDS_BY_SECTION = {};
-FIELDS.forEach(f => { if (!FIELDS_BY_SECTION[f.section]) FIELDS_BY_SECTION[f.section] = []; FIELDS_BY_SECTION[f.section].push(f); });
+function detectFormat(xmlDoc) {
+  const root = xmlDoc.documentElement;
+  if (root.localName === 'REGZEC') return REGZEC_CONFIG;
+  if (root.localName === 'jmhz') return JMHZ_CONFIG;
+  alert('Neznámý formát XML');
+  return null;
+}
 
-// Pre-cache: section map + normalized field metadata (computed once, used on every search)
-const SECTION_MAP = {};
-SECTIONS.forEach(s => { SECTION_MAP[s.id] = s; });
-const FOREIGN_KEYWORDS = ['cizin', 'cizi', 'foreig', 'foreign', 'zahran', 'cuzi'];
-const FIELD_META = FIELDS.map(f => ({
-  ...f,
-  _nLabel: norm(f.label),
-  _nId: f.csszId || '',
-  _nXpath: norm(f.section + '/@' + f.attr),
-  _nSecLabel: norm((SECTION_MAP[f.section] || {}).label || ''),
-  _isForeign: !!(SECTION_MAP[f.section] || {})._foreign
-}));
+// For JMHZ: find the form variant child (bezPriznaku, odlozenyPrijem, etc.)
+function getFormRoot(rowEl, format) {
+  if (format.fieldMode === 'attributes') return rowEl;
+  if (!format.formVariants) return rowEl;
+  for (const v of format.formVariants) {
+    const child = getChildByLocalNameNS(rowEl, v, format.formNs);
+    if (child) return child;
+  }
+  return rowEl;
+}
 
-// Action type → relevant sections (null = all)
-const ACTION_SECTIONS = {
-  '': null,
-  '1': null,
-  '2': ['employee', 'client', 'client/name', 'comp', 'job', 'unemplcomp'],
-  '3': ['employee', 'client', 'client/name', 'client/birth', 'client/stat', 'client/adr', 'comp', 'job', 'job/prof', 'job/position', 'pens', 'insh', 'fact', 'fact/healtrest', 'forinreg', 'client/fdr', 'client/rdr', 'client/taxidrezid', 'client/proofid', 'nocitizen'],
-  '4': null,
-  '8': ['employee', 'client', 'comp', 'job'],
-};
-
-// Field requirement per action type (from regzam-specification.md)
-const FIELD_RULES = {
-  // employee header
-  '10004': { '1':'P','2':'P','3':'P','4':'P','8':'P' },
-  '10008': { '1':'P','2':'P','3':'P','4':'P','8':'P' },
-  '10005': { '1':'P','2':'P','3':'P','4':'P','8':'P' },
-  '10009': { '1':'/','2':'/','3':'P','4':'P','8':'/' },
-  // client
-  '10057': { '1':'PP','2':'PP','3':'PP','4':'PP','8':'PP' },
-  '10051': { '1':'N','2':'P','3':'P','4':'P','8':'P' },
-  '10060': { '1':'N','2':'/','3':'N','4':'N','8':'/' },
-  // client/name
-  '10053': { '1':'P','2':'/','3':'N','4':'N','8':'/' },
-  '10054': { '1':'P','2':'/','3':'N','4':'N','8':'/' },
-  '10055': { '1':'N','2':'/','3':'N','4':'N','8':'/' },
-  '10064': { '1':'N','2':'/','3':'N','4':'N','8':'/' },
-  // client/birth
-  '10056': { '1':'P','2':'/','3':'N','4':'N','8':'/' },
-  '10063': { '1':'P','2':'/','3':'/','4':'N','8':'/' },
-  '10066': { '1':'P','2':'/','3':'/','4':'N','8':'/' },
-  '10065': { '1':'P','2':'/','3':'/','4':'N','8':'/' },
-  // client/stat
-  '10059': { '1':'P','2':'/','3':'N','4':'N','8':'/' },
-  '10067': { '1':'P','2':'/','3':'N','4':'N','8':'/' },
-  // client/adr
-  '10077': { '1':'N','2':'/','3':'N','4':'N','8':'/' },
-  '10078': { '1':'P','2':'/','3':'PP','4':'PP','8':'/' },
-  '10079': { '1':'N','2':'/','3':'N','4':'N','8':'/' },
-  '10082': { '1':'P','2':'/','3':'PP','4':'PP','8':'/' },
-  '10080': { '1':'P','2':'/','3':'PP','4':'PP','8':'/' },
-  '10083': { '1':'P','2':'/','3':'PP','4':'PP','8':'/' },
-  '10076': { '1':'N','2':'/','3':'N','4':'N','8':'/' },
-  // comp
-  '10221': { '1':'P','2':'P','3':'P','4':'P','8':'P' },
-  '10222': { '1':'N','2':'N','3':'N','4':'N','8':'/' },
-  '10120': { '1':'P','2':'P','3':'P','4':'P','8':'P' },
-  // job
-  '10228': { '1':'/','2':'P','3':'P','4':'P','8':'P' },
-  '10223': { '1':'P','2':'/','3':'N','4':'N','8':'/' },
-  '10224': { '1':'N','2':'P','3':'N','4':'N','8':'/' },
-  '10239': { '1':'P','2':'P','3':'P','4':'P','8':'/' },
-  '10502': { '1':'P','2':'P','3':'P','4':'P','8':'/' },
-  '10243': { '1':'P-OST','2':'/','3':'/','4':'N-OST','8':'/' },
-  '10225': { '1':'/','2':'P-OST','3':'/','4':'N-OST','8':'/' },
-  '10226': { '1':'/','2':'/','3':'/','4':'/','8':'P' },
-  '10227': { '1':'P-OST','2':'/','3':'N-OST','4':'N-OST','8':'/' },
-  '10249': { '1':'P-OST','2':'/','3':'N-OST','4':'N-OST','8':'/' },
-  '10255': { '1':'P-OST','2':'/','3':'N-OST','4':'N-OST','8':'/' },
-  '10407': { '1':'P-OST','2':'/','3':'N-OST','4':'N-OST','8':'/' },
-  '10258': { '1':'PP','2':'/','3':'N','4':'N','8':'/' },
-  '10526': { '1':'PP','2':'/','3':'N','4':'N','8':'/' },
-  '10527': { '1':'P','2':'/','3':'N','4':'N','8':'/' },
-  '10528': { '1':'P','2':'/','3':'N','4':'N','8':'/' },
-  '10529': { '1':'P','2':'/','3':'N','4':'N','8':'/' },
-  '10234': { '1':'P-OST','2':'/','3':'N-OST','4':'N-OST','8':'/' },
-  '10248': { '1':'PP','2':'/','3':'N','4':'N','8':'/' },
-  '10235': { '1':'P-OST','2':'/','3':'N-OST','4':'N-OST','8':'/' },
-  '10238': { '1':'P-OST','2':'/','3':'N-OST','4':'N-OST','8':'/' },
-  '10534': { '1':'PP','2':'PP','3':'PP','4':'PP','8':'/' },
-  // pens
-  '10113': { '1':'PP','2':'/','3':'PP','4':'PP','8':'/' },
-  '10114': { '1':'PP','2':'/','3':'PP','4':'PP','8':'/' },
-  '10115': { '1':'P-OST','2':'/','3':'N-OST','4':'N-OST','8':'/' },
-  '10504': { '1':'P-OST','2':'/','3':'N-OST','4':'N-OST','8':'/' },
-  // insh
-  '10102': { '1':'P','2':'/','3':'N','4':'N','8':'/' },
-  // inso/insp
-  '10103': { '1':'N','2':'/','3':'N','4':'N','8':'/' },
-  '10104': { '1':'N','2':'/','3':'N','4':'N','8':'/' },
-  // unemplcomp
-  '10376': { '1':'N','2':'N','3':'/','4':'N','8':'/' },
-  '10525': { '1':'N','2':'N','3':'/','4':'N','8':'/' },
-  '10377': { '1':'PP','2':'PP','3':'/','4':'PP','8':'/' },
-  '10378': { '1':'PP','2':'PP','3':'/','4':'PP','8':'/' },
-  '10379': { '1':'PP','2':'PP','3':'/','4':'PP','8':'/' },
-  '10380': { '1':'PP','2':'PP','3':'/','4':'PP','8':'/' },
-  '10381': { '1':'N','2':'N','3':'/','4':'N','8':'/' },
-  '10530': { '1':'PP','2':'PP','3':'/','4':'PP','8':'/' },
-  '10531': { '1':'PP','2':'PP','3':'/','4':'PP','8':'/' },
-  '10532': { '1':'N','2':'N','3':'/','4':'N','8':'/' },
-  '10533': { '1':'N','2':'N','3':'/','4':'N','8':'/' },
-  // fact
-  '10090': { '1':'PP','2':'/','3':'PP','4':'PP','8':'/' },
-  '10091': { '1':'P-OST','2':'/','3':'N-OST','4':'N-OST','8':'/' },
-  '10085': { '1':'N','2':'/','3':'N','4':'N','8':'/' },
-  '10086': { '1':'PP','2':'/','3':'N','4':'N','8':'/' },
-  '10087': { '1':'PP','2':'/','3':'N','4':'N','8':'/' },
-  // forinreg
-  '10427': { '1':'P-OST','2':'/','3':'N-OST','4':'N-OST','8':'/' },
-  '10428': { '1':'PP','2':'/','3':'N','4':'N','8':'/' },
-  // nocitizen
-  '10414': { '1':'PP','2':'/','3':'PP','4':'PP','8':'/' },
-  '10105': { '1':'PP','2':'/','3':'PP','4':'PP','8':'/' },
-  '10106': { '1':'PP','2':'/','3':'PP','4':'PP','8':'/' },
-  '10107': { '1':'PP','2':'/','3':'PP','4':'PP','8':'/' },
-  '10108': { '1':'PP','2':'/','3':'PP','4':'PP','8':'/' },
-  '10109': { '1':'PP','2':'/','3':'PP','4':'PP','8':'/' },
-  '10110': { '1':'PP','2':'/','3':'PP','4':'PP','8':'/' },
-};
+// For JMHZ: find rows (formulareOsob wrappers -> formularOsoby inner elements)
+function findRows(doc, format) {
+  if (format.rowsContainer) {
+    // REGZEC: employees/employee
+    const container = doc.getElementsByTagNameNS(format.ns, format.rowsContainer)[0];
+    return container ? Array.from(container.getElementsByTagNameNS(format.ns, format.rowElement)) : [];
+  } else if (format.rowParentElement) {
+    // JMHZ: formulareOsob contains multiple formularOsoby children
+    const wrappers = doc.getElementsByTagNameNS(format.ns, format.rowParentElement);
+    const rows = [];
+    for (const w of wrappers) {
+      for (let i = 0; i < w.childNodes.length; i++) {
+        const ch = w.childNodes[i];
+        if (ch.nodeType === 1 && ch.localName === format.rowElement) rows.push(ch);
+      }
+    }
+    return rows;
+  } else {
+    return Array.from(doc.getElementsByTagNameNS(format.ns, format.rowElement));
+  }
+}
 
 const REQ_TITLES = { 'P': 'Povinné', 'N': 'Nepovinné', 'PP': 'Podmíněně povinné', 'P-OST': 'Povinné (pouze OST)', 'N-OST': 'Nepovinné (pouze OST)', '/': 'Zakázané' };
 
@@ -667,25 +470,6 @@ function reqClass(req) {
   if (req.startsWith('P')) return 'col-req-P';
   if (req === 'PP') return 'col-req-PP';
   return 'col-req-N';
-}
-
-const NS = 'http://schemas.cssz.cz/REGZEC/2025';
-const ACTION_LABELS = { '1': 'A1 Přihláška', '2': 'A2 Odhláška', '3': 'A3 Změna', '4': 'A4 Oprava', '8': 'A8 Storno' };
-
-function getChildNS(parent, localName) {
-  if (!parent) return null;
-  for (let i = 0; i < parent.childNodes.length; i++) {
-    if (parent.childNodes[i].nodeType === 1 && parent.childNodes[i].localName === localName) return parent.childNodes[i];
-  }
-  return null;
-}
-
-function determineEmployeeType(rel, relDetail) {
-  if (!rel) return 'OST';
-  if (['11','12','13','14','M'].includes(rel)) return 'SPEC';
-  if (rel === '10') return '10';
-  if (/^[1-9]$/.test(rel) && relDetail === '2') return 'SPEC';
-  return 'OST';
 }
 
 function norm(s) { return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
@@ -727,50 +511,64 @@ createApp({
     const searchInput = ref(null);
     const undoStack = ref([]);
     const redoStack = ref([]);
-    const actionLabels = ACTION_LABELS;
+    const actionLabels = computed(() => activeFormat ? (activeFormat.actionLabels || {}) : {});
+    const formatName = computed(() => activeFormat ? activeFormat.name : '');
+    const hasActions = computed(() => activeFormat ? activeFormat.hasActions : false);
+    const rowInfoDefs = computed(() => activeFormat ? (activeFormat.getRowInfo || []) : []);
+    function getRowLabel(emp) { return activeFormat ? activeFormat.getRowLabel(emp.fields) : (emp.surname + ' ' + emp.firstName); }
+    const rowColumnLabel = computed(() => activeFormat ? (activeFormat.rowColumnLabel || 'Jméno') : 'Jméno');
+    function fieldXpath(field) { return activeFormat ? activeFormat.fieldXpath(field) : (field.section + '/@' + (field.attr || field.element)); }
 
     function parseXml(xmlText) {
       const parser = new DOMParser();
       const doc = parser.parseFromString(xmlText, 'application/xml');
       if (doc.querySelector('parsererror')) { alert('Chyba při parsování XML:\n' + doc.querySelector('parsererror').textContent); return; }
+      const format = detectFormat(doc);
+      if (!format) return;
+      rebuildMetadata(format);
       xmlDoc.value = doc;
       employees.value = [];
       errors.value = [];
       expandedEmployee.value = -1;
-      const empElements = doc.getElementsByTagNameNS(NS, 'employee');
-      for (let i = 0; i < empElements.length; i++) employees.value.push(buildEmployeeMirror(empElements[i], i));
+      hasValidated.value = false;
+      validationErrors.value = new Map();
+      const rowElements = findRows(doc, activeFormat);
+      for (let i = 0; i < rowElements.length; i++) employees.value.push(buildEmployeeMirror(rowElements[i], i));
       isDirty.value = false;
       updateTitle();
     }
 
-    function buildEmployeeMirror(empEl, index) {
+    function buildEmployeeMirror(rowEl, index) {
+      const format = activeFormat;
       const fields = {};
-      ['sqnr', 'dep', 'act', 'dat', 'fro'].forEach(attr => {
-        const v = empEl.getAttribute(attr) || '';
-        fields['employee/' + attr] = { value: v, _norm: norm(v), el: empEl, attr, modified: false };
+      const formRoot = getFormRoot(rowEl, format);
+      // Header fields (REGZEC: sqnr, dep, act, dat, fro as attributes on employee element)
+      format.headerFields.forEach(attr => {
+        const v = rowEl.getAttribute(attr) || '';
+        fields[format.sections[0].id + '/' + attr] = { value: v, _norm: norm(v), el: rowEl, attr, modified: false };
       });
-      SECTIONS.forEach(sec => {
-        if (sec.id === 'employee') return;
+      // Section fields
+      format.sections.forEach(sec => {
+        if (sec.id === (format.headerFields.length > 0 ? format.sections[0].id : null)) return;
         const sectionFields = FIELDS_BY_SECTION[sec.id] || [];
-        let targetEl;
-        if (sec.child) { const p = getChildNS(empEl, sec.element); targetEl = p ? getChildNS(p, sec.child) : null; }
-        else targetEl = getChildNS(empEl, sec.element);
+        const targetEl = format.resolveSection(formRoot, sec);
         sectionFields.forEach(f => {
-          const v = targetEl ? (targetEl.getAttribute(f.attr) || '') : '';
-          fields[f.section + '/' + f.attr] = { value: v, _norm: norm(v), el: targetEl, attr: f.attr, modified: false };
+          const v = format.readField(targetEl, f);
+          const attrKey = format.fieldAttrKey(f);
+          fields[f.section + '/' + attrKey] = { value: v, _norm: norm(v), el: targetEl, attr: attrKey, modified: false, _field: f };
         });
       });
-      const rel = fields['job/rel']?.value || '';
-      const relDetail = fields['job/relDetail']?.value || '';
+      const label = format.getRowLabel(fields);
+      const labelParts = label.split(/\s+/).filter(Boolean);
       return {
-        _index: index, _empEl: empEl,
-        sqnr: fields['employee/sqnr']?.value || String(index + 1),
-        act: fields['employee/act']?.value || '',
-        dat: fields['employee/dat']?.value || '',
-        dep: fields['employee/dep']?.value || '',
-        surname: fields['client/name/sur']?.value || '',
-        firstName: fields['client/name/fir']?.value || '',
-        empType: determineEmployeeType(rel, relDetail),
+        _index: index, _empEl: rowEl, _formRoot: formRoot,
+        sqnr: fields[format.sections[0]?.id + '/sqnr']?.value || String(index + 1),
+        act: fields[format.sections[0]?.id + '/act']?.value || '',
+        dat: fields[format.sections[0]?.id + '/dat']?.value || '',
+        dep: fields[format.sections[0]?.id + '/dep']?.value || '',
+        surname: labelParts[0] || '',
+        firstName: labelParts.slice(1).join(' ') || '',
+        empType: format.determineRowType(fields),
         fields
       };
     }
@@ -782,37 +580,43 @@ createApp({
     const xmlVersion = computed(() => {
       if (!xmlDoc.value) return '';
       const root = xmlDoc.value.documentElement;
-      return root ? (root.getAttribute('version') || '?') : '?';
+      return root ? (root.getAttribute('version') || root.getAttribute('verze') || '?') : '?';
     });
 
     const actionSummary = computed(() => {
+      if (!activeFormat || !activeFormat.hasActions) return '';
       if (!employees.value.length) return '';
       const counts = {};
       employees.value.forEach(e => { counts[e.act] = (counts[e.act] || 0) + 1; });
-      const keys = Object.keys(counts);
+      const keys = Object.keys(counts).filter(Boolean);
+      if (!keys.length) return '';
       if (keys.length === 1) {
         const act = keys[0];
-        return ACTION_LABELS[act] || ('A' + act);
+        return (activeFormat.actionLabels || {})[act] || ('A' + act);
       }
       return keys.map(a => 'A' + a + ': ' + counts[a]).join(', ');
     });
 
     const employerName = computed(() => {
+      if (!activeFormat || !activeFormat.stats.employer) return '';
       if (!employees.value.length) return '';
-      return employees.value[0].fields['comp/nam']?.value || '—';
+      return employees.value[0].fields[activeFormat.stats.employer]?.value || '';
     });
 
     const datumVyplneni = computed(() => {
+      if (!activeFormat || !activeFormat.stats.date) return '';
       if (!employees.value.length) return '';
       const dates = new Set(employees.value.map(e => e.dat).filter(Boolean));
       return dates.size === 1 ? [...dates][0] : '';
     });
 
     const czForeignerSplit = computed(() => {
+      if (!activeFormat || !activeFormat.stats.citizenship) return '';
       if (!employees.value.length) return '';
+      const citizenKey = activeFormat.stats.citizenship;
       let cz = 0, foreign = 0;
       employees.value.forEach(e => {
-        const cnt = e.fields['client/stat/cnt']?.value || '';
+        const cnt = e.fields[citizenKey]?.value || '';
         if (cnt === 'CZ') cz++; else if (cnt) foreign++; else cz++;
       });
       if (foreign === 0) return cz + ' CZ';
@@ -821,6 +625,7 @@ createApp({
     });
 
     const partialAcceptValue = computed(() => {
+      if (!activeFormat || !activeFormat.stats.partialAccept) return '';
       if (!xmlDoc.value) return '';
       const root = xmlDoc.value.documentElement;
       return root ? (root.getAttribute('partialAccept') || '') : '';
@@ -846,7 +651,7 @@ createApp({
       employees.value.forEach(emp => {
         const empMatches = new Set();
         FIELD_META.forEach(f => {
-          const key = f.section + '/' + f.attr;
+          const key = fieldKey(f);
           const fieldRef = emp.fields[key];
           const nVal = fieldRef?._norm || '';
           const foreignHit = f._isForeign && fqParts.some(fq => FOREIGN_KEYWORDS.some(kw => kw.includes(fq) || fq.includes(kw)));
@@ -858,8 +663,7 @@ createApp({
         });
         if (fqParts.length > 0) {
           const nEmpName = norm(emp.surname + ' ' + emp.firstName);
-          const nBno = norm(emp.fields['client/bno']?.value || '');
-          if (fqParts.some(fq => nEmpName.includes(fq) || nBno.includes(fq) || emp.sqnr.includes(fq))) {
+          if (fqParts.some(fq => nEmpName.includes(fq) || emp.sqnr.includes(fq))) {
             empMatches.add('_card_');
           }
         }
@@ -916,7 +720,7 @@ createApp({
       if (!searchMatches.value) return false;
       const empMatches = searchMatches.value.get(emp._index);
       if (!empMatches) return false;
-      return empMatches.has(field.section + '/' + field.attr);
+      return empMatches.has(fieldKey(field));
     }
 
     function getEmpMatchCount(empIndex) {
@@ -947,7 +751,7 @@ createApp({
     const visibleColumns = computed(() => {
       let cols = FIELD_META;
       // Action filter: only show sections relevant to the selected action
-      const actSections = ACTION_SECTIONS[actionFilter.value];
+      const actSections = ACTION_SECTIONS ? ACTION_SECTIONS[actionFilter.value] : null;
       if (actSections) {
         cols = cols.filter(f => actSections.includes(f.section));
         // Also hide fields with "/" requirement for this action
@@ -978,7 +782,7 @@ createApp({
     function sectionHasMatchingFields(emp, section) {
       if (!searchMatches.value?.has(emp._index)) return false;
       const matches = searchMatches.value.get(emp._index);
-      return section.fields.some(f => matches.has(f.section + '/' + f.attr));
+      return section.fields.some(f => matches.has(fieldKey(f)));
     }
 
     function getSectionsForEmployee(emp) {
@@ -1006,14 +810,14 @@ createApp({
       if (isMatched && hasSearch.value && searchMatches.value?.has(empIdx)) {
         const matches = searchMatches.value.get(empIdx);
         const sectionFields = FIELDS_BY_SECTION[secId] || [];
-        if (sectionFields.some(f => matches.has(f.section + '/' + f.attr))) return true;
+        if (sectionFields.some(f => matches.has(fieldKey(f)))) return true;
       }
       return expandedSections.has(key);
     }
     function toggleShowAll(key) { showAllSections.has(key) ? showAllSections.delete(key) : showAllSections.add(key); }
     function isShowAll(empIdx, secId) { return showAllSections.has(empIdx + ':' + secId); }
 
-    function fieldKey(field) { return field.section + '/' + field.attr; }
+    function fieldKey(field) { return field.section + '/' + (activeFormat ? activeFormat.fieldAttrKey(field) : (field.attr || field.element)); }
     function getFieldValue(emp, field) { return emp.fields[fieldKey(field)]?.value || ''; }
     function isFieldModified(emp, field) { return emp.fields[fieldKey(field)]?.modified || false; }
     function getFieldRequirement(field) { return null; }
@@ -1023,7 +827,7 @@ createApp({
       if (isMatched && hasSearch.value && searchMatches.value?.has(emp._index)) {
         if (showAllFieldsInSearch.value) return section.fields;
         const matches = searchMatches.value.get(emp._index);
-        const filtered = section.fields.filter(f => matches.has(f.section + '/' + f.attr));
+        const filtered = section.fields.filter(f => matches.has(fieldKey(f)));
         return filtered.length > 0 ? filtered : section.fields;
       }
       return section.fields;
@@ -1042,11 +846,14 @@ createApp({
         fieldRef.value = newValue;
         fieldRef._norm = norm(newValue);
         fieldRef.modified = true;
-        if (fieldRef.el) { if (newValue) fieldRef.el.setAttribute(field.attr, newValue); else fieldRef.el.removeAttribute(field.attr); }
-        if (key === 'client/name/sur') emp.surname = newValue;
-        if (key === 'client/name/fir') emp.firstName = newValue;
-        if (key === 'employee/act') emp.act = newValue;
-        if (key === 'employee/dep') emp.dep = newValue;
+        if (fieldRef.el) { activeFormat.writeField(fieldRef, newValue); }
+        // Update cached shortcut fields
+        const newLabel = activeFormat.getRowLabel(emp.fields);
+        const lp = newLabel.split(/\s+/).filter(Boolean);
+        emp.surname = lp[0] || '';
+        emp.firstName = lp.slice(1).join(' ') || '';
+        if (key.endsWith('/act')) emp.act = newValue;
+        if (key.endsWith('/dep')) emp.dep = newValue;
         undoStack.value.push({ empIndex: emp._index, key, oldValue, newValue });
         if (undoStack.value.length > 200) undoStack.value.shift();
         redoStack.value = [];
@@ -1061,6 +868,7 @@ createApp({
     function handleFileSelect(e) {
       const file = e.target.files[0]; if (!file) return;
       filename.value = file.name;
+      fileHandle.value = null;
       const reader = new FileReader();
       reader.onload = (ev) => parseXml(ev.target.result);
       reader.readAsText(file);
@@ -1071,6 +879,7 @@ createApp({
       const file = e.dataTransfer?.files[0];
       if (!file || !file.name.endsWith('.xml')) return;
       filename.value = file.name;
+      fileHandle.value = null;
       const reader = new FileReader();
       reader.onload = (ev) => parseXml(ev.target.result);
       reader.readAsText(file);
@@ -1080,7 +889,7 @@ createApp({
       const serializer = new XMLSerializer();
       let xmlString = serializer.serializeToString(xmlDoc.value);
       if (!xmlString.startsWith('<?xml')) xmlString = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + xmlString;
-      const suggestedName = filename.value || 'REGZEC.xml';
+      const suggestedName = filename.value || ((activeFormat ? activeFormat.name : 'REGZEC') + '.xml');
       if ('showSaveFilePicker' in window) {
         try {
           const handle = fileHandle.value || await window.showSaveFilePicker({ suggestedName, types: [{ description: 'XML', accept: { 'application/xml': ['.xml'] } }] });
@@ -1094,7 +903,7 @@ createApp({
       showToast('Staženo: ' + suggestedName); isDirty.value = false; updateTitle();
     }
     function showToast(msg) { toastMessage.value = msg; setTimeout(() => { toastMessage.value = ''; }, 2500); }
-    function updateTitle() { document.title = (isDirty.value ? '* ' : '') + (filename.value || 'REGZEC Editor'); }
+    function updateTitle() { document.title = (isDirty.value ? '* ' : '') + (filename.value || ((activeFormat ? activeFormat.name : 'REGZEC') + ' Editor')); }
 
     // === XSD Validation with error mapping ===
     // validationErrors: Map<empIndex, Map<fieldKey, string[]>> for field-level error lookup
@@ -1115,7 +924,7 @@ createApp({
       const empStartLines = [];
       let empIdx = 0;
       lines.forEach((line, i) => {
-        if (/<[a-zA-Z]*:?employee[\s>]/.test(line)) {
+        if (activeFormat.rowElementPattern.test(line)) {
           empStartLines.push({ line: i + 1, index: empIdx++ });
         }
       });
@@ -1129,16 +938,21 @@ createApp({
       }
 
       // Build schema array with named files (xs:import resolves by filename)
-      const schemaFiles = Object.keys(DEFAULT_SCHEMAS).map(name => ({
-        fileName: name,
-        contents: DEFAULT_SCHEMAS[name]
-      }));
+      const schemas = window[activeFormat.schemasKey] || DEFAULT_SCHEMAS;
+      const mainSchemaName = activeFormat.mainSchema || null;
+      let validateOpts;
+      if (mainSchemaName && schemas[mainSchemaName]) {
+        // Multi-namespace: pass main schema as schema, rest as preload for import resolution
+        const mainSchema = [{ fileName: mainSchemaName, contents: schemas[mainSchemaName] }];
+        const preload = Object.keys(schemas).filter(n => n !== mainSchemaName).map(name => ({ fileName: name, contents: schemas[name] }));
+        validateOpts = { xml: [{ fileName: 'document.xml', contents: xmlString }], schema: mainSchema, preload };
+      } else {
+        const schemaFiles = Object.keys(schemas).map(name => ({ fileName: name, contents: schemas[name] }));
+        validateOpts = { xml: [{ fileName: 'document.xml', contents: xmlString }], schema: schemaFiles };
+      }
 
       try {
-        const result = await validateXML({
-          xml: [{ fileName: 'document.xml', contents: xmlString }],
-          schema: schemaFiles
-        });
+        const result = await validateXML(validateOpts);
 
         if (!result.valid && result.errors.length > 0) {
           result.errors.forEach(err => {
@@ -1161,13 +975,14 @@ createApp({
             let fieldKey = '';
             let sectionLabel = elementName;
             if (attrName) {
-              const field = FIELDS.find(f => f.attr === attrName && (
+              const attrOrElement = attrName;
+              const field = FIELDS.find(f => (f.attr === attrOrElement || f.element === attrOrElement) && (
                 f.section === elementName ||
                 f.section.endsWith('/' + elementName) ||
                 f.section.split('/').pop() === elementName
               ));
               if (field) {
-                fieldKey = field.section + '/' + field.attr;
+                fieldKey = field.section + '/' + (activeFormat ? activeFormat.fieldAttrKey(field) : (field.attr || field.element));
                 const sec = SECTION_MAP[field.section];
                 sectionLabel = sec ? sec.label : elementName;
               } else {
@@ -1201,13 +1016,13 @@ createApp({
     function hasFieldError(emp, field) {
       const empErrors = validationErrors.value.get(emp._index);
       if (!empErrors) return false;
-      return empErrors.has(field.section + '/' + field.attr);
+      return empErrors.has(fieldKey(field));
     }
 
     function getFieldErrorMsg(emp, field) {
       const empErrors = validationErrors.value.get(emp._index);
       if (!empErrors) return '';
-      const msgs = empErrors.get(field.section + '/' + field.attr);
+      const msgs = empErrors.get(fieldKey(field));
       return msgs ? msgs.join('\n') : '';
     }
 
@@ -1216,7 +1031,7 @@ createApp({
       if (!empErrors) return 0;
       let count = 0;
       const sectionFields = FIELDS_BY_SECTION[sectionId] || [];
-      sectionFields.forEach(f => { if (empErrors.has(f.section + '/' + f.attr)) count++; });
+      sectionFields.forEach(f => { if (empErrors.has(fieldKey(f))) count++; });
       return count;
     }
 
@@ -1253,7 +1068,7 @@ createApp({
           if (emp?.fields[entry.key]) {
             emp.fields[entry.key].value = entry.oldValue;
             const fr = emp.fields[entry.key];
-            if (fr.el) { if (entry.oldValue) fr.el.setAttribute(fr.attr, entry.oldValue); else fr.el.removeAttribute(fr.attr); }
+            if (fr.el) { activeFormat.writeField(fr, entry.oldValue); }
           }
           redoStack.value.push(entry);
         }
@@ -1266,7 +1081,7 @@ createApp({
           if (emp?.fields[entry.key]) {
             emp.fields[entry.key].value = entry.newValue;
             const fr = emp.fields[entry.key];
-            if (fr.el) { if (entry.newValue) fr.el.setAttribute(fr.attr, entry.newValue); else fr.el.removeAttribute(fr.attr); }
+            if (fr.el) { activeFormat.writeField(fr, entry.newValue); }
           }
           undoStack.value.push(entry);
         }
@@ -1278,7 +1093,8 @@ createApp({
     return {
       xmlDoc, filename, employees, expandedEmployee, fieldSearch, valueSearch, expandedSections, showAllSections,
       isDirty, isDragging, errors, validationCollapsed, editingField, toastMessage, fileInput, searchInput,
-      actionLabels, displayList, filteredEmployees, matchedEmployees, unmatchedEmployees, searchMatchInfo, isFieldMatch, isEmployeeExpanded, getEmpMatchCount, sectionHasMatchingFields, showAllFieldsInSearch, autoExpandMatched,
+      actionLabels, formatName, hasActions, rowInfoDefs, rowColumnLabel, getRowLabel, fieldXpath,
+      displayList, filteredEmployees, matchedEmployees, unmatchedEmployees, searchMatchInfo, isFieldMatch, isEmployeeExpanded, getEmpMatchCount, sectionHasMatchingFields, showAllFieldsInSearch, autoExpandMatched,
       onFieldSearchInput, onValueSearchInput, clearFieldSearch, clearValueSearch,
       hasSearch, hasValidated, xmlVersion, actionSummary, employerName, datumVyplneni, czForeignerSplit, partialAcceptValue,
       viewMode, toggleViewMode, visibleColumns, actionFilter, getFieldReq, reqClass, REQ_TITLES,
