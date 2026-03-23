@@ -660,6 +660,17 @@ const REGZEC_CONFIG = {
     return 'OST';
   },
   rowElementPattern: /<[a-zA-Z]*:?employee[\s>]/,
+  fieldGroups: [
+    { id: 'personal',    label: 'Osoba',           query: 'identifikace, jmeno a prijmeni, narozeni, pohlavi a obcanstvi' },
+    { id: 'addresses',  label: 'Adresy',          query: 'trvale bydliste, pobyt v cr, adresa rezidence' },
+    { id: 'employer',   label: 'Zaměstnavatel',   query: 'zamestnavatel' },
+    { id: 'employment', label: 'Pracovní poměr',  query: 'pracovni pomer, profese, pozice' },
+    { id: 'insurance',  label: 'Pojišťovny',      query: 'zdravotni pojistovna, organ np' },
+    { id: 'pension',    label: 'Důchod',          query: 'duchod' },
+    { id: 'termination',label: 'Ukončení',        query: 'podpora v nezamestnanosti' },
+    { id: 'health',     label: 'Zdraví',          query: 'dalsi udaje, zdravotni omezeni' },
+    { id: 'foreign',    label: 'Cizinec',         query: 'cizozemsky, cizi pravni predpisy, pracovni opravneni, danove identifikace, doklad' },
+  ],
 };
 
 const JMHZ_CONFIG = {
@@ -729,6 +740,15 @@ const JMHZ_CONFIG = {
     { id: 'mzda/nahrady', label: 'Náhrady' },
     { id: 'mzda/odmeny', label: 'Odměny' },
     { id: 'mzda/vydelek', label: 'Výdělek' },
+  ],
+  fieldGroups: [
+    { id: 'identification', label: 'Identifikace',     query: 'identifikace zamestnance' },
+    { id: 'work',           label: 'Práce a pozice',   query: 'vykonavana pozice, prubeh zamestna, prijem v danem' },
+    { id: 'insurance',      label: 'Pojištění a ELDP', query: 'trvani pojisteni, vymero, eldp' },
+    { id: 'contributions',  label: 'Pojistné',         query: 'pojistne za zamestn, sleva na pojistnem' },
+    { id: 'income',         label: 'Příjmy',           query: 'prijmy, cista mzda, zdravotni pojisteni' },
+    { id: 'tax',            label: 'Daně',             query: 'zaloha na dan, zvlastni sazba, prohlaseni poplatnika, rocni uhrny' },
+    { id: 'wages',          label: 'Mzda',             query: 'mzda' },
   ],
   fields: [
     { section: 'identifikace', element: 'ikMpsv', csszId: '10051', label: 'IK MPSV', type: 'text' },
@@ -1255,6 +1275,7 @@ body {
   min-width: 80px; vertical-align: top; line-height: 1.3; color: var(--text-primary);
 }
 .table-view th .col-id { font-family: ui-monospace, "Cascadia Code", "Source Code Pro", monospace; color: var(--text-muted); font-size: 0.625rem; display: block; font-weight: 400; }
+.table-view th .col-sec { display: block; font-size: 0.6rem; color: var(--text-faint); font-weight: 400; margin-top: 1px; white-space: normal; line-height: 1.2; }
 .table-view th:first-child { border-left: 1px solid oklch(82% 0.015 250); }
 .table-view th { border-top: 1px solid oklch(82% 0.015 250); }
 .table-view th.name-col { position: sticky; left: 0; z-index: 4; min-width: 150px; background: oklch(89% 0.018 250); }
@@ -1287,6 +1308,19 @@ body {
 }
 .action-filter button:hover { background: var(--bg-hover); }
 .action-filter button.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+
+/* === Group filter pills === */
+.group-filter-bar { padding: 0 32px 6px; max-width: 1000px; margin: 0 auto; width: 100%; }
+.group-filter-pills { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.group-pill {
+  padding: 3px 10px; font-size: 0.72rem; font-weight: 500;
+  border: 1px solid var(--border); border-radius: 20px;
+  background: var(--bg-elevated); cursor: pointer; color: var(--text-secondary);
+  white-space: nowrap; transition: background 0.15s, color 0.15s, border-color 0.15s;
+  user-select: none; line-height: 1.5;
+}
+.group-pill:hover { background: var(--bg-hover); color: var(--text-primary); }
+.group-pill.active { background: var(--accent-subtle); color: var(--accent); border-color: var(--accent); font-weight: 600; }
 
 /* === Requirement badges in table headers === */
 .col-req { display: inline-block; font-size: 0.625rem; font-weight: 700; padding: 0 var(--sp-1); border-radius: 3px; margin-left: 3px; cursor: help; }
@@ -1359,15 +1393,28 @@ body {
     </div>
   </div>
 
+  <!-- Group filter pills -->
+  <div class="group-filter-bar" v-if="xmlDoc && employees.length > 0 && currentFormatGroups.length > 0">
+    <div class="group-filter-pills">
+      <button
+        v-for="group in currentFormatGroups" :key="group.id"
+        class="group-pill"
+        :class="{ active: fieldSearch === group.query }"
+        @click="fieldSearch === group.query ? applyGroupQuery('') : applyGroupQuery(group.query)">
+        {{ group.label }}
+      </button>
+    </div>
+  </div>
+
   <!-- Table View -->
   <div class="table-view" v-if="xmlDoc && employees.length > 0 && viewMode === 'table'">
     <table>
       <thead>
         <tr>
           <th class="name-col">{{ rowColumnLabel }}</th>
-          <th v-for="field in visibleColumns" :key="field.csszId || fieldKey(field)"
-              :title="fieldXpath(field)">
+          <th v-for="field in visibleColumns" :key="field.csszId || fieldKey(field)">
             {{ field.label }}<span class="col-id">{{ field.csszId || '' }}</span>
+            <span class="col-sec">{{ fieldSecLabel(field) }}</span>
             <span v-if="actionFilter && getFieldReq(field, actionFilter)" class="col-req" :class="reqClass(getFieldReq(field, actionFilter))" :title="REQ_TITLES[getFieldReq(field, actionFilter)] || ''">{{ getFieldReq(field, actionFilter) }}</span>
           </th>
         </tr>
@@ -1515,6 +1562,13 @@ let ACTION_LABELS = {};
 let ACTION_SECTIONS = null;
 let FIELD_RULES = {};
 
+function fieldMatchesTerm(f, fq) {
+  const tokens = fq.split(/\s+/).filter(t => t.length >= 2);
+  if (!tokens.length) return true;
+  const haystack = f._nId + ' ' + f._nLabel + ' ' + f._nXpath + ' ' + f._nSecLabel;
+  return tokens.every(t => haystack.includes(t));
+}
+
 function rebuildMetadata(format) {
   activeFormat = format;
   SECTIONS = format.sections;
@@ -1640,6 +1694,12 @@ createApp({
     function getRowLabel(emp) { return activeFormat ? activeFormat.getRowLabel(emp.fields) : (emp.surname + ' ' + emp.firstName); }
     const rowColumnLabel = computed(() => { const f = formatRef.value; return f ? (f.rowColumnLabel || 'Jméno') : 'Jméno'; });
     function fieldXpath(field) { return activeFormat ? activeFormat.fieldXpath(field) : (field.section + '/@' + (field.attr || field.element)); }
+    function fieldHint(field) {
+      const secLabel = (SECTION_MAP[field.section] || {}).label || '';
+      const xpath = fieldXpath(field);
+      return secLabel ? secLabel + ' · ' + xpath : xpath;
+    }
+    function fieldSecLabel(field) { return (SECTION_MAP[field.section] || {}).label || ''; }
 
     function parseXml(xmlText) {
       const parser = new DOMParser();
@@ -1774,6 +1834,16 @@ createApp({
       if (!val) { collapsedSections.clear(); collapsedMatchedEmps.clear(); }
     });
 
+    const currentFormatGroups = computed(() => {
+      void xmlDoc.value;
+      return activeFormat?.fieldGroups || [];
+    });
+
+    function applyGroupQuery(query) {
+      fieldSearch.value = query;
+      if (searchInput.value) searchInput.value.value = query;
+    }
+
     const searchMatches = computed(() => {
       const fqParts = splitQuery(fieldSearch.value);
       const vqParts = splitQuery(valueSearch.value);
@@ -1786,7 +1856,7 @@ createApp({
           const fieldRef = emp.fields[key];
           const nVal = fieldRef?._norm || '';
           const foreignHit = f._isForeign && fqParts.some(fq => FOREIGN_KEYWORDS.some(kw => kw.includes(fq) || fq.includes(kw)));
-          const fieldHit = fqParts.length === 0 || fqParts.some(fq => f._nId.includes(fq) || f._nLabel.includes(fq) || f._nXpath.includes(fq) || f._nSecLabel.includes(fq)) || foreignHit;
+          const fieldHit = fqParts.length === 0 || fqParts.some(fq => fieldMatchesTerm(f, fq)) || foreignHit;
           const valHit = vqParts.length === 0 || (nVal && vqParts.some(vq => nVal.includes(vq)));
           if (fieldHit && valHit && (fqParts.length > 0 || vqParts.length > 0)) {
             empMatches.add(key);
@@ -1896,7 +1966,7 @@ createApp({
       if (fqParts.length) {
         cols = cols.filter(f => {
           const foreignHit = f._isForeign && fqParts.some(fq => FOREIGN_KEYWORDS.some(kw => kw.includes(fq) || fq.includes(kw)));
-          return fqParts.some(fq => f._nId.includes(fq) || f._nLabel.includes(fq) || f._nXpath.includes(fq)) || foreignHit;
+          return fqParts.some(fq => fieldMatchesTerm(f, fq)) || foreignHit;
         });
       }
       return cols;
@@ -2246,11 +2316,12 @@ createApp({
     return {
       xmlDoc, filename, employees, expandedEmployee, fieldSearch, valueSearch, expandedSections, showAllSections,
       isDirty, isDragging, errors, validationCollapsed, editingField, toastMessage, fileInput, searchInput,
-      actionLabels, formatName, hasActions, rowInfoDefs, rowColumnLabel, getRowLabel, fieldXpath,
+      actionLabels, formatName, hasActions, rowInfoDefs, rowColumnLabel, getRowLabel, fieldXpath, fieldHint, fieldSecLabel,
       displayList, filteredEmployees, matchedEmployees, unmatchedEmployees, searchMatchInfo, isFieldMatch, isEmployeeExpanded, getEmpMatchCount, sectionHasMatchingFields, showAllFieldsInSearch, autoExpandMatched,
       onFieldSearchInput, onValueSearchInput, clearFieldSearch, clearValueSearch,
       hasSearch, hasValidated, xmlVersion, actionSummary, employerName, datumVyplneni, czForeignerSplit, partialAcceptValue,
       viewMode, toggleViewMode, visibleColumns, actionFilter, getFieldReq, reqClass, REQ_TITLES,
+      currentFormatGroups, applyGroupQuery,
       toggleEmployee, getSectionsForEmployee, toggleSection, isSectionExpanded,
       fieldKey, getFieldValue, isFieldModified, getFieldRequirement, hasFieldError, getFieldErrorMsg,
       getVisibleFields, startEdit, commitEdit, cancelEdit,

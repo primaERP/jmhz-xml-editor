@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-let html = fs.readFileSync('index.html', 'utf8');
+let html = fs.readFileSync('index.dev.html', 'utf8');
 const vue = fs.readFileSync('vue.global.prod.js', 'utf8');
 const xmllint = fs.readFileSync('xmllint-wasm-bundle.js', 'utf8');
 const xsd = fs.readFileSync('xsd-data.js', 'utf8');

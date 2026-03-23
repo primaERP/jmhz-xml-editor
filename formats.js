@@ -322,6 +322,17 @@ const REGZEC_CONFIG = {
     return 'OST';
   },
   rowElementPattern: /<[a-zA-Z]*:?employee[\s>]/,
+  fieldGroups: [
+    { id: 'personal',    label: 'Osoba',           query: 'identifikace, jmeno a prijmeni, narozeni, pohlavi a obcanstvi' },
+    { id: 'addresses',  label: 'Adresy',          query: 'trvale bydliste, pobyt v cr, adresa rezidence' },
+    { id: 'employer',   label: 'Zaměstnavatel',   query: 'zamestnavatel' },
+    { id: 'employment', label: 'Pracovní poměr',  query: 'pracovni pomer, profese, pozice' },
+    { id: 'insurance',  label: 'Pojišťovny',      query: 'zdravotni pojistovna, organ np' },
+    { id: 'pension',    label: 'Důchod',          query: 'duchod' },
+    { id: 'termination',label: 'Ukončení',        query: 'podpora v nezamestnanosti' },
+    { id: 'health',     label: 'Zdraví',          query: 'dalsi udaje, zdravotni omezeni' },
+    { id: 'foreign',    label: 'Cizinec',         query: 'cizozemsky, cizi pravni predpisy, pracovni opravneni, danove identifikace, doklad' },
+  ],
 };
 
 const JMHZ_CONFIG = {
@@ -391,6 +402,15 @@ const JMHZ_CONFIG = {
     { id: 'mzda/nahrady', label: 'Náhrady' },
     { id: 'mzda/odmeny', label: 'Odměny' },
     { id: 'mzda/vydelek', label: 'Výdělek' },
+  ],
+  fieldGroups: [
+    { id: 'identification', label: 'Identifikace',     query: 'identifikace zamestnance' },
+    { id: 'work',           label: 'Práce a pozice',   query: 'vykonavana pozice, prubeh zamestna, prijem v danem' },
+    { id: 'insurance',      label: 'Pojištění a ELDP', query: 'trvani pojisteni, vymero, eldp' },
+    { id: 'contributions',  label: 'Pojistné',         query: 'pojistne za zamestn, sleva na pojistnem' },
+    { id: 'income',         label: 'Příjmy',           query: 'prijmy, cista mzda, zdravotni pojisteni' },
+    { id: 'tax',            label: 'Daně',             query: 'zaloha na dan, zvlastni sazba, prohlaseni poplatnika, rocni uhrny' },
+    { id: 'wages',          label: 'Mzda',             query: 'mzda' },
   ],
   fields: [
     { section: 'identifikace', element: 'ikMpsv', csszId: '10051', label: 'IK MPSV', type: 'text' },
