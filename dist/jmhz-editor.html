@@ -634,6 +634,23 @@ const REGZEC_CONFIG = {
     action: 'employee/act',
     partialAccept: true
   },
+  parseDocumentHeader: function(doc) {
+    if (!doc) return [];
+    const root = doc.documentElement;
+    const fields = [];
+    const ver = root.getAttribute('version');
+    if (ver) fields.push({ label: 'Verze', value: ver });
+    const pa = root.getAttribute('partialAccept');
+    if (pa) fields.push({ label: 'Částečné přijetí', value: pa });
+    for (const c of root.children) {
+      if (c.localName === 'VENDOR') {
+        const pn = c.getAttribute('productName') || '';
+        const pv = c.getAttribute('productVersion') || '';
+        if (pn || pv) fields.push({ label: 'Software', value: [pn, pv].filter(Boolean).join(' ') });
+      }
+    }
+    return fields;
+  },
   resolveSection: function(empEl, sec) {
     if (sec.id === 'employee') return empEl;
     if (sec.child) { const p = getChildByLocalName(empEl, sec.element); return p ? getChildByLocalName(p, sec.child) : null; }
@@ -747,9 +764,85 @@ const JMHZ_CONFIG = {
     { id: 'insurance',      label: 'Pojištění a ELDP', query: 'trvani pojisteni, vymero, eldp' },
     { id: 'contributions',  label: 'Pojistné',         query: 'pojistne za zamestn, sleva na pojistnem' },
     { id: 'income',         label: 'Příjmy',           query: 'prijmy, cista mzda, zdravotni pojisteni' },
-    { id: 'tax',            label: 'Daně',             query: 'zaloha na dan, zvlastni sazba, prohlaseni poplatnika, rocni uhrny' },
+    { id: 'tax',            label: 'Daně',             query: 'zaloha na dan, zvlastni sazba, prohlaseni poplatnika' },
     { id: 'wages',          label: 'Mzda',             query: 'mzda' },
+    { id: 'annual',         label: 'Roční zúčtování',  query: 'rocniuhrny' },
   ],
+  parseDocumentHeader: function(doc) {
+    if (!doc) return [];
+    function el(parent, localName) {
+      if (!parent) return null;
+      for (const c of parent.children) if (c.localName === localName) return c;
+      return null;
+    }
+    function txt(parent, localName) {
+      const e = el(parent, localName); return e ? e.textContent.trim() : '';
+    }
+    const root = doc.documentElement;
+    const hlavicka = el(root, 'hlavicka');
+    const vendor   = el(root, 'VENDOR');
+    const sender   = el(root, 'SENDER');
+    const fields = [];
+    if (hlavicka) {
+      const mesic = txt(hlavicka, 'mesic'), rok = txt(hlavicka, 'rok');
+      if (mesic || rok) fields.push({ label: 'Období', value: mesic + '/' + rok });
+      const typ = txt(hlavicka, 'typPodani');
+      if (typ) fields.push({ label: 'Typ podání', value: typ });
+      const vs = txt(hlavicka, 'variabilniSymbol');
+      if (vs) fields.push({ label: 'Variabilní symbol', value: vs });
+      const dat = txt(hlavicka, 'datumVyplneni');
+      if (dat) fields.push({ label: 'Datum vyplnění', value: dat.replace('T', ' ').replace('Z', '') });
+      const id = txt(hlavicka, 'idPodani');
+      if (id) fields.push({ label: 'ID podání', value: id });
+      const bp = txt(hlavicka, 'balikPoradi'), bpc = txt(hlavicka, 'balikyPocet');
+      if (bp || bpc) fields.push({ label: 'Balík', value: bp + ' / ' + bpc });
+      const fv = txt(hlavicka, 'formularePocetVBaliku'), fc = txt(hlavicka, 'formularePocetCelkem');
+      if (fv || fc) fields.push({ label: 'Formulářů v balíku / celkem', value: fv + ' / ' + fc });
+    }
+    if (vendor) {
+      const pn = vendor.getAttribute('productName') || '';
+      const pv = vendor.getAttribute('productVersion') || '';
+      if (pn || pv) fields.push({ label: 'Software', value: [pn, pv].filter(Boolean).join(' ') });
+    }
+    if (sender) {
+      const vp = sender.getAttribute('VerzeProtokolu') || '';
+      if (vp) fields.push({ label: 'Verze protokolu', value: vp });
+      const em = sender.getAttribute('EmailNotifikace') || '';
+      if (em) fields.push({ label: 'E-mail notifikace', value: em });
+      const isds = sender.getAttribute('ISDSreport') || '';
+      if (isds) fields.push({ label: 'ISDS report', value: isds });
+    }
+    const souhrn = el(root, 'souhrn');
+    if (souhrn) {
+      const mesic = el(souhrn, 'danUdajeMesic');
+      if (mesic) {
+        const z = txt(mesic, 'danZalohaPoSleve'); if (z) fields.push({ label: 'Záloha na daň (měsíc)', value: z });
+        const b = txt(mesic, 'danBonus'); if (b) fields.push({ label: 'Daňový bonus (měsíc)', value: b });
+      }
+      const rok = el(souhrn, 'danUdajeRok');
+      if (rok) {
+        const p = txt(rok, 'danPreplatek'); if (p) fields.push({ label: 'Přeplatek na dani (rok)', value: p });
+        const d = txt(rok, 'danBonusDoplatek'); if (d) fields.push({ label: 'Doplatek daňového bonusu (rok)', value: d });
+      }
+    }
+    const pvpoj = el(root, 'PVPOJ');
+    if (pvpoj) {
+      const poj = el(pvpoj, 'pojistne');
+      if (poj) {
+        const za = txt(poj, 'zakladZamestnavateleA'); if (za) fields.push({ label: 'Základ poj. zaměstnavatele A', value: za });
+        const pa = txt(poj, 'pojistneZamestnavateleA'); if (pa) fields.push({ label: 'Pojistné zaměstnavatele A', value: pa });
+        const zb = txt(poj, 'zakladZamestnavateleB'); if (zb) fields.push({ label: 'Základ poj. zaměstnavatele B', value: zb });
+        const pb = txt(poj, 'pojistneZamestnavateleB'); if (pb) fields.push({ label: 'Pojistné zaměstnavatele B', value: pb });
+        const zc = txt(poj, 'zakladZamestnavateleC'); if (zc) fields.push({ label: 'Základ poj. zaměstnavatele C', value: zc });
+        const pc = txt(poj, 'pojistneZamestnavateleC'); if (pc) fields.push({ label: 'Pojistné zaměstnavatele C', value: pc });
+        const cel = txt(poj, 'pojistneZamestnavateleCelkem'); if (cel) fields.push({ label: 'Pojistné zaměstnavatele celkem', value: cel });
+        const zam = txt(poj, 'pojistneZamestnance'); if (zam) fields.push({ label: 'Pojistné zaměstnance', value: zam });
+        const tot = txt(poj, 'pojistneCelkem'); if (tot) fields.push({ label: 'Pojistné celkem', value: tot });
+      }
+      const uh = txt(pvpoj, 'pojistneUhrada'); if (uh) fields.push({ label: 'Pojistné k úhradě', value: uh });
+    }
+    return fields;
+  },
   fields: [
     { section: 'identifikace', element: 'ikMpsv', csszId: '10051', label: 'IK MPSV', type: 'text' },
     { section: 'identifikace', element: 'idPpv', csszId: '10228', label: 'ID pracovněprávního vztahu', type: 'text' },
@@ -803,48 +896,6 @@ const JMHZ_CONFIG = {
     { section: 'souhrnDataZec/prohlaseniPoplatnikaDane/zvyhodneniDetiMesic/vyzivovaneDeti/vyzivovaneDite', element: 'dite/rodneCislo', csszId: '10438', label: 'Rodné číslo dítěte', type: 'text' },
     { section: 'souhrnDataZec/prohlaseniPoplatnikaDane/zvyhodneniDetiMesic/vyzivovaneDeti/vyzivovaneDite', element: 'prukazZtpp', csszId: '10439', label: 'Držitel průkazu ZTP/P', type: 'boolean' },
     { section: 'souhrnDataZec/prohlaseniPoplatnikaDane/zvyhodneniDetiMesic/vyzivovaneDeti/vyzivovaneDite', element: 'poradi', csszId: '10440', label: 'Pořadí dítěte (1/2/3/N)', type: 'text' },
-
-    { section: 'souhrnDataZec/rocniUhrny', element: 'prijemSrazkDanZvlSazba', csszId: '10311', label: 'Příjmy podléhající srážkové dani (rok)', type: 'number' },
-    { section: 'souhrnDataZec/rocniUhrny', element: 'danSrazenaZvlSazba', csszId: '10312', label: 'Sražená daň zvláštní sazby (rok)', type: 'number' },
-    { section: 'souhrnDataZec/rocniUhrny', element: 'prijemZdanitelnyCelkem', csszId: '10313', label: 'Zdanitelné příjmy celkem (rok)', type: 'number' },
-    { section: 'souhrnDataZec/rocniUhrny', element: 'prijemZdanitelnyDoplatek', csszId: '10316', label: 'Doplatky příjmů z minulých období (rok)', type: 'number' },
-    { section: 'souhrnDataZec/rocniUhrny', element: 'zalohaPrijmy', csszId: '10317', label: 'Sražená záloha na daň z příjmů (rok)', type: 'number' },
-    { section: 'souhrnDataZec/rocniUhrny', element: 'zalohaDoplatky', csszId: '10318', label: 'Sražená záloha na daň z doplatků (rok)', type: 'number' },
-    { section: 'souhrnDataZec/rocniUhrny', element: 'rocniZuctovaniZadost', csszId: '10319', label: 'Požádáno o roční zúčtování', type: 'boolean' },
-    { section: 'souhrnDataZec/rocniUhrny', element: 'rocniZuctovaniProvedeno', csszId: '10320', label: 'Roční zúčtování provedeno', type: 'boolean' },
-
-    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani', element: 'preplatekRok', csszId: '10321', label: 'Přeplatek/nedoplatek z ročního zúčtování', type: 'number' },
-    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani', element: 'danPreplatekRok', csszId: '10322', label: 'Přeplatek/nedoplatek na dani', type: 'number' },
-    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani', element: 'danBonusPreplatekRok', csszId: '10323', label: 'Doplatek/přeplatek daňového bonusu', type: 'number' },
-    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani', element: 'uplatnenaSlevaNaPartnera', csszId: '10420', label: 'Uplatněna sleva na manželku/manžela', type: 'boolean' },
-    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani', element: 'uplatnenoZvyhodneniNaDeti', csszId: '10454', label: 'Uplatněno daňové zvýhodnění na děti', type: 'boolean' },
-
-    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/slevaNaPartnera/partner', element: 'partnerUdaje/jmeno', csszId: '10421', label: 'Jméno partnera', type: 'text' },
-    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/slevaNaPartnera/partner', element: 'partnerUdaje/prijmeni', csszId: '10422', label: 'Příjmení partnera', type: 'text' },
-    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/slevaNaPartnera/partner', element: 'partnerUdaje/rodneCislo', csszId: '10423', label: 'Rodné číslo partnera', type: 'text' },
-    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/slevaNaPartnera/partner', element: 'partnerUdaje/datumNarozeni', csszId: '10424', label: 'Datum narození partnera', type: 'date' },
-    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/slevaNaPartnera/partner', element: 'prukazZtpp', csszId: '10425', label: 'Partner držitel ZTP/P', type: 'boolean' },
-    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/slevaNaPartnera/partner', element: 'slevaPocetMesicu', csszId: '10426', label: 'Počet měsíců uplatnění slevy', type: 'number' },
-    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/slevaNaPartnera/partner', element: 'slevaPocetMesicuZtpp', csszId: '10430', label: 'Počet měsíců ZTP/P', type: 'number' },
-    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/slevaNaPartnera/partner', element: 'deti/dite/jmeno', csszId: '10539', label: 'Jméno dítěte partnera', type: 'text' },
-    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/slevaNaPartnera/partner', element: 'deti/dite/prijmeni', csszId: '10540', label: 'Příjmení dítěte partnera', type: 'text' },
-    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/slevaNaPartnera/partner', element: 'deti/dite/datumNarozeni', csszId: '10541', label: 'Datum narození dítěte partnera', type: 'date' },
-    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/slevaNaPartnera/partner', element: 'deti/dite/rodneCislo', csszId: '10542', label: 'Rodné číslo dítěte partnera', type: 'text' },
-
-    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti', element: 'vyzivujeJinaOsoba', csszId: '10455', label: 'Vyživuje děti i jiná osoba (roční)', type: 'boolean' },
-
-    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/jineOsoby/jinaOsoba', element: 'osoba/jmeno', csszId: '10441', label: 'Jméno jiné osoby', type: 'text' },
-    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/jineOsoby/jinaOsoba', element: 'osoba/prijmeni', csszId: '10442', label: 'Příjmení jiné osoby', type: 'text' },
-    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/jineOsoby/jinaOsoba', element: 'osoba/datumNarozeni', csszId: '10443', label: 'Datum narození jiné osoby', type: 'date' },
-    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/jineOsoby/jinaOsoba', element: 'osoba/rodneCislo', csszId: '10444', label: 'Rodné číslo jiné osoby', type: 'text' },
-    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/jineOsoby/jinaOsoba', element: 'mesiceVyzivovani', csszId: '10445', label: 'Měsíce vyživování (12 znaků A/N)', type: 'text' },
-
-    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/vyzivovaneDeti/vyzivovaneDite', element: 'dite/jmeno', csszId: '10446', label: 'Jméno dítěte', type: 'text' },
-    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/vyzivovaneDeti/vyzivovaneDite', element: 'dite/prijmeni', csszId: '10447', label: 'Příjmení dítěte', type: 'text' },
-    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/vyzivovaneDeti/vyzivovaneDite', element: 'dite/datumNarozeni', csszId: '10448', label: 'Datum narození dítěte', type: 'date' },
-    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/vyzivovaneDeti/vyzivovaneDite', element: 'dite/rodneCislo', csszId: '10449', label: 'Rodné číslo dítěte', type: 'text' },
-    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/vyzivovaneDeti/vyzivovaneDite', element: 'prukazZtpp', csszId: '10450', label: 'ZTP/P (12 znaků A/N)', type: 'text' },
-    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/vyzivovaneDeti/vyzivovaneDite', element: 'poradi', csszId: '10451', label: 'Pořadí (12 znaků 1-3/N)', type: 'text' },
 
     { section: 'souhrnDataZec/mzdaCista', element: 'mzdaCista', csszId: '10344', label: 'Čistý příjem', type: 'number' },
     { section: 'souhrnDataZec/mzdaCista', element: 'srazkyZeMzdyEvidovany', csszId: '10116', label: 'Evidovány srážky ze mzdy', type: 'boolean' },
@@ -974,6 +1025,48 @@ const JMHZ_CONFIG = {
     { section: 'mzda/odmeny', element: 'pohotovost', csszId: '10343', label: 'Odměny za pracovní pohotovost', type: 'number' },
 
     { section: 'mzda/vydelek', element: 'vydelekPrumernyHod', csszId: '10345', label: 'Průměrný hodinový výdělek', type: 'number' },
+
+    { section: 'souhrnDataZec/rocniUhrny', element: 'prijemSrazkDanZvlSazba', csszId: '10311', label: 'Příjmy podléhající srážkové dani (rok)', type: 'number' },
+    { section: 'souhrnDataZec/rocniUhrny', element: 'danSrazenaZvlSazba', csszId: '10312', label: 'Sražená daň zvláštní sazby (rok)', type: 'number' },
+    { section: 'souhrnDataZec/rocniUhrny', element: 'prijemZdanitelnyCelkem', csszId: '10313', label: 'Zdanitelné příjmy celkem (rok)', type: 'number' },
+    { section: 'souhrnDataZec/rocniUhrny', element: 'prijemZdanitelnyDoplatek', csszId: '10316', label: 'Doplatky příjmů z minulých období (rok)', type: 'number' },
+    { section: 'souhrnDataZec/rocniUhrny', element: 'zalohaPrijmy', csszId: '10317', label: 'Sražená záloha na daň z příjmů (rok)', type: 'number' },
+    { section: 'souhrnDataZec/rocniUhrny', element: 'zalohaDoplatky', csszId: '10318', label: 'Sražená záloha na daň z doplatků (rok)', type: 'number' },
+    { section: 'souhrnDataZec/rocniUhrny', element: 'rocniZuctovaniZadost', csszId: '10319', label: 'Požádáno o roční zúčtování', type: 'boolean' },
+    { section: 'souhrnDataZec/rocniUhrny', element: 'rocniZuctovaniProvedeno', csszId: '10320', label: 'Roční zúčtování provedeno', type: 'boolean' },
+
+    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani', element: 'preplatekRok', csszId: '10321', label: 'Přeplatek/nedoplatek z ročního zúčtování', type: 'number' },
+    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani', element: 'danPreplatekRok', csszId: '10322', label: 'Přeplatek/nedoplatek na dani', type: 'number' },
+    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani', element: 'danBonusPreplatekRok', csszId: '10323', label: 'Doplatek/přeplatek daňového bonusu', type: 'number' },
+    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani', element: 'uplatnenaSlevaNaPartnera', csszId: '10420', label: 'Uplatněna sleva na manželku/manžela', type: 'boolean' },
+    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani', element: 'uplatnenoZvyhodneniNaDeti', csszId: '10454', label: 'Uplatněno daňové zvýhodnění na děti', type: 'boolean' },
+
+    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/slevaNaPartnera/partner', element: 'partnerUdaje/jmeno', csszId: '10421', label: 'Jméno partnera', type: 'text' },
+    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/slevaNaPartnera/partner', element: 'partnerUdaje/prijmeni', csszId: '10422', label: 'Příjmení partnera', type: 'text' },
+    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/slevaNaPartnera/partner', element: 'partnerUdaje/rodneCislo', csszId: '10423', label: 'Rodné číslo partnera', type: 'text' },
+    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/slevaNaPartnera/partner', element: 'partnerUdaje/datumNarozeni', csszId: '10424', label: 'Datum narození partnera', type: 'date' },
+    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/slevaNaPartnera/partner', element: 'prukazZtpp', csszId: '10425', label: 'Partner držitel ZTP/P', type: 'boolean' },
+    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/slevaNaPartnera/partner', element: 'slevaPocetMesicu', csszId: '10426', label: 'Počet měsíců uplatnění slevy', type: 'number' },
+    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/slevaNaPartnera/partner', element: 'slevaPocetMesicuZtpp', csszId: '10430', label: 'Počet měsíců ZTP/P', type: 'number' },
+    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/slevaNaPartnera/partner', element: 'deti/dite/jmeno', csszId: '10539', label: 'Jméno dítěte partnera', type: 'text' },
+    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/slevaNaPartnera/partner', element: 'deti/dite/prijmeni', csszId: '10540', label: 'Příjmení dítěte partnera', type: 'text' },
+    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/slevaNaPartnera/partner', element: 'deti/dite/datumNarozeni', csszId: '10541', label: 'Datum narození dítěte partnera', type: 'date' },
+    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/slevaNaPartnera/partner', element: 'deti/dite/rodneCislo', csszId: '10542', label: 'Rodné číslo dítěte partnera', type: 'text' },
+
+    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti', element: 'vyzivujeJinaOsoba', csszId: '10455', label: 'Vyživuje děti i jiná osoba (roční)', type: 'boolean' },
+
+    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/jineOsoby/jinaOsoba', element: 'osoba/jmeno', csszId: '10441', label: 'Jméno jiné osoby', type: 'text' },
+    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/jineOsoby/jinaOsoba', element: 'osoba/prijmeni', csszId: '10442', label: 'Příjmení jiné osoby', type: 'text' },
+    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/jineOsoby/jinaOsoba', element: 'osoba/datumNarozeni', csszId: '10443', label: 'Datum narození jiné osoby', type: 'date' },
+    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/jineOsoby/jinaOsoba', element: 'osoba/rodneCislo', csszId: '10444', label: 'Rodné číslo jiné osoby', type: 'text' },
+    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/jineOsoby/jinaOsoba', element: 'mesiceVyzivovani', csszId: '10445', label: 'Měsíce vyživování (12 znaků A/N)', type: 'text' },
+
+    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/vyzivovaneDeti/vyzivovaneDite', element: 'dite/jmeno', csszId: '10446', label: 'Jméno dítěte', type: 'text' },
+    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/vyzivovaneDeti/vyzivovaneDite', element: 'dite/prijmeni', csszId: '10447', label: 'Příjmení dítěte', type: 'text' },
+    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/vyzivovaneDeti/vyzivovaneDite', element: 'dite/datumNarozeni', csszId: '10448', label: 'Datum narození dítěte', type: 'date' },
+    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/vyzivovaneDeti/vyzivovaneDite', element: 'dite/rodneCislo', csszId: '10449', label: 'Rodné číslo dítěte', type: 'text' },
+    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/vyzivovaneDeti/vyzivovaneDite', element: 'prukazZtpp', csszId: '10450', label: 'ZTP/P (12 znaků A/N)', type: 'text' },
+    { section: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/vyzivovaneDeti/vyzivovaneDite', element: 'poradi', csszId: '10451', label: 'Pořadí (12 znaků 1-3/N)', type: 'text' },
   ],
   actionLabels: null,
   actionSections: null,
@@ -1095,16 +1188,16 @@ body {
 .validation-panel { background: var(--bg-elevated); border-top: 1px solid var(--border); max-height: 200px; overflow-y: auto; flex-shrink: 0; }
 
 /* === Toolbar === */
-.toolbar button {
+.toolbar button, .btn {
   padding: var(--sp-1) var(--sp-3); border: 1px solid var(--border); border-radius: var(--radius-md);
   background: var(--bg-elevated); cursor: pointer; font-size: 0.8125rem; font-weight: 500;
   color: var(--text-secondary); transition: all var(--duration) var(--ease);
 }
-.toolbar button:hover { background: var(--bg-hover); border-color: oklch(78% 0.015 250); color: var(--text-primary); }
-.toolbar button:active { background: var(--bg-active); transform: scale(0.98); }
-.toolbar button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
-.toolbar button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
-.toolbar button.primary:active { transform: scale(0.98); }
+.toolbar button:hover, .btn:hover { background: var(--bg-hover); border-color: oklch(78% 0.015 250); color: var(--text-primary); }
+.toolbar button:active, .btn:active { background: var(--bg-active); transform: scale(0.98); }
+.toolbar button.primary, .btn.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+.toolbar button.primary:hover, .btn.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.toolbar button.primary:active, .btn.primary:active { transform: scale(0.98); }
 .toolbar .spacer { flex: 1; }
 .toolbar .filename { color: var(--text-muted); font-size: 0.8125rem; }
 .toolbar .error-badge { background: var(--error); color: var(--accent-text); font-size: 0.6875rem; font-weight: 600; padding: 2px var(--sp-2); border-radius: 10px; }
@@ -1348,6 +1441,23 @@ body {
     <button class="primary" @click="saveFile" v-if="xmlDoc">Uložit XML</button>
     <button @click="validateAll" v-if="xmlDoc">Validovat</button>
     <button @click="toggleViewMode" v-if="xmlDoc" style="margin-left: 4px;">Zobrazení: {{ viewMode === 'cards' ? 'Karty' : 'Tabulka' }}</button>
+    <button @click="xlsDialog = true" v-if="xmlDoc && viewMode === 'table'">Export XLS</button>
+  </div>
+
+  <!-- XLS Export Dialog -->
+  <div v-if="xlsDialog" style="position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35)" @click.self="xlsDialog=false">
+    <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--sp-6);min-width:280px;display:flex;flex-direction:column;gap:var(--sp-4);">
+      <div style="font-weight:600;font-size:.9375rem;">Možnosti exportu</div>
+      <div style="display:flex;flex-direction:column;gap:var(--sp-2);">
+        <label style="display:flex;align-items:center;gap:var(--sp-2);cursor:pointer;"><input type="checkbox" v-model="xlsOptTitle"> Název sloupce</label>
+        <label style="display:flex;align-items:center;gap:var(--sp-2);cursor:pointer;"><input type="checkbox" v-model="xlsOptId"> ID pole</label>
+        <label style="display:flex;align-items:center;gap:var(--sp-2);cursor:pointer;"><input type="checkbox" v-model="xlsOptCategory"> Kategorie</label>
+      </div>
+      <div style="display:flex;gap:var(--sp-2);justify-content:flex-end;">
+        <button class="btn" @click="xlsDialog=false">Zrušit</button>
+        <button class="btn primary" @click="exportToExcel">Exportovat</button>
+      </div>
+    </div>
   </div>
 
   <!-- Stats Bar -->
@@ -1363,6 +1473,10 @@ body {
       <span v-if="hasValidated">
         <span :class="errors.length > 0 ? 'stat-error' : 'stat-ok'">{{ errors.length }} {{ errors.length === 1 ? 'chyba' : errors.length < 5 ? 'chyby' : 'chyb' }}</span>
       </span>
+      <button v-if="documentHeader.length" class="btn" @click="headerExpanded = !headerExpanded" style="margin-left:auto;font-size:0.75rem;padding:2px 8px;">{{ headerExpanded ? 'Záhlaví ▲' : 'Záhlaví ▼' }}</button>
+    </div>
+    <div v-if="headerExpanded && documentHeader.length" class="stat-row" style="margin-top:var(--sp-2);flex-wrap:wrap;gap:var(--sp-1) var(--sp-6);">
+      <span v-for="f in documentHeader" :key="f.label"><span class="stat-label">{{ f.label }}:</span> <span class="stat-value">{{ f.value }}</span></span>
     </div>
    </div>
   </div>
@@ -1685,6 +1799,11 @@ createApp({
     const fileHandle = ref(null);
     const fileInput = ref(null);
     const searchInput = ref(null);
+    const headerExpanded = ref(false);
+    const xlsDialog = ref(false);
+    const xlsOptTitle = ref(true);
+    const xlsOptId = ref(false);
+    const xlsOptCategory = ref(false);
     const undoStack = ref([]);
     const redoStack = ref([]);
     const actionLabels = computed(() => { const f = formatRef.value; return f ? (f.actionLabels || {}) : {}; });
@@ -1763,6 +1882,10 @@ createApp({
     const hasValidated = ref(false);
 
     // === Stats computeds ===
+    const documentHeader = computed(() => {
+      if (!xmlDoc.value) return [];
+      return activeFormat?.parseDocumentHeader?.(xmlDoc.value) || [];
+    });
     const xmlVersion = computed(() => {
       if (!xmlDoc.value) return '';
       const root = xmlDoc.value.documentElement;
@@ -1845,6 +1968,7 @@ createApp({
     }
 
     const searchMatches = computed(() => {
+      void xmlDoc.value;
       const fqParts = splitQuery(fieldSearch.value);
       const vqParts = splitQuery(valueSearch.value);
       if (!fqParts.length && !vqParts.length) return null;
@@ -1950,6 +2074,7 @@ createApp({
 
     // Table view: which columns to show (filtered by field search)
     const visibleColumns = computed(() => {
+      void xmlDoc.value;
       let cols = FIELD_META;
       // Action filter: only show sections relevant to the selected action
       const actSections = ACTION_SECTIONS ? ACTION_SECTIONS[actionFilter.value] : null;
@@ -2102,6 +2227,36 @@ createApp({
       const blob = new Blob([xmlString], { type: 'application/xml' });
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = suggestedName; a.click();
       showToast('Staženo: ' + suggestedName); isDirty.value = false; updateTitle();
+    }
+    function exportToExcel() {
+      xlsDialog.value = false;
+      const cols = visibleColumns.value;
+      const rows = displayList.value.filter(item => item.type !== 'separator');
+      const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const hCell = v => `<Cell ss:StyleID="h"><Data ss:Type="String">${esc(v)}</Data></Cell>`;
+      const dCell = v => `<Cell><Data ss:Type="String">${esc(v)}</Data></Cell>`;
+      function colHeader(f) {
+        const parts = [];
+        if (xlsOptTitle.value && f.label) parts.push(f.label);
+        if (xlsOptId.value && f.csszId) parts.push(f.csszId);
+        if (xlsOptCategory.value) { const sec = fieldSecLabel(f); if (sec) parts.push(sec); }
+        return parts.join(' · ');
+      }
+      const includeHeader = xlsOptTitle.value || xlsOptId.value || xlsOptCategory.value;
+      const headerRow = includeHeader
+        ? '<Row>' + [rowColumnLabel.value, ...cols.map(colHeader)].map(hCell).join('') + '</Row>'
+        : '';
+      const dataRows = rows.map(item =>
+        '<Row>' + [getRowLabel(item.emp), ...cols.map(f => getFieldValue(item.emp, f))].map(dCell).join('') + '</Row>'
+      ).join('');
+      const xml = `<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Styles><Style ss:ID="h"><Font ss:Bold="1"/></Style></Styles><Worksheet ss:Name="Export"><Table>${headerRow}${dataRows}</Table></Worksheet></Workbook>`;
+      const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = (filename.value ? filename.value.replace(/\.xml$/i, '') : 'export') + '.xls';
+      a.click();
+      URL.revokeObjectURL(url);
     }
     function showToast(msg) { toastMessage.value = msg; setTimeout(() => { toastMessage.value = ''; }, 2500); }
     function updateTitle() { document.title = (isDirty.value ? '* ' : '') + (filename.value || 'JMHZ XML Editor'); }
@@ -2282,7 +2437,6 @@ createApp({
     document.addEventListener('keydown', (e) => {
       if (e.ctrlKey && e.key === 'o') { e.preventDefault(); loadFile(); }
       if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveFile(); }
-      if (e.ctrlKey && e.key === 'f') { e.preventDefault(); searchInput.value?.focus(); }
       if (e.ctrlKey && e.key === 'z') {
         e.preventDefault();
         if (undoStack.value.length) {
@@ -2325,6 +2479,8 @@ createApp({
       toggleEmployee, getSectionsForEmployee, toggleSection, isSectionExpanded,
       fieldKey, getFieldValue, isFieldModified, getFieldRequirement, hasFieldError, getFieldErrorMsg,
       getVisibleFields, startEdit, commitEdit, cancelEdit,
+      headerExpanded, documentHeader,
+      xlsDialog, xlsOptTitle, xlsOptId, xlsOptCategory, exportToExcel,
       loadFile, handleFileSelect, handleDrop, saveFile, validateAll, getSectionErrorCount,
       getEmployeeErrorCount, navigateToError
     };

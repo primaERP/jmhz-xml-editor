@@ -74,16 +74,16 @@ body {
 .validation-panel { background: var(--bg-elevated); border-top: 1px solid var(--border); max-height: 200px; overflow-y: auto; flex-shrink: 0; }
 
 /* === Toolbar === */
-.toolbar button {
+.toolbar button, .btn {
   padding: var(--sp-1) var(--sp-3); border: 1px solid var(--border); border-radius: var(--radius-md);
   background: var(--bg-elevated); cursor: pointer; font-size: 0.8125rem; font-weight: 500;
   color: var(--text-secondary); transition: all var(--duration) var(--ease);
 }
-.toolbar button:hover { background: var(--bg-hover); border-color: oklch(78% 0.015 250); color: var(--text-primary); }
-.toolbar button:active { background: var(--bg-active); transform: scale(0.98); }
-.toolbar button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
-.toolbar button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
-.toolbar button.primary:active { transform: scale(0.98); }
+.toolbar button:hover, .btn:hover { background: var(--bg-hover); border-color: oklch(78% 0.015 250); color: var(--text-primary); }
+.toolbar button:active, .btn:active { background: var(--bg-active); transform: scale(0.98); }
+.toolbar button.primary, .btn.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+.toolbar button.primary:hover, .btn.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.toolbar button.primary:active, .btn.primary:active { transform: scale(0.98); }
 .toolbar .spacer { flex: 1; }
 .toolbar .filename { color: var(--text-muted); font-size: 0.8125rem; }
 .toolbar .error-badge { background: var(--error); color: var(--accent-text); font-size: 0.6875rem; font-weight: 600; padding: 2px var(--sp-2); border-radius: 10px; }
@@ -327,6 +327,23 @@ body {
     <button class="primary" @click="saveFile" v-if="xmlDoc">Uložit XML</button>
     <button @click="validateAll" v-if="xmlDoc">Validovat</button>
     <button @click="toggleViewMode" v-if="xmlDoc" style="margin-left: 4px;">Zobrazení: {{ viewMode === 'cards' ? 'Karty' : 'Tabulka' }}</button>
+    <button @click="xlsDialog = true" v-if="xmlDoc && viewMode === 'table'">Export XLS</button>
+  </div>
+
+  <!-- XLS Export Dialog -->
+  <div v-if="xlsDialog" style="position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35)" @click.self="xlsDialog=false">
+    <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--sp-6);min-width:280px;display:flex;flex-direction:column;gap:var(--sp-4);">
+      <div style="font-weight:600;font-size:.9375rem;">Možnosti exportu</div>
+      <div style="display:flex;flex-direction:column;gap:var(--sp-2);">
+        <label style="display:flex;align-items:center;gap:var(--sp-2);cursor:pointer;"><input type="checkbox" v-model="xlsOptTitle"> Název sloupce</label>
+        <label style="display:flex;align-items:center;gap:var(--sp-2);cursor:pointer;"><input type="checkbox" v-model="xlsOptId"> ID pole</label>
+        <label style="display:flex;align-items:center;gap:var(--sp-2);cursor:pointer;"><input type="checkbox" v-model="xlsOptCategory"> Kategorie</label>
+      </div>
+      <div style="display:flex;gap:var(--sp-2);justify-content:flex-end;">
+        <button class="btn" @click="xlsDialog=false">Zrušit</button>
+        <button class="btn primary" @click="exportToExcel">Exportovat</button>
+      </div>
+    </div>
   </div>
 
   <!-- Stats Bar -->
@@ -342,6 +359,10 @@ body {
       <span v-if="hasValidated">
         <span :class="errors.length > 0 ? 'stat-error' : 'stat-ok'">{{ errors.length }} {{ errors.length === 1 ? 'chyba' : errors.length < 5 ? 'chyby' : 'chyb' }}</span>
       </span>
+      <button v-if="documentHeader.length" class="btn" @click="headerExpanded = !headerExpanded" style="margin-left:auto;font-size:0.75rem;padding:2px 8px;">{{ headerExpanded ? 'Záhlaví ▲' : 'Záhlaví ▼' }}</button>
+    </div>
+    <div v-if="headerExpanded && documentHeader.length" class="stat-row" style="margin-top:var(--sp-2);flex-wrap:wrap;gap:var(--sp-1) var(--sp-6);">
+      <span v-for="f in documentHeader" :key="f.label"><span class="stat-label">{{ f.label }}:</span> <span class="stat-value">{{ f.value }}</span></span>
     </div>
    </div>
   </div>
@@ -664,6 +685,11 @@ createApp({
     const fileHandle = ref(null);
     const fileInput = ref(null);
     const searchInput = ref(null);
+    const headerExpanded = ref(false);
+    const xlsDialog = ref(false);
+    const xlsOptTitle = ref(true);
+    const xlsOptId = ref(false);
+    const xlsOptCategory = ref(false);
     const undoStack = ref([]);
     const redoStack = ref([]);
     const actionLabels = computed(() => { const f = formatRef.value; return f ? (f.actionLabels || {}) : {}; });
@@ -742,6 +768,10 @@ createApp({
     const hasValidated = ref(false);
 
     // === Stats computeds ===
+    const documentHeader = computed(() => {
+      if (!xmlDoc.value) return [];
+      return activeFormat?.parseDocumentHeader?.(xmlDoc.value) || [];
+    });
     const xmlVersion = computed(() => {
       if (!xmlDoc.value) return '';
       const root = xmlDoc.value.documentElement;
@@ -824,6 +854,7 @@ createApp({
     }
 
     const searchMatches = computed(() => {
+      void xmlDoc.value;
       const fqParts = splitQuery(fieldSearch.value);
       const vqParts = splitQuery(valueSearch.value);
       if (!fqParts.length && !vqParts.length) return null;
@@ -929,6 +960,7 @@ createApp({
 
     // Table view: which columns to show (filtered by field search)
     const visibleColumns = computed(() => {
+      void xmlDoc.value;
       let cols = FIELD_META;
       // Action filter: only show sections relevant to the selected action
       const actSections = ACTION_SECTIONS ? ACTION_SECTIONS[actionFilter.value] : null;
@@ -1081,6 +1113,36 @@ createApp({
       const blob = new Blob([xmlString], { type: 'application/xml' });
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = suggestedName; a.click();
       showToast('Staženo: ' + suggestedName); isDirty.value = false; updateTitle();
+    }
+    function exportToExcel() {
+      xlsDialog.value = false;
+      const cols = visibleColumns.value;
+      const rows = displayList.value.filter(item => item.type !== 'separator');
+      const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const hCell = v => `<Cell ss:StyleID="h"><Data ss:Type="String">${esc(v)}</Data></Cell>`;
+      const dCell = v => `<Cell><Data ss:Type="String">${esc(v)}</Data></Cell>`;
+      function colHeader(f) {
+        const parts = [];
+        if (xlsOptTitle.value && f.label) parts.push(f.label);
+        if (xlsOptId.value && f.csszId) parts.push(f.csszId);
+        if (xlsOptCategory.value) { const sec = fieldSecLabel(f); if (sec) parts.push(sec); }
+        return parts.join(' · ');
+      }
+      const includeHeader = xlsOptTitle.value || xlsOptId.value || xlsOptCategory.value;
+      const headerRow = includeHeader
+        ? '<Row>' + [rowColumnLabel.value, ...cols.map(colHeader)].map(hCell).join('') + '</Row>'
+        : '';
+      const dataRows = rows.map(item =>
+        '<Row>' + [getRowLabel(item.emp), ...cols.map(f => getFieldValue(item.emp, f))].map(dCell).join('') + '</Row>'
+      ).join('');
+      const xml = `<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Styles><Style ss:ID="h"><Font ss:Bold="1"/></Style></Styles><Worksheet ss:Name="Export"><Table>${headerRow}${dataRows}</Table></Worksheet></Workbook>`;
+      const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = (filename.value ? filename.value.replace(/\.xml$/i, '') : 'export') + '.xls';
+      a.click();
+      URL.revokeObjectURL(url);
     }
     function showToast(msg) { toastMessage.value = msg; setTimeout(() => { toastMessage.value = ''; }, 2500); }
     function updateTitle() { document.title = (isDirty.value ? '* ' : '') + (filename.value || 'JMHZ XML Editor'); }
@@ -1261,7 +1323,6 @@ createApp({
     document.addEventListener('keydown', (e) => {
       if (e.ctrlKey && e.key === 'o') { e.preventDefault(); loadFile(); }
       if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveFile(); }
-      if (e.ctrlKey && e.key === 'f') { e.preventDefault(); searchInput.value?.focus(); }
       if (e.ctrlKey && e.key === 'z') {
         e.preventDefault();
         if (undoStack.value.length) {
@@ -1304,6 +1365,8 @@ createApp({
       toggleEmployee, getSectionsForEmployee, toggleSection, isSectionExpanded,
       fieldKey, getFieldValue, isFieldModified, getFieldRequirement, hasFieldError, getFieldErrorMsg,
       getVisibleFields, startEdit, commitEdit, cancelEdit,
+      headerExpanded, documentHeader,
+      xlsDialog, xlsOptTitle, xlsOptId, xlsOptCategory, exportToExcel,
       loadFile, handleFileSelect, handleDrop, saveFile, validateAll, getSectionErrorCount,
       getEmployeeErrorCount, navigateToError
     };
