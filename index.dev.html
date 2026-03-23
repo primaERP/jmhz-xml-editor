@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JMHZ XML Editor</title>
+<script src="vue.global.prod.js"></script>
+<script src="xmllint-wasm-bundle.js"></script>
+<script src="xsd-data.js"></script>
+<script src="jmhz-xsd-data.js"></script>
+<script src="formats.js"></script>
+<style>
+/* === Design Tokens === */
+:root {
+  /* Tinted neutrals — hint of blue (hue 250) */
+  --bg-base: oklch(97% 0.005 250);
+  --bg-surface: oklch(99% 0.003 250);
+  --bg-elevated: oklch(100% 0.002 250);
+  --bg-hover: oklch(96% 0.008 250);
+  --bg-active: oklch(94% 0.012 250);
+  --border: oklch(87% 0.012 250);
+  --border-subtle: oklch(92% 0.008 250);
+  --text-primary: oklch(20% 0.02 250);
+  --text-secondary: oklch(42% 0.015 250);
+  --text-muted: oklch(58% 0.012 250);
+  --text-faint: oklch(72% 0.008 250);
+  /* Accent — deep blue */
+  --accent: oklch(48% 0.2 255);
+  --accent-hover: oklch(40% 0.22 255);
+  --accent-subtle: oklch(94% 0.035 255);
+  --accent-text: oklch(99% 0.005 255);
+  --accent-focus: oklch(48% 0.2 255 / 0.15);
+  /* Semantic */
+  --error: oklch(52% 0.2 25);
+  --error-bg: oklch(95% 0.035 25);
+  --error-border: oklch(82% 0.08 25);
+  --success: oklch(50% 0.14 155);
+  --success-bg: oklch(94% 0.04 155);
+  --success-border: oklch(82% 0.06 155);
+  --warning: oklch(58% 0.16 80);
+  --warning-bg: oklch(95% 0.045 80);
+  --warning-border: oklch(82% 0.08 80);
+  --match-bg: oklch(95% 0.055 80);
+  --match-border: oklch(82% 0.08 80);
+  /* Motion */
+  --ease: cubic-bezier(0.25, 1, 0.5, 1);
+  --duration: 180ms;
+  /* Spacing (4pt base) */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-6: 24px; --sp-8: 32px; --sp-12: 48px;
+  /* Radius */
+  --radius-sm: 4px; --radius-md: 6px; --radius-lg: 8px;
+}
+
+/* === Reset & Base === */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  background: var(--bg-base);
+  font-kerning: normal;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* === Layout === */
+.app { display: flex; flex-direction: column; height: 100vh; }
+.toolbar {
+  display: flex; align-items: center; gap: var(--sp-3); padding: 0 var(--sp-4);
+  height: 48px; background: var(--bg-elevated); border-bottom: 1px solid var(--border);
+  z-index: 10; flex-shrink: 0; position: relative;
+}
+.content { flex: 1; overflow-y: auto; padding: var(--sp-4) var(--sp-6); min-height: 0; }
+.validation-panel { background: var(--bg-elevated); border-top: 1px solid var(--border); max-height: 200px; overflow-y: auto; flex-shrink: 0; }
+
+/* === Toolbar === */
+.toolbar button {
+  padding: var(--sp-1) var(--sp-3); border: 1px solid var(--border); border-radius: var(--radius-md);
+  background: var(--bg-elevated); cursor: pointer; font-size: 0.8125rem; font-weight: 500;
+  color: var(--text-secondary); transition: all var(--duration) var(--ease);
+}
+.toolbar button:hover { background: var(--bg-hover); border-color: oklch(78% 0.015 250); color: var(--text-primary); }
+.toolbar button:active { background: var(--bg-active); transform: scale(0.98); }
+.toolbar button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+.toolbar button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.toolbar button.primary:active { transform: scale(0.98); }
+.toolbar .spacer { flex: 1; }
+.toolbar .filename { color: var(--text-muted); font-size: 0.8125rem; }
+.toolbar .error-badge { background: var(--error); color: var(--accent-text); font-size: 0.6875rem; font-weight: 600; padding: 2px var(--sp-2); border-radius: 10px; }
+
+/* === Employee Card === */
+.emp-card {
+  background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg);
+  margin-bottom: var(--sp-2); overflow: hidden;
+  box-shadow: 0 1px 2px oklch(20% 0.02 250 / 0.05);
+  transition: box-shadow var(--duration) var(--ease), border-color var(--duration) var(--ease);
+  content-visibility: auto; contain-intrinsic-size: 0 42px;
+}
+.emp-card:hover { box-shadow: 0 2px 8px oklch(20% 0.02 250 / 0.08); }
+.emp-card.expanded { box-shadow: 0 4px 16px oklch(20% 0.02 250 / 0.1); border-color: oklch(72% 0.08 255); }
+.emp-card.has-matches { }
+.search-separator { text-align: center; padding: var(--sp-3) 0; color: var(--text-faint); font-size: 0.8125rem; border-top: 1px solid var(--border-subtle); margin-top: var(--sp-2); }
+.emp-card .match-badge { font-size: 0.6875rem; font-weight: 600; padding: 1px var(--sp-2); border-radius: 10px; background: var(--bg-active); color: var(--text-secondary); }
+.emp-card-header {
+  padding: var(--sp-3) var(--sp-4); cursor: pointer; user-select: none;
+  display: flex; align-items: center; gap: var(--sp-3); font-size: 0.8125rem;
+  transition: background var(--duration) var(--ease);
+}
+.emp-card-header:hover { background: var(--bg-hover); }
+.emp-card.expanded .emp-card-header { background: var(--accent-subtle); }
+.emp-card-header .emp-name { font-size: 0.875rem; font-weight: 600; white-space: nowrap; min-width: 160px; color: var(--text-primary); }
+.emp-card-header .info-item { white-space: nowrap; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.emp-card-header .info-label { color: var(--text-faint); margin-right: 3px; }
+.emp-card-header .info-value { font-weight: 500; color: var(--text-primary); }
+.emp-card-header .info-empty { color: var(--text-faint); font-style: italic; }
+.emp-card-header .error-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--error); flex-shrink: 0; }
+.emp-card-header .spacer { flex: 1; }
+
+/* === Card Body (expanded sections) === */
+.emp-card-body { border-top: 1px solid var(--border-subtle); }
+
+/* === Empty State === */
+.empty-state { display: flex; flex-direction: column; align-items: center; padding-top: var(--sp-12); color: var(--text-muted); }
+.drop-zone {
+  border: 2px dashed var(--border); border-radius: var(--radius-lg); padding: var(--sp-12) var(--sp-8);
+  text-align: center; cursor: pointer; max-width: 500px;
+  transition: all var(--duration) var(--ease);
+}
+.drop-zone:hover, .drop-zone.dragover { border-color: var(--accent); background: var(--accent-subtle); }
+.drop-zone h2 { font-size: 1.125rem; color: var(--text-primary); margin-bottom: var(--sp-2); font-weight: 600; }
+.drop-zone p { font-size: 0.875rem; color: var(--text-muted); }
+.drop-zone button {
+  margin-top: var(--sp-4); padding: var(--sp-3) var(--sp-6);
+  font-size: 0.9375rem; font-weight: 500; border: 1px solid var(--accent);
+  border-radius: var(--radius-lg); background: var(--accent); color: var(--accent-text);
+  cursor: pointer; transition: all var(--duration) var(--ease);
+}
+.drop-zone button:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+/* === Sections (Accordion) inside card === */
+.section-card { border-bottom: 1px solid var(--border-subtle); }
+.section-card:last-child { border-bottom: none; }
+.section-header {
+  display: flex; align-items: center; padding: var(--sp-3) var(--sp-4);
+  cursor: pointer; user-select: none; gap: var(--sp-2);
+  transition: background var(--duration) var(--ease);
+}
+.section-header:hover { background: var(--bg-hover); }
+.section-chevron { width: 14px; height: 14px; transition: transform 200ms var(--ease); color: var(--text-muted); flex-shrink: 0; }
+.section-chevron.expanded { transform: rotate(90deg); }
+.section-title { font-size: 0.8125rem; font-weight: 600; color: var(--text-primary); }
+.section-badge { font-size: 0.6875rem; font-weight: 600; padding: 1px var(--sp-1); border-radius: 10px; margin-left: auto; }
+.section-badge.errors { background: var(--error-bg); color: var(--error); }
+.section-body { overflow: hidden; transition: max-height 250ms var(--ease); }
+.section-body.collapsed { max-height: 0 !important; }
+
+/* === Field Table === */
+.field-table { width: 100%; border-collapse: collapse; }
+.field-table tr { border-bottom: 1px solid var(--border-subtle); }
+.field-table tr:last-child { border-bottom: none; }
+.field-table td { padding: 5px var(--sp-3) 5px var(--sp-4); vertical-align: middle; }
+.field-id { font-family: ui-monospace, "Cascadia Code", "Source Code Pro", monospace; font-size: 0.6875rem; color: var(--text-faint); width: 50px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.field-label { font-size: 0.8125rem; color: var(--text-primary); width: 240px; }
+.field-label .xpath { display: block; font-size: 0.625rem; color: var(--text-faint); font-family: ui-monospace, "Cascadia Code", "Source Code Pro", monospace; margin-top: 1px; }
+.field-label .required { color: var(--error); margin-left: 2px; }
+.field-label .pp-required { color: var(--warning); margin-left: 2px; }
+.field-value { font-size: 0.875rem; min-width: 180px; background: var(--bg-base); border-radius: var(--radius-sm); font-variant-numeric: tabular-nums; }
+.field-value .empty { color: var(--text-faint); font-style: italic; font-size: 0.8125rem; }
+.field-value .modified-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-right: var(--sp-1); }
+.field-value input, .field-value select {
+  width: 100%; padding: var(--sp-1) var(--sp-2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); font-size: 0.875rem; font-family: inherit; outline: none;
+  transition: border-color var(--duration) var(--ease), box-shadow var(--duration) var(--ease);
+}
+.field-value input:focus, .field-value select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-focus); }
+.field-row.has-error .field-value input { border-color: var(--error); background: var(--error-bg); }
+.field-row.has-error { background: var(--error-bg); }
+.show-all-toggle { padding: var(--sp-1) var(--sp-4); font-size: 0.75rem; color: var(--accent); cursor: pointer; }
+.show-all-toggle:hover { text-decoration: underline; }
+
+/* === Validation Panel === */
+.validation-header {
+  display: flex; align-items: center; padding: var(--sp-2) var(--sp-4);
+  font-size: 0.8125rem; font-weight: 600; color: var(--text-primary);
+  border-bottom: 1px solid var(--border-subtle); cursor: pointer;
+  transition: background var(--duration) var(--ease);
+}
+.validation-header:hover { background: var(--bg-hover); }
+.validation-list { padding: 0; }
+.validation-item { display: flex; align-items: center; padding: var(--sp-1) var(--sp-4); gap: var(--sp-2); font-size: 0.8125rem; border-bottom: 1px solid var(--border-subtle); }
+.validation-item .severity { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.validation-item .severity.error { background: var(--error); }
+.validation-item .path { color: var(--text-muted); }
+.validation-item .message { flex: 1; color: var(--text-secondary); }
+.validation-item .goto-btn { font-size: 0.75rem; color: var(--accent); cursor: pointer; white-space: nowrap; transition: color var(--duration) var(--ease); }
+.validation-item .goto-btn:hover { color: var(--accent-hover); text-decoration: underline; }
+
+/* === Toast === */
+.toast {
+  position: fixed; bottom: 20px; right: 20px; padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--radius-lg); font-size: 0.8125rem; font-weight: 500; z-index: 100;
+  animation: toast-in 300ms var(--ease);
+}
+.toast.success { background: var(--success-bg); color: oklch(28% 0.08 155); border: 1px solid var(--success-border); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes flash-highlight { 0% { box-shadow: inset 0 0 0 2px var(--accent); } 100% { box-shadow: inset 0 0 0 2px transparent; } }
+.flash { animation: flash-highlight 1.5s var(--ease); }
+
+/* === Scrollbar — thin but visible === */
+.content { scrollbar-width: thin; scrollbar-color: oklch(80% 0.01 250) transparent; }
+.content::-webkit-scrollbar { width: 6px; }
+.content::-webkit-scrollbar-thumb { background: oklch(80% 0.01 250); border-radius: 3px; }
+.content::-webkit-scrollbar-track { background: transparent; }
+
+/* === Stats Bar === */
+.stats-bar { width: 100%; background: var(--bg-elevated); border-bottom: 1px solid var(--border-subtle); flex-shrink: 0; padding: var(--sp-3) 0; }
+.stats-bar-inner { max-width: 1000px; margin: 0 auto; padding: 0 var(--sp-8); font-size: 0.8125rem; color: var(--text-muted); line-height: 1.7; }
+.stats-bar .stat-row { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-4); align-items: center; }
+.stats-bar .stat-label { color: var(--text-faint); }
+.stats-bar .stat-value { font-weight: 600; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.stats-bar .stat-sep { color: var(--border); margin: 0 2px; }
+.stats-bar .stat-error { font-weight: 600; color: var(--error); }
+.stats-bar .stat-ok { font-weight: 600; color: var(--success); }
+.stats-bar .stat-warn { font-weight: 600; color: var(--warning); }
+
+/* === Global Search === */
+.global-search { max-width: 1000px; margin: 0 auto; padding: var(--sp-4) var(--sp-8) var(--sp-3); flex-shrink: 0; width: 100%; }
+.global-search .search-row { display: flex; gap: var(--sp-3); }
+.global-search input {
+  flex: 1; min-width: 0; padding: var(--sp-3) var(--sp-4); border: 2px solid var(--border);
+  border-radius: var(--radius-lg); font-size: 0.9375rem; outline: none;
+  background: var(--bg-elevated); color: var(--text-primary);
+  transition: border-color var(--duration) var(--ease), box-shadow var(--duration) var(--ease);
+}
+.global-search input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-focus); }
+.global-search input::placeholder { color: var(--text-faint); }
+.global-search .match-count { font-size: 0.75rem; color: var(--text-muted); margin-top: var(--sp-1); padding-left: var(--sp-1); }
+.search-help {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  width: 20px; height: 20px; border-radius: 50%; background: var(--bg-active);
+  color: var(--text-muted); font-size: 0.75rem; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; cursor: help;
+  transition: all var(--duration) var(--ease);
+}
+.search-help:hover { background: var(--accent); color: var(--accent-text); }
+
+/* === Table View === */
+.table-view { flex: 1; overflow: auto; min-height: 0; }
+.table-view table { border-collapse: separate; border-spacing: 0; font-size: 0.75rem; width: max-content; font-variant-numeric: tabular-nums; }
+.table-view thead { position: sticky; top: 0; z-index: 3; }
+.table-view th {
+  background: oklch(94% 0.01 250); border-right: 1px solid oklch(82% 0.015 250); border-bottom: 1px solid oklch(82% 0.015 250); padding: var(--sp-2) var(--sp-2);
+  font-size: 0.6875rem; font-weight: 600; text-align: left; white-space: normal;
+  min-width: 80px; vertical-align: top; line-height: 1.3; color: var(--text-primary);
+}
+.table-view th .col-id { font-family: ui-monospace, "Cascadia Code", "Source Code Pro", monospace; color: var(--text-muted); font-size: 0.625rem; display: block; font-weight: 400; }
+.table-view th:first-child { border-left: 1px solid oklch(82% 0.015 250); }
+.table-view th { border-top: 1px solid oklch(82% 0.015 250); }
+.table-view th.name-col { position: sticky; left: 0; z-index: 4; min-width: 150px; background: oklch(89% 0.018 250); }
+.table-view td {
+  border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 3px var(--sp-2); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; max-width: 160px; cursor: pointer; font-size: 0.75rem;
+  transition: background var(--duration) var(--ease);
+}
+.table-view td:hover { background: var(--accent-subtle); }
+.table-view td:first-child { border-left: 1px solid var(--border); }
+.table-view td.name-cell { position: sticky; left: 0; background: var(--bg-surface); font-weight: 500; z-index: 1; min-width: 160px; color: var(--text-primary); }
+.table-view tbody tr:nth-child(odd) td { background: var(--bg-surface); }
+.table-view tbody tr:nth-child(even) td { background: oklch(94.5% 0.008 250); }
+.table-view tbody tr:nth-child(even) td.name-cell { background: oklch(94.5% 0.008 250); }
+.table-view tr.matched td { }
+.table-view tr.matched td.name-cell { }
+.table-view tr.separator-row td { background: var(--bg-base); text-align: center; color: var(--text-faint); font-size: 0.6875rem; border: none; padding: var(--sp-2); }
+.table-view tbody tr td.has-error { background: var(--error-bg); }
+.table-view td.cell-match { }
+.table-view td .cell-empty { color: var(--text-faint); }
+.table-view td input, .table-view td select { width: 100%; padding: 2px var(--sp-1); border: 1px solid var(--accent); border-radius: 2px; font-size: 0.75rem; outline: none; }
+.table-view .error-dot-sm { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--error); margin-left: var(--sp-1); }
+
+/* === Action filter buttons === */
+.action-filter { display: inline-flex; gap: 2px; margin-left: var(--sp-2); }
+.action-filter button {
+  padding: 2px var(--sp-2); font-size: 0.6875rem; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); background: var(--bg-elevated); cursor: pointer;
+  color: var(--text-secondary); transition: all var(--duration) var(--ease);
+}
+.action-filter button:hover { background: var(--bg-hover); }
+.action-filter button.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+
+/* === Requirement badges in table headers === */
+.col-req { display: inline-block; font-size: 0.625rem; font-weight: 700; padding: 0 var(--sp-1); border-radius: 3px; margin-left: 3px; cursor: help; }
+.col-req-P { color: var(--error); background: var(--error-bg); }
+.col-req-N { color: var(--text-muted); background: var(--bg-base); }
+.col-req-PP { color: var(--warning); background: var(--warning-bg); }
+
+/* === Content inner wrapper === */
+.content-inner { max-width: 1000px; margin: 0 auto; padding-left: var(--sp-8); padding-right: var(--sp-8); }
+</style>
+</head>
+<body>
+<div id="app" class="app">
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <img src="abra-logo-2026.svg" alt="ABRA" style="flex-shrink: 0; height: 28px; width: auto;">
+    <span style="font-weight: 600; font-size: 0.875rem; color: var(--text-primary);">JMHZ XML Editor</span>
+    <span class="spacer"></span>
+    <span style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 1px; pointer-events: none;">
+      <span class="filename" v-if="filename" style="pointer-events: auto;">{{ filename }}{{ isDirty ? ' *' : '' }}</span>
+      <span style="font-size: 11px; color: var(--text-muted);">Lokální zpracování v prohlížeči, nic se nikam neposílá</span>
+    </span>
+    <span class="spacer"></span>
+    <button @click="loadFile" v-if="xmlDoc">Nahrát XML</button>
+    <button class="primary" @click="saveFile" v-if="xmlDoc">Uložit XML</button>
+    <button @click="validateAll" v-if="xmlDoc">Validovat</button>
+    <button @click="toggleViewMode" v-if="xmlDoc" style="margin-left: 4px;">Zobrazení: {{ viewMode === 'cards' ? 'Karty' : 'Tabulka' }}</button>
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="stats-bar" v-if="xmlDoc && employees.length > 0">
+   <div class="stats-bar-inner">
+    <div class="stat-row">
+      <span><span class="stat-label">{{ formatName }}</span> <span class="stat-value" v-if="xmlVersion">{{ xmlVersion }}</span></span>
+      <span class="stat-value" v-if="actionSummary">{{ actionSummary }}</span>
+      <span><span class="stat-value">{{ employees.length }}</span> <span class="stat-label">zaměstnanců</span></span>
+      <span v-if="employerName"><span class="stat-label">Zaměstnavatel:</span> <span class="stat-value">{{ employerName }}</span></span>
+      <span v-if="datumVyplneni"><span class="stat-label">Datum:</span> <span class="stat-value">{{ datumVyplneni }}</span></span>
+      <span v-if="czForeignerSplit"><span class="stat-value">{{ czForeignerSplit }}</span></span>
+      <span v-if="hasValidated">
+        <span :class="errors.length > 0 ? 'stat-error' : 'stat-ok'">{{ errors.length }} {{ errors.length === 1 ? 'chyba' : errors.length < 5 ? 'chyby' : 'chyb' }}</span>
+      </span>
+    </div>
+   </div>
+  </div>
+
+  <!-- Global Search -->
+  <div class="global-search" v-if="xmlDoc && employees.length > 0">
+    <div class="search-row">
+      <div style="flex: 1; position: relative; display: flex; align-items: center;">
+        <input ref="searchInput" placeholder="Filtrovat zobrazená pole — ID, název, XML cesta..." @input="onFieldSearchInput" @keydown.escape="clearFieldSearch" style="flex: 1;">
+        <span class="search-help" title="Filtrovat zobrazená pole podle:&#10;• ID pole — např. 10053, 10228&#10;• Názvu pole — např. příjmení, datum narození&#10;• Názvu sekce — např. identifikace, pojištění&#10;• XML cesty — např. client/name, job/rel&#10;&#10;Více výrazů oddělte čárkou — např. 10053, příjmení">?</span>
+      </div>
+      <input placeholder="Hledat v hodnotách..." @input="onValueSearchInput" @keydown.escape="clearValueSearch">
+    </div>
+    <div style="display: flex; align-items: center; gap: 16px; margin-top: 6px; padding-left: 4px;">
+      <span class="match-count" v-if="(fieldSearch || valueSearch) && searchMatchInfo">{{ searchMatchInfo }}</span>
+      <label v-if="hasSearch" style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+        <input type="checkbox" v-model="autoExpandMatched"> Automaticky rozbalit
+      </label>
+      <label v-if="hasSearch" style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+        <input type="checkbox" v-model="showAllFieldsInSearch"> Zobrazit všechna pole
+      </label>
+      <span v-if="viewMode === 'table' && hasActions" style="font-size: 12px; color: #6B7280; display: flex; align-items: center; gap: 4px;">
+        Akce:
+        <span class="action-filter">
+          <button v-for="a in ['', '1', '2', '3', '4', '8']" :key="a" @click="actionFilter = a" :class="{ active: actionFilter === a }">{{ a ? 'A' + a : 'Vše' }}</button>
+        </span>
+      </span>
+    </div>
+  </div>
+
+  <!-- Table View -->
+  <div class="table-view" v-if="xmlDoc && employees.length > 0 && viewMode === 'table'">
+    <table>
+      <thead>
+        <tr>
+          <th class="name-col">{{ rowColumnLabel }}</th>
+          <th v-for="field in visibleColumns" :key="field.csszId || fieldKey(field)"
+              :title="fieldXpath(field)">
+            {{ field.label }}<span class="col-id">{{ field.csszId || '' }}</span>
+            <span v-if="actionFilter && getFieldReq(field, actionFilter)" class="col-req" :class="reqClass(getFieldReq(field, actionFilter))" :title="REQ_TITLES[getFieldReq(field, actionFilter)] || ''">{{ getFieldReq(field, actionFilter) }}</span>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <template v-for="item in displayList" :key="item.type === 'separator' ? 'sep' : item.emp._index">
+          <tr v-if="item.type === 'separator'" class="separator-row">
+            <td :colspan="visibleColumns.length + 1">{{ item.count }} dalších zaměstnanců</td>
+          </tr>
+          <tr v-else :class="{ matched: item.matched }">
+            <td class="name-cell">
+              <span class="error-dot-sm" v-if="getEmployeeErrorCount(item.emp._index) > 0"></span>
+              {{ getRowLabel(item.emp) }}
+            </td>
+            <td v-for="field in visibleColumns" :key="field.csszId || fieldKey(field)"
+                :class="{ 'has-error': hasFieldError(item.emp, field), 'cell-match': item.matched && isFieldMatch(item.emp, field) }"
+                :data-err-id="'e' + item.emp._index + '-' + fieldKey(field)"
+                @click="startEdit(item.emp, field)">
+              <template v-if="editingField === item.emp._index + ':' + fieldKey(field)">
+                <input v-if="field.type === 'date'" type="date" :value="getFieldValue(item.emp, field)"
+                       @blur="commitEdit(item.emp, field, $event.target.value)" @keydown.enter="commitEdit(item.emp, field, $event.target.value)"
+                       @keydown.escape="cancelEdit" autofocus>
+                <select v-else-if="field.type === 'boolean'" :value="getFieldValue(item.emp, field)"
+                        @change="commitEdit(item.emp, field, $event.target.value)" @blur="commitEdit(item.emp, field, $event.target.value)"
+                        @keydown.escape="cancelEdit" autofocus>
+                  <option value="">—</option><option value="A">A</option><option value="N">N</option>
+                </select>
+                <input v-else type="text" :value="getFieldValue(item.emp, field)" :maxlength="field.maxLength || undefined"
+                       @blur="commitEdit(item.emp, field, $event.target.value)" @keydown.enter="commitEdit(item.emp, field, $event.target.value)"
+                       @keydown.escape="cancelEdit" autofocus>
+              </template>
+              <template v-else>
+                <template v-if="getFieldValue(item.emp, field)">{{ getFieldValue(item.emp, field) }}</template>
+                <span class="cell-empty" v-else></span>
+              </template>
+            </td>
+          </tr>
+        </template>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Content: Cards list -->
+  <div class="content" v-if="xmlDoc && employees.length > 0 && viewMode === 'cards'"
+       @dragover.prevent="isDragging = true" @dragleave="isDragging = false" @drop.prevent="handleDrop">
+   <div class="content-inner">
+    <!-- Unified display list: matched + separator + unmatched -->
+    <template v-for="(item, idx) in displayList" :key="item.type === 'separator' ? 'sep' : item.emp._index">
+      <!-- Separator -->
+      <div v-if="item.type === 'separator'" class="search-separator">{{ item.count }} dalších zaměstnanců</div>
+      <!-- Employee card -->
+      <div v-else class="emp-card" :class="{ expanded: isEmployeeExpanded(item.emp._index, item.matched), 'has-matches': item.matched }">
+        <div class="emp-card-header" @click="toggleEmployee(item.emp._index, item.matched)">
+          <span class="emp-name">{{ getRowLabel(item.emp) }}</span>
+          <span class="info-item" v-for="info in rowInfoDefs" :key="info.key"><span class="info-label">{{ info.label }}:</span><span :class="item.emp.fields[info.key]?.value ? 'info-value' : 'info-empty'">{{ item.emp.fields[info.key]?.value || '—' }}</span></span>
+          <span class="spacer"></span>
+          <span class="error-dot" v-if="getEmployeeErrorCount(item.emp._index) > 0" :title="getEmployeeErrorCount(item.emp._index) + ' chyb'"></span>
+          <span class="match-badge" v-if="item.matched && getEmpMatchCount(item.emp._index) > 0">{{ getEmpMatchCount(item.emp._index) }} shod</span>
+        </div>
+        <div class="emp-card-body" v-if="isEmployeeExpanded(item.emp._index, item.matched)">
+          <template v-for="section in getSectionsForEmployee(item.emp)" :key="section.id">
+            <div class="section-card" v-if="!item.matched || sectionHasMatchingFields(item.emp, section) || showAllFieldsInSearch">
+              <div class="section-header" @click.stop="toggleSection(item.emp._index + ':' + section.id)">
+                <svg class="section-chevron" :class="{ expanded: isSectionExpanded(item.emp._index, section.id, item.matched) }" viewBox="0 0 16 16" fill="currentColor"><path d="M6 3l5 5-5 5V3z"/></svg>
+                <span class="section-title">{{ section.label }}</span>
+                <span class="section-badge errors" v-if="getSectionErrorCount(item.emp._index, section.id) > 0">{{ getSectionErrorCount(item.emp._index, section.id) }}</span>
+              </div>
+              <div class="section-body" :class="{ collapsed: !isSectionExpanded(item.emp._index, section.id, item.matched) }"
+                   :style="isSectionExpanded(item.emp._index, section.id, item.matched) ? { maxHeight: (section.fields.length * 38 + 50) + 'px' } : {}">
+                <table class="field-table">
+                  <tr v-for="field in getVisibleFields(item.emp, section, item.matched)" :key="field.csszId || fieldKey(field)"
+                      class="field-row" :class="{ 'has-error': hasFieldError(item.emp, field), 'field-match': item.matched && isFieldMatch(item.emp, field) }" :data-field-id="field.csszId">
+                    <td class="field-id">{{ field.csszId || '' }}</td>
+                    <td class="field-label">{{ field.label }}<span class="xpath">{{ fieldXpath(field) }}</span></td>
+                    <td class="field-value">
+                      <template v-if="editingField === item.emp._index + ':' + fieldKey(field)">
+                        <input v-if="field.type === 'date'" type="date" :value="getFieldValue(item.emp, field)" @blur="commitEdit(item.emp, field, $event.target.value)" @keydown.enter="commitEdit(item.emp, field, $event.target.value)" @keydown.escape="cancelEdit" autofocus>
+                        <select v-else-if="field.type === 'boolean'" :value="getFieldValue(item.emp, field)" @change="commitEdit(item.emp, field, $event.target.value)" @blur="commitEdit(item.emp, field, $event.target.value)" @keydown.escape="cancelEdit" autofocus><option value="">—</option><option value="A">A (Ano)</option><option value="N">N (Ne)</option></select>
+                        <input v-else type="text" :value="getFieldValue(item.emp, field)" :maxlength="field.maxLength || undefined" :inputmode="field.type === 'number' ? 'numeric' : 'text'" @blur="commitEdit(item.emp, field, $event.target.value)" @keydown.enter="commitEdit(item.emp, field, $event.target.value)" @keydown.escape="cancelEdit" autofocus>
+                      </template>
+                      <template v-else>
+                        <span @click.stop="startEdit(item.emp, field)" style="cursor: pointer; display: block; min-height: 24px; padding: 2px 0;">
+                          <span class="modified-dot" v-if="isFieldModified(item.emp, field)"></span>
+                          <template v-if="getFieldValue(item.emp, field)">{{ getFieldValue(item.emp, field) }}</template>
+                          <span class="empty" v-else>—</span>
+                        </span>
+                      </template>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </template>
+   </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="content" v-else-if="!xmlDoc" style="max-width: 100%;">
+    <div class="empty-state">
+      <div class="drop-zone" :class="{ dragover: isDragging }"
+           @dragover.prevent="isDragging = true" @dragleave="isDragging = false"
+           @drop.prevent="handleDrop" @click="loadFile">
+        <p>Přetáhněte nebo klikněte pro načtení XML souboru měsíčního hlášení</p>
+        <button @click.stop="loadFile" style="margin-top: 16px; padding: 10px 28px; font-size: 15px; font-weight: 500; border: 1px solid #D1D5DB; border-radius: 8px; background: #2563EB; color: #fff; cursor: pointer;">Nahrát XML</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Validation Panel -->
+  <div class="validation-panel" v-if="errors.length > 0">
+    <div class="validation-header" @click="validationCollapsed = !validationCollapsed">
+      Validace ({{ errors.length }} {{ errors.length === 1 ? 'chyba' : errors.length < 5 ? 'chyby' : 'chyb' }})
+      {{ validationCollapsed ? '▲' : '▼' }}
+    </div>
+    <div class="validation-list" v-if="!validationCollapsed">
+      <div v-for="(err, i) in errors" :key="i" class="validation-item">
+        <span class="severity" :class="err.severity || 'error'"></span>
+        <span class="path">{{ err.employeeName }} › {{ err.sectionLabel }} ›</span>
+        <span class="message">{{ err.fieldLabel }}: {{ err.message }}</span>
+        <span class="goto-btn" @click="navigateToError(err)">Přejít</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast success" v-if="toastMessage">{{ toastMessage }}</div>
+
+  <!-- Hidden file input -->
+  <input type="file" ref="fileInput" accept=".xml" style="display:none" @change="handleFileSelect">
+</div>
+
+<script>
+// === Active format — set on XML load, used everywhere ===
+let activeFormat = null;
+let SECTIONS = [];
+let FIELDS = [];
+let FIELDS_BY_SECTION = {};
+let SECTION_MAP = {};
+let FIELD_META = [];
+let FOREIGN_KEYWORDS = [];
+let ACTION_LABELS = {};
+let ACTION_SECTIONS = null;
+let FIELD_RULES = {};
+
+function rebuildMetadata(format) {
+  activeFormat = format;
+  SECTIONS = format.sections;
+  FIELDS = format.fields;
+  FIELDS_BY_SECTION = {};
+  FIELDS.forEach(f => { const key = f.section; if (!FIELDS_BY_SECTION[key]) FIELDS_BY_SECTION[key] = []; FIELDS_BY_SECTION[key].push(f); });
+  SECTION_MAP = {};
+  SECTIONS.forEach(s => { SECTION_MAP[s.id] = s; });
+  FOREIGN_KEYWORDS = format.foreignKeywords || [];
+  ACTION_LABELS = format.actionLabels || {};
+  ACTION_SECTIONS = format.actionSections || null;
+  FIELD_RULES = format.fieldRules || {};
+  FIELD_META = FIELDS.map(f => ({
+    ...f,
+    _nLabel: norm(f.label),
+    _nId: f.csszId || '',
+    _nXpath: norm(activeFormat.fieldXpath(f)),
+    _nSecLabel: norm((SECTION_MAP[f.section] || {}).label || ''),
+    _isForeign: !!(SECTION_MAP[f.section] || {})._foreign
+  }));
+}
+
+function detectFormat(xmlDoc) {
+  const root = xmlDoc.documentElement;
+  if (root.localName === 'REGZEC') return REGZEC_CONFIG;
+  if (root.localName === 'jmhz') return JMHZ_CONFIG;
+  alert('Neznámý formát XML');
+  return null;
+}
+
+// For JMHZ: find the form variant child (bezPriznaku, odlozenyPrijem, etc.)
+function getFormRoot(rowEl, format) {
+  if (format.fieldMode === 'attributes') return rowEl;
+  if (!format.formVariants) return rowEl;
+  for (const v of format.formVariants) {
+    const child = getChildByLocalNameNS(rowEl, v, format.formNs);
+    if (child) return child;
+  }
+  return rowEl;
+}
+
+// For JMHZ: find rows (formulareOsob wrappers -> formularOsoby inner elements)
+function findRows(doc, format) {
+  if (format.rowsContainer) {
+    // REGZEC: employees/employee
+    const container = doc.getElementsByTagNameNS(format.ns, format.rowsContainer)[0];
+    return container ? Array.from(container.getElementsByTagNameNS(format.ns, format.rowElement)) : [];
+  } else if (format.rowParentElement) {
+    // JMHZ: formulareOsob contains multiple formularOsoby children
+    const wrappers = doc.getElementsByTagNameNS(format.ns, format.rowParentElement);
+    const rows = [];
+    for (const w of wrappers) {
+      for (let i = 0; i < w.childNodes.length; i++) {
+        const ch = w.childNodes[i];
+        if (ch.nodeType === 1 && ch.localName === format.rowElement) rows.push(ch);
+      }
+    }
+    return rows;
+  } else {
+    return Array.from(doc.getElementsByTagNameNS(format.ns, format.rowElement));
+  }
+}
+
+const REQ_TITLES = { 'P': 'Povinné', 'N': 'Nepovinné', 'PP': 'Podmíněně povinné', 'P-OST': 'Povinné (pouze OST)', 'N-OST': 'Nepovinné (pouze OST)', '/': 'Zakázané' };
+
+function getFieldReq(field, action) {
+  if (!action || !field.csszId) return null;
+  const rules = FIELD_RULES[field.csszId];
+  return rules ? (rules[action] || null) : null;
+}
+
+function reqClass(req) {
+  if (!req) return '';
+  if (req.startsWith('P')) return 'col-req-P';
+  if (req === 'PP') return 'col-req-PP';
+  return 'col-req-N';
+}
+
+function norm(s) { return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+
+
+const { createApp, reactive, ref, computed, nextTick, watch } = Vue;
+
+createApp({
+  setup() {
+    const xmlDoc = ref(null);
+    const filename = ref('');
+    const employees = ref([]);
+    const expandedEmployee = ref(-1);
+    const fieldSearch = ref('');
+    const valueSearch = ref('');
+    const formatRef = ref(null);
+    let _searchTimer = null;
+    function onFieldSearchInput(e) {
+      clearTimeout(_searchTimer);
+      const val = e.target.value;
+      _searchTimer = setTimeout(() => { fieldSearch.value = val; }, 250);
+    }
+    function onValueSearchInput(e) {
+      clearTimeout(_searchTimer);
+      const val = e.target.value;
+      _searchTimer = setTimeout(() => { valueSearch.value = val; }, 250);
+    }
+    function clearFieldSearch(e) { e.target.value = ''; fieldSearch.value = ''; }
+    function clearValueSearch(e) { e.target.value = ''; valueSearch.value = ''; }
+    const expandedSections = reactive(new Set());
+    const showAllSections = reactive(new Set());
+    const isDirty = ref(false);
+    const isDragging = ref(false);
+    const errors = ref([]);
+    const validationCollapsed = ref(false);
+    const editingField = ref(null);
+    const toastMessage = ref('');
+    const fileHandle = ref(null);
+    const fileInput = ref(null);
+    const searchInput = ref(null);
+    const undoStack = ref([]);
+    const redoStack = ref([]);
+    const actionLabels = computed(() => { const f = formatRef.value; return f ? (f.actionLabels || {}) : {}; });
+    const formatName = computed(() => { const f = formatRef.value; return f ? f.name : ''; });
+    const hasActions = computed(() => { const f = formatRef.value; return f ? f.hasActions : false; });
+    const rowInfoDefs = computed(() => { const f = formatRef.value; return f ? (f.getRowInfo || []) : []; });
+    function getRowLabel(emp) { return activeFormat ? activeFormat.getRowLabel(emp.fields) : (emp.surname + ' ' + emp.firstName); }
+    const rowColumnLabel = computed(() => { const f = formatRef.value; return f ? (f.rowColumnLabel || 'Jméno') : 'Jméno'; });
+    function fieldXpath(field) { return activeFormat ? activeFormat.fieldXpath(field) : (field.section + '/@' + (field.attr || field.element)); }
+
+    function parseXml(xmlText) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(xmlText, 'application/xml');
+      if (doc.querySelector('parsererror')) { alert('Chyba při parsování XML:\n' + doc.querySelector('parsererror').textContent); return; }
+      const format = detectFormat(doc);
+      if (!format) return;
+      rebuildMetadata(format);
+      formatRef.value = format;
+      xmlDoc.value = doc;
+      employees.value = [];
+      errors.value = [];
+      expandedEmployee.value = -1;
+      hasValidated.value = false;
+      validationErrors.value = new Map();
+      actionFilter.value = '';
+      fieldSearch.value = '';
+      valueSearch.value = '';
+      const rowElements = findRows(doc, activeFormat);
+      for (let i = 0; i < rowElements.length; i++) employees.value.push(buildEmployeeMirror(rowElements[i], i));
+      isDirty.value = false;
+      updateTitle();
+    }
+
+    function buildEmployeeMirror(rowEl, index) {
+      const format = activeFormat;
+      const fields = {};
+      const formRoot = getFormRoot(rowEl, format);
+      // Header fields (REGZEC: sqnr, dep, act, dat, fro as attributes on employee element)
+      format.headerFields.forEach(attr => {
+        const v = rowEl.getAttribute(attr) || '';
+        fields[format.sections[0].id + '/' + attr] = { value: v, _norm: norm(v), el: rowEl, attr, modified: false };
+      });
+      // Section fields
+      format.sections.forEach(sec => {
+        if (sec.id === (format.headerFields.length > 0 ? format.sections[0].id : null)) return;
+        const sectionFields = FIELDS_BY_SECTION[sec.id] || [];
+        const targetEl = format.resolveSection(formRoot, sec);
+        sectionFields.forEach(f => {
+          const v = format.readField(targetEl, f);
+          const attrKey = format.fieldAttrKey(f);
+          fields[f.section + '/' + attrKey] = { value: v, _norm: norm(v), el: targetEl, attr: attrKey, modified: false, _field: f };
+        });
+      });
+      const label = format.getRowLabel(fields);
+      const labelParts = label.split(/\s+/).filter(Boolean);
+      return {
+        _index: index, _empEl: rowEl, _formRoot: formRoot,
+        sqnr: fields[format.sections[0]?.id + '/sqnr']?.value || String(index + 1),
+        act: fields[format.sections[0]?.id + '/act']?.value || '',
+        dat: fields[format.sections[0]?.id + '/dat']?.value || '',
+        dep: fields[format.sections[0]?.id + '/dep']?.value || '',
+        surname: labelParts[0] || '',
+        firstName: labelParts.slice(1).join(' ') || '',
+        empType: format.determineRowType(fields),
+        fields
+      };
+    }
+
+    // Search: builds a map of empIndex -> Set of matching field keys
+    const hasValidated = ref(false);
+
+    // === Stats computeds ===
+    const xmlVersion = computed(() => {
+      if (!xmlDoc.value) return '';
+      const root = xmlDoc.value.documentElement;
+      return root ? (root.getAttribute('version') || root.getAttribute('verze') || '') : '';
+    });
+
+    const actionSummary = computed(() => {
+      const f = formatRef.value;
+      if (!f || !f.hasActions) return '';
+      if (!employees.value.length) return '';
+      const counts = {};
+      employees.value.forEach(e => { counts[e.act] = (counts[e.act] || 0) + 1; });
+      const keys = Object.keys(counts).filter(Boolean);
+      if (!keys.length) return '';
+      if (keys.length === 1) {
+        const act = keys[0];
+        return (f.actionLabels || {})[act] || ('A' + act);
+      }
+      return keys.map(a => 'A' + a + ': ' + counts[a]).join(', ');
+    });
+
+    const employerName = computed(() => {
+      const f = formatRef.value;
+      if (!f || !f.stats.employer) return '';
+      if (!employees.value.length) return '';
+      return employees.value[0].fields[f.stats.employer]?.value || '';
+    });
+
+    const datumVyplneni = computed(() => {
+      const f = formatRef.value;
+      if (!f || !f.stats.date) return '';
+      if (!employees.value.length) return '';
+      const dates = new Set(employees.value.map(e => e.dat).filter(Boolean));
+      return dates.size === 1 ? [...dates][0] : '';
+    });
+
+    const czForeignerSplit = computed(() => {
+      const f = formatRef.value;
+      if (!f || !f.stats.citizenship) return '';
+      if (!employees.value.length) return '';
+      const citizenKey = f.stats.citizenship;
+      let cz = 0, foreign = 0;
+      employees.value.forEach(e => {
+        const cnt = e.fields[citizenKey]?.value || '';
+        if (cnt === 'CZ') cz++; else if (cnt) foreign++; else cz++;
+      });
+      if (foreign === 0) return cz + ' CZ';
+      if (cz === 0) return foreign + ' cizinců';
+      return cz + ' CZ, ' + foreign + ' cizinců';
+    });
+
+    const partialAcceptValue = computed(() => {
+      const f = formatRef.value;
+      if (!f || !f.stats.partialAccept) return '';
+      if (!xmlDoc.value) return '';
+      const root = xmlDoc.value.documentElement;
+      return root ? (root.getAttribute('partialAccept') || '') : '';
+    });
+
+    function splitQuery(raw) { return raw.split(',').map(s => norm(s.trim())).filter(Boolean); }
+
+    const hasSearch = computed(() => {
+      const fp = splitQuery(fieldSearch.value);
+      const vp = splitQuery(valueSearch.value);
+      return fp.length > 0 || vp.length > 0;
+    });
+    // Clean up collapsed state when search is cleared (outside computed to avoid side effects)
+    watch(hasSearch, (val) => {
+      if (!val) { collapsedSections.clear(); collapsedMatchedEmps.clear(); }
+    });
+
+    const searchMatches = computed(() => {
+      const fqParts = splitQuery(fieldSearch.value);
+      const vqParts = splitQuery(valueSearch.value);
+      if (!fqParts.length && !vqParts.length) return null;
+      const matches = new Map();
+      employees.value.forEach(emp => {
+        const empMatches = new Set();
+        FIELD_META.forEach(f => {
+          const key = fieldKey(f);
+          const fieldRef = emp.fields[key];
+          const nVal = fieldRef?._norm || '';
+          const foreignHit = f._isForeign && fqParts.some(fq => FOREIGN_KEYWORDS.some(kw => kw.includes(fq) || fq.includes(kw)));
+          const fieldHit = fqParts.length === 0 || fqParts.some(fq => f._nId.includes(fq) || f._nLabel.includes(fq) || f._nXpath.includes(fq) || f._nSecLabel.includes(fq)) || foreignHit;
+          const valHit = vqParts.length === 0 || (nVal && vqParts.some(vq => nVal.includes(vq)));
+          if (fieldHit && valHit && (fqParts.length > 0 || vqParts.length > 0)) {
+            empMatches.add(key);
+          }
+        });
+        if (fqParts.length > 0) {
+          const nEmpName = norm(emp.surname + ' ' + emp.firstName);
+          if (fqParts.some(fq => nEmpName.includes(fq) || emp.sqnr.includes(fq))) {
+            empMatches.add('_card_');
+          }
+        }
+        if (empMatches.size > 0) matches.set(emp._index, empMatches);
+      });
+      return matches;
+    });
+
+    function sortByName(list) {
+      return [...list].sort((a, b) => {
+        const na = (a.surname + ' ' + a.firstName).toLowerCase();
+        const nb = (b.surname + ' ' + b.firstName).toLowerCase();
+        return na < nb ? -1 : na > nb ? 1 : 0;
+      });
+    }
+
+    // Memoized sort — only re-sorts when employees array changes, not on search
+    const sortedEmployees = computed(() => sortByName(employees.value));
+
+    const matchedEmployees = computed(() => {
+      if (!searchMatches.value) return [];
+      return sortedEmployees.value.filter(e => searchMatches.value.has(e._index));
+    });
+
+    const unmatchedEmployees = computed(() => {
+      if (!searchMatches.value) return sortedEmployees.value;
+      return sortedEmployees.value.filter(e => !searchMatches.value.has(e._index));
+    });
+
+    // Merged display list: matched cards + separator + unmatched cards
+    const displayList = computed(() => {
+      if (!hasSearch.value) return sortByName(employees.value).map(e => ({ type: 'card', emp: e, matched: false }));
+      const matched = matchedEmployees.value.map(e => ({ type: 'card', emp: e, matched: true }));
+      const unmatched = unmatchedEmployees.value.map(e => ({ type: 'card', emp: e, matched: false }));
+      if (matched.length && unmatched.length) return [...matched, { type: 'separator', count: unmatched.length }, ...unmatched];
+      return [...matched, ...unmatched];
+    });
+
+    // Keep for backward compat (validation panel etc.)
+    const filteredEmployees = computed(() => {
+      if (!searchMatches.value) return sortByName(employees.value);
+      return [...matchedEmployees.value, ...unmatchedEmployees.value];
+    });
+
+    const searchMatchInfo = computed(() => {
+      if (!searchMatches.value) return '';
+      let totalFields = 0;
+      searchMatches.value.forEach(s => { s.forEach(k => { if (k !== '_card_') totalFields++; }); });
+      const empCount = searchMatches.value.size;
+      return totalFields + ' shod u ' + empCount + ' zaměstnanců';
+    });
+
+    function isFieldMatch(emp, field) {
+      if (!searchMatches.value) return false;
+      const empMatches = searchMatches.value.get(emp._index);
+      if (!empMatches) return false;
+      return empMatches.has(fieldKey(field));
+    }
+
+    function getEmpMatchCount(empIndex) {
+      if (!searchMatches.value) return 0;
+      const matches = searchMatches.value.get(empIndex);
+      if (!matches) return 0;
+      let count = 0;
+      matches.forEach(k => { if (k !== '_card_') count++; });
+      return count;
+    }
+
+    function toggleEmployee(index, isMatched) {
+      if (isMatched && hasSearch.value) {
+        if (collapsedMatchedEmps.has(index)) collapsedMatchedEmps.delete(index);
+        else collapsedMatchedEmps.add(index);
+      } else {
+        expandedEmployee.value = expandedEmployee.value === index ? -1 : index;
+      }
+    }
+
+    const collapsedMatchedEmps = reactive(new Set());
+    const showAllFieldsInSearch = ref(false);
+    const viewMode = ref('table');
+    const actionFilter = ref('');
+    function toggleViewMode() { viewMode.value = viewMode.value === 'cards' ? 'table' : 'cards'; }
+
+    // Table view: which columns to show (filtered by field search)
+    const visibleColumns = computed(() => {
+      let cols = FIELD_META;
+      // Action filter: only show sections relevant to the selected action
+      const actSections = ACTION_SECTIONS ? ACTION_SECTIONS[actionFilter.value] : null;
+      if (actSections) {
+        cols = cols.filter(f => actSections.includes(f.section));
+        // Also hide fields with "/" requirement for this action
+        cols = cols.filter(f => {
+          const req = getFieldReq(f, actionFilter.value);
+          return req !== '/';
+        });
+      }
+      // Field search filter
+      const fqParts = splitQuery(fieldSearch.value);
+      if (fqParts.length) {
+        cols = cols.filter(f => {
+          const foreignHit = f._isForeign && fqParts.some(fq => FOREIGN_KEYWORDS.some(kw => kw.includes(fq) || fq.includes(kw)));
+          return fqParts.some(fq => f._nId.includes(fq) || f._nLabel.includes(fq) || f._nXpath.includes(fq)) || foreignHit;
+        });
+      }
+      return cols;
+    });
+    const autoExpandMatched = ref(true);
+
+    function isEmployeeExpanded(index, isMatched) {
+      if (isMatched && hasSearch.value && autoExpandMatched.value) {
+        return !collapsedMatchedEmps.has(index);
+      }
+      return expandedEmployee.value === index;
+    }
+
+    function sectionHasMatchingFields(emp, section) {
+      if (!searchMatches.value?.has(emp._index)) return false;
+      const matches = searchMatches.value.get(emp._index);
+      return section.fields.some(f => matches.has(fieldKey(f)));
+    }
+
+    function getSectionsForEmployee(emp) {
+      return SECTIONS.map(sec => ({ ...sec, fields: FIELDS_BY_SECTION[sec.id] || [] })).filter(sec => sec.fields.length > 0);
+    }
+
+    function toggleSection(key) {
+      const parts = key.split(':');
+      const empIdx = parseInt(parts[0]);
+      const secId = parts.slice(1).join(':');
+      if (isSectionExpanded(empIdx, secId)) {
+        expandedSections.delete(key);
+        collapsedSections.add(key);
+      } else {
+        expandedSections.add(key);
+        collapsedSections.delete(key);
+      }
+    }
+    const collapsedSections = reactive(new Set()); // manually collapsed despite search match
+
+    function isSectionExpanded(empIdx, secId, isMatched) {
+      const key = empIdx + ':' + secId;
+      if (collapsedSections.has(key)) return false;
+      // For matched employees during search: auto-expand sections with matching fields
+      if (isMatched && hasSearch.value && searchMatches.value?.has(empIdx)) {
+        const matches = searchMatches.value.get(empIdx);
+        const sectionFields = FIELDS_BY_SECTION[secId] || [];
+        if (sectionFields.some(f => matches.has(fieldKey(f)))) return true;
+      }
+      return expandedSections.has(key);
+    }
+    function toggleShowAll(key) { showAllSections.has(key) ? showAllSections.delete(key) : showAllSections.add(key); }
+    function isShowAll(empIdx, secId) { return showAllSections.has(empIdx + ':' + secId); }
+
+    function fieldKey(field) { return field.section + '/' + (activeFormat ? activeFormat.fieldAttrKey(field) : (field.attr || field.element)); }
+    function getFieldValue(emp, field) { return emp.fields[fieldKey(field)]?.value || ''; }
+    function isFieldModified(emp, field) { return emp.fields[fieldKey(field)]?.modified || false; }
+    function getFieldRequirement(field) { return null; }
+    function getFieldError(field) { return null; }
+
+    function getVisibleFields(emp, section, isMatched) {
+      if (isMatched && hasSearch.value && searchMatches.value?.has(emp._index)) {
+        if (showAllFieldsInSearch.value) return section.fields;
+        const matches = searchMatches.value.get(emp._index);
+        const filtered = section.fields.filter(f => matches.has(fieldKey(f)));
+        return filtered.length > 0 ? filtered : section.fields;
+      }
+      return section.fields;
+    }
+
+    function startEdit(emp, field) {
+      editingField.value = emp._index + ':' + fieldKey(field);
+      nextTick(() => { const el = document.querySelector('.field-value input, .field-value select'); if (el) el.focus(); });
+    }
+    function commitEdit(emp, field, newValue) {
+      const key = fieldKey(field);
+      const fieldRef = emp.fields[key];
+      if (!fieldRef) return;
+      const oldValue = fieldRef.value;
+      if (oldValue !== newValue) {
+        fieldRef.value = newValue;
+        fieldRef._norm = norm(newValue);
+        fieldRef.modified = true;
+        if (fieldRef.el) { activeFormat.writeField(fieldRef, newValue); }
+        // Update cached shortcut fields
+        const newLabel = activeFormat.getRowLabel(emp.fields);
+        const lp = newLabel.split(/\s+/).filter(Boolean);
+        emp.surname = lp[0] || '';
+        emp.firstName = lp.slice(1).join(' ') || '';
+        if (key.endsWith('/act')) emp.act = newValue;
+        if (key.endsWith('/dep')) emp.dep = newValue;
+        undoStack.value.push({ empIndex: emp._index, key, oldValue, newValue });
+        if (undoStack.value.length > 200) undoStack.value.shift();
+        redoStack.value = [];
+        isDirty.value = true;
+        updateTitle();
+      }
+      editingField.value = null;
+    }
+    function cancelEdit() { editingField.value = null; }
+
+    function loadFile() { fileInput.value?.click(); }
+    function handleFileSelect(e) {
+      const file = e.target.files[0]; if (!file) return;
+      filename.value = file.name;
+      fileHandle.value = null;
+      const reader = new FileReader();
+      reader.onload = (ev) => parseXml(ev.target.result);
+      reader.readAsText(file);
+      e.target.value = '';
+    }
+    function handleDrop(e) {
+      isDragging.value = false;
+      const file = e.dataTransfer?.files[0];
+      if (!file || !file.name.endsWith('.xml')) return;
+      filename.value = file.name;
+      fileHandle.value = null;
+      const reader = new FileReader();
+      reader.onload = (ev) => parseXml(ev.target.result);
+      reader.readAsText(file);
+    }
+    async function saveFile() {
+      if (!xmlDoc.value) return;
+      const serializer = new XMLSerializer();
+      let xmlString = serializer.serializeToString(xmlDoc.value);
+      if (!xmlString.startsWith('<?xml')) xmlString = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + xmlString;
+      const suggestedName = filename.value || 'JMHZ.xml';
+      if ('showSaveFilePicker' in window) {
+        try {
+          const handle = fileHandle.value || await window.showSaveFilePicker({ suggestedName, types: [{ description: 'XML', accept: { 'application/xml': ['.xml'] } }] });
+          fileHandle.value = handle;
+          const writable = await handle.createWritable(); await writable.write(xmlString); await writable.close();
+          showToast('Uloženo: ' + suggestedName); isDirty.value = false; updateTitle(); return;
+        } catch (e) { if (e.name === 'AbortError') return; }
+      }
+      const blob = new Blob([xmlString], { type: 'application/xml' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = suggestedName; a.click();
+      showToast('Staženo: ' + suggestedName); isDirty.value = false; updateTitle();
+    }
+    function showToast(msg) { toastMessage.value = msg; setTimeout(() => { toastMessage.value = ''; }, 2500); }
+    function updateTitle() { document.title = (isDirty.value ? '* ' : '') + (filename.value || 'JMHZ XML Editor'); }
+
+    // === XSD Validation with error mapping ===
+    // validationErrors: Map<empIndex, Map<fieldKey, string[]>> for field-level error lookup
+    const validationErrors = ref(new Map());
+
+    async function validateAll() {
+      if (!xmlDoc.value) return;
+      errors.value = [];
+      validationErrors.value = new Map();
+      hasValidated.value = true;
+
+      const serializer = new XMLSerializer();
+      let xmlString = serializer.serializeToString(xmlDoc.value);
+      if (!xmlString.startsWith('<?xml')) xmlString = '<?xml version="1.0" encoding="UTF-8"?>\n' + xmlString;
+
+      // Build line → employee index map
+      const lines = xmlString.split('\n');
+      const empStartLines = [];
+      let empIdx = 0;
+      const rowElName = activeFormat.rowElement;
+      const rowPattern = new RegExp('<[a-zA-Z0-9]*:?' + rowElName + '[\\s>]');
+      lines.forEach((line, i) => {
+        if (rowPattern.test(line)) {
+          empStartLines.push({ line: i + 1, index: empIdx++ });
+        }
+      });
+      function lineToEmpIndex(lineNum) {
+        let idx = -1;
+        for (const entry of empStartLines) {
+          if (entry.line <= lineNum) idx = entry.index;
+          else break;
+        }
+        return idx;
+      }
+
+      // Build schema array with named files (xs:import resolves by filename)
+      const SCHEMA_MAP = { 'DEFAULT_SCHEMAS': DEFAULT_SCHEMAS, 'JMHZ_SCHEMAS': JMHZ_SCHEMAS };
+      const schemas = SCHEMA_MAP[activeFormat.schemasKey] || DEFAULT_SCHEMAS;
+      const mainSchemaName = activeFormat.mainSchema || null;
+      let validateOpts;
+      if (mainSchemaName && schemas[mainSchemaName]) {
+        // Multi-namespace: pass main schema as schema, rest as preload for import resolution
+        const mainSchema = [{ fileName: mainSchemaName, contents: schemas[mainSchemaName] }];
+        const preload = Object.keys(schemas).filter(n => n !== mainSchemaName).map(name => ({ fileName: name, contents: schemas[name] }));
+        validateOpts = { xml: [{ fileName: 'document.xml', contents: xmlString }], schema: mainSchema, preload };
+      } else {
+        const schemaFiles = Object.keys(schemas).map(name => ({ fileName: name, contents: schemas[name] }));
+        validateOpts = { xml: [{ fileName: 'document.xml', contents: xmlString }], schema: schemaFiles };
+      }
+
+      try {
+        const result = await validateXML(validateOpts);
+
+        if (!result.valid && result.errors.length > 0) {
+          result.errors.forEach(err => {
+            const errMsg = err.rawMessage || err.message || '';
+            let lineNum = -1;
+            if (err.loc && err.loc.lineNumber) lineNum = err.loc.lineNumber;
+
+            const ei = lineToEmpIndex(lineNum);
+            const emp = ei >= 0 ? employees.value[ei] : null;
+            const employeeName = emp ? getRowLabel(emp) : '';
+
+            let elementName = '';
+            const elemMatch = errMsg.match(/Element '\{[^}]*\}([^']+)'/);
+            if (elemMatch) elementName = elemMatch[1];
+
+            let attrName = '';
+            const attrMatch = errMsg.match(/attribute '([^']+)'/);
+            if (attrMatch) attrName = attrMatch[1];
+
+            let fieldKey = '';
+            let sectionLabel = elementName;
+            if (attrName) {
+              // REGZEC: error on attribute within an element
+              const attrOrElement = attrName;
+              const field = FIELDS.find(f => (f.attr === attrOrElement || f.element === attrOrElement) && (
+                f.section === elementName ||
+                f.section.endsWith('/' + elementName) ||
+                f.section.split('/').pop() === elementName
+              ));
+              if (field) {
+                fieldKey = field.section + '/' + (activeFormat ? activeFormat.fieldAttrKey(field) : (field.attr || field.element));
+                const sec = SECTION_MAP[field.section];
+                sectionLabel = sec ? sec.label : elementName;
+              } else {
+                fieldKey = elementName + '/' + attrName;
+              }
+            } else if (elementName) {
+              // JMHZ: error on element itself (element IS the field)
+              const field = FIELDS.find(f => (f.element === elementName || f.attr === elementName));
+              if (field) {
+                fieldKey = field.section + '/' + (activeFormat ? activeFormat.fieldAttrKey(field) : (field.attr || field.element));
+                const sec = SECTION_MAP[field.section];
+                sectionLabel = sec ? sec.label : elementName;
+                attrName = elementName;
+              }
+            }
+
+            if (ei >= 0 && fieldKey) {
+              if (!validationErrors.value.has(ei)) validationErrors.value.set(ei, new Map());
+              const empErrors = validationErrors.value.get(ei);
+              if (!empErrors.has(fieldKey)) empErrors.set(fieldKey, []);
+              empErrors.get(fieldKey).push(err.message);
+            }
+
+            errors.value.push({
+              severity: 'error', empIndex: ei, employeeName, sectionLabel,
+              fieldLabel: attrName, fieldKey, message: err.message
+            });
+          });
+          showToast(errors.value.length + ' chyb nalezeno');
+        } else {
+          showToast('Validace OK — žádné chyby');
+        }
+      } catch (e) {
+        console.error('Validation error:', e);
+        errors.value.push({ severity: 'error', empIndex: -1, employeeName: '', sectionLabel: '', fieldLabel: '', fieldKey: '', message: 'Chyba validace: ' + String(e) });
+        showToast('Chyba při validaci');
+      }
+    }
+
+    function hasFieldError(emp, field) {
+      const empErrors = validationErrors.value.get(emp._index);
+      if (!empErrors) return false;
+      return empErrors.has(fieldKey(field));
+    }
+
+    function getFieldErrorMsg(emp, field) {
+      const empErrors = validationErrors.value.get(emp._index);
+      if (!empErrors) return '';
+      const msgs = empErrors.get(fieldKey(field));
+      return msgs ? msgs.join('\n') : '';
+    }
+
+    function getSectionErrorCount(empIndex, sectionId) {
+      const empErrors = validationErrors.value.get(empIndex);
+      if (!empErrors) return 0;
+      let count = 0;
+      const sectionFields = FIELDS_BY_SECTION[sectionId] || [];
+      sectionFields.forEach(f => { if (empErrors.has(fieldKey(f))) count++; });
+      return count;
+    }
+
+    function getEmployeeErrorCount(empIndex) {
+      const empErrors = validationErrors.value.get(empIndex);
+      return empErrors ? empErrors.size : 0;
+    }
+
+    function navigateToError(err) {
+      if (err.empIndex >= 0) {
+        if (viewMode.value === 'table') {
+          // Table view: scroll to the error cell
+          nextTick(() => {
+            const el = document.querySelector('[data-err-id="e' + err.empIndex + '-' + (err.fieldKey || '') + '"]');
+            if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1500); }
+          });
+        } else {
+          // Card view: expand card and section, scroll to field
+          expandedEmployee.value = err.empIndex;
+          if (err.fieldKey) {
+            const sectionId = err.fieldKey.substring(0, err.fieldKey.lastIndexOf('/'));
+            const secKey = err.empIndex + ':' + sectionId;
+            expandedSections.add(secKey);
+            collapsedSections.delete(secKey);
+            nextTick(() => {
+              const el = document.querySelector('[data-field-id="' + (err.fieldLabel || '') + '"]');
+              if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1500); }
+            });
+          }
+        }
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 'o') { e.preventDefault(); loadFile(); }
+      if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveFile(); }
+      if (e.ctrlKey && e.key === 'f') { e.preventDefault(); searchInput.value?.focus(); }
+      if (e.ctrlKey && e.key === 'z') {
+        e.preventDefault();
+        if (undoStack.value.length) {
+          const entry = undoStack.value.pop();
+          const emp = employees.value[entry.empIndex];
+          if (emp?.fields[entry.key]) {
+            emp.fields[entry.key].value = entry.oldValue;
+            const fr = emp.fields[entry.key];
+            if (fr.el) { activeFormat.writeField(fr, entry.oldValue); }
+          }
+          redoStack.value.push(entry);
+        }
+      }
+      if (e.ctrlKey && e.key === 'y') {
+        e.preventDefault();
+        if (redoStack.value.length) {
+          const entry = redoStack.value.pop();
+          const emp = employees.value[entry.empIndex];
+          if (emp?.fields[entry.key]) {
+            emp.fields[entry.key].value = entry.newValue;
+            const fr = emp.fields[entry.key];
+            if (fr.el) { activeFormat.writeField(fr, entry.newValue); }
+          }
+          undoStack.value.push(entry);
+        }
+      }
+    });
+    window.addEventListener('beforeunload', (e) => { if (isDirty.value) { e.preventDefault(); e.returnValue = ''; } });
+    updateTitle();
+
+    return {
+      xmlDoc, filename, employees, expandedEmployee, fieldSearch, valueSearch, expandedSections, showAllSections,
+      isDirty, isDragging, errors, validationCollapsed, editingField, toastMessage, fileInput, searchInput,
+      actionLabels, formatName, hasActions, rowInfoDefs, rowColumnLabel, getRowLabel, fieldXpath,
+      displayList, filteredEmployees, matchedEmployees, unmatchedEmployees, searchMatchInfo, isFieldMatch, isEmployeeExpanded, getEmpMatchCount, sectionHasMatchingFields, showAllFieldsInSearch, autoExpandMatched,
+      onFieldSearchInput, onValueSearchInput, clearFieldSearch, clearValueSearch,
+      hasSearch, hasValidated, xmlVersion, actionSummary, employerName, datumVyplneni, czForeignerSplit, partialAcceptValue,
+      viewMode, toggleViewMode, visibleColumns, actionFilter, getFieldReq, reqClass, REQ_TITLES,
+      toggleEmployee, getSectionsForEmployee, toggleSection, isSectionExpanded,
+      fieldKey, getFieldValue, isFieldModified, getFieldRequirement, hasFieldError, getFieldErrorMsg,
+      getVisibleFields, startEdit, commitEdit, cancelEdit,
+      loadFile, handleFileSelect, handleDrop, saveFile, validateAll, getSectionErrorCount,
+      getEmployeeErrorCount, navigateToError
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
