@@ -17,6 +17,16 @@ function getChildByLocalNameNS(parent, localName, ns) {
   return null;
 }
 
+function getAllChildrenByLocalNameNS(parent, localName, ns) {
+  if (!parent) return [];
+  const result = [];
+  for (let i = 0; i < parent.childNodes.length; i++) {
+    const ch = parent.childNodes[i];
+    if (ch.nodeType === 1 && ch.localName === localName && (!ns || ch.namespaceURI === ns)) result.push(ch);
+  }
+  return result;
+}
+
 const REGZEC_CONFIG = {
   name: 'REGZEC',
   ns: 'http://schemas.cssz.cz/REGZEC/2025',
@@ -373,14 +383,14 @@ const JMHZ_CONFIG = {
     { id: 'souhrnDataZec/zvlastniSazbaDane', label: 'Výpočet daně podle zvláštní sazby daně' },
     { id: 'souhrnDataZec/prohlaseniPoplatnikaDane', label: 'Prohlášení poplatníka daně' },
     { id: 'souhrnDataZec/prohlaseniPoplatnikaDane/zvyhodneniDetiMesic', label: 'Daňové zvýhodnění na děti (měsíc)' },
-    { id: 'souhrnDataZec/prohlaseniPoplatnikaDane/zvyhodneniDetiMesic/jineOsoby/jinaOsoba', label: 'Jiná osoba vyživující děti' },
-    { id: 'souhrnDataZec/prohlaseniPoplatnikaDane/zvyhodneniDetiMesic/vyzivovaneDeti/vyzivovaneDite', label: 'Vyživované dítě (měsíc)' },
+    { id: 'souhrnDataZec/prohlaseniPoplatnikaDane/zvyhodneniDetiMesic/jineOsoby/jinaOsoba', label: 'Jiná osoba vyživující děti', repeating: true },
+    { id: 'souhrnDataZec/prohlaseniPoplatnikaDane/zvyhodneniDetiMesic/vyzivovaneDeti/vyzivovaneDite', label: 'Vyživované dítě (měsíc)', repeating: true },
     { id: 'souhrnDataZec/rocniUhrny', label: 'Roční úhrny jednotlivých položek' },
     { id: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani', label: 'Výsledek ročního zúčtování' },
     { id: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/slevaNaPartnera/partner', label: 'Sleva na manželku / manžela' },
     { id: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti', label: 'Daňové zvýhodnění na děti (roční)' },
-    { id: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/jineOsoby/jinaOsoba', label: 'Jiná osoba (roční zúčtování)' },
-    { id: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/vyzivovaneDeti/vyzivovaneDite', label: 'Vyživované dítě (roční zúčtování)' },
+    { id: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/jineOsoby/jinaOsoba', label: 'Jiná osoba (roční zúčtování)', repeating: true },
+    { id: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/vyzivovaneDeti/vyzivovaneDite', label: 'Vyživované dítě (roční zúčtování)', repeating: true },
     { id: 'souhrnDataZec/mzdaCista', label: 'Čistá mzda' },
     { id: 'souhrnDataZec/mzdaCista/vydelekOZP', label: 'Výdělek osob OZP' },
     { id: 'souhrnDataZec/mzdaCista/srazky', label: 'Srážky ze mzdy' },
@@ -390,9 +400,9 @@ const JMHZ_CONFIG = {
     { id: 'pojisteni/trvani', label: 'Trvání pojištění' },
     { id: 'pojisteni/vymerovaciZaklad', label: 'Vyměřovací základ' },
     { id: 'pojisteni/vymerovaciZakladParagraf5', label: 'Vyměřovací základ § 5a' },
-    { id: 'pojisteni/eldpSeznam/eldp', label: 'ELDP' },
-    { id: 'pojisteni/eldpSeznam/eldp/vylouceneDny', label: 'ELDP - Vyloučené dny' },
-    { id: 'pojisteni/eldpSeznam/eldp/odecitaneDny', label: 'ELDP - Odečítané dny' },
+    { id: 'pojisteni/eldpSeznam/eldp', label: 'ELDP', repeating: true },
+    { id: 'pojisteni/eldpSeznam/eldp/vylouceneDny', label: 'ELDP - Vyloučené dny', parentRepeating: 'pojisteni/eldpSeznam/eldp' },
+    { id: 'pojisteni/eldpSeznam/eldp/odecitaneDny', label: 'ELDP - Odečítané dny', parentRepeating: 'pojisteni/eldpSeznam/eldp' },
     { id: 'pojisteni/pojisteniZamestnanec', label: 'Pojistné za zaměstnance' },
     { id: 'pojisteni/pojisteniZamestnavatel', label: 'Pojistné za zaměstnavatele' },
     { id: 'pojisteni/slevaZamestnance', label: 'Sleva na pojistném zaměstnanců' },
@@ -429,6 +439,7 @@ const JMHZ_CONFIG = {
     { id: 'tax',            label: 'Daně',             query: 'zaloha na dan, zvlastni sazba, prohlaseni poplatnika' },
     { id: 'wages',          label: 'Mzda',             query: 'mzda' },
     { id: 'annual',         label: 'Roční zúčtování',  query: 'rocniuhrny' },
+    { id: 'children',       label: 'Děti',             query: 'zvyhodneni deti, jina osoba, vyzivovane dite' },
   ],
   parseDocumentHeader: function(doc) {
     if (!doc) return [];
@@ -734,7 +745,7 @@ const JMHZ_CONFIG = {
   actionSections: null,
   fieldRules: null,
   foreignKeywords: null,
-  getRowLabel: function(fields) { return fields['identifikace/idPpv']?.value || '?'; },
+  getRowLabel: function(fields) { return fields['identifikace/idPpv']?.value || ''; },
   rowColumnLabel: 'ID PPV',
   getRowInfo: [
     { key: 'identifikace/ikMpsv', label: 'IK MPSV' },
@@ -756,6 +767,53 @@ const JMHZ_CONFIG = {
       el = getChildByLocalNameNS(el, part, 'http://schemas.cssz.cz/JMHZ/form/1.0') || getChildByLocalName(el, part);
     }
     return el;
+  },
+  resolveSectionInstances: function(formRoot, sec) {
+    if (!sec.repeating && !sec.parentRepeating) return null;
+    const ns = 'http://schemas.cssz.cz/JMHZ/form/1.0';
+    const repeatingSectionId = sec.parentRepeating || sec.id;
+    const repeatParts = repeatingSectionId.split('/');
+    const repeatElement = repeatParts[repeatParts.length - 1];
+    const containerParts = repeatParts.slice(0, -1);
+    let container = formRoot;
+    for (const part of containerParts) {
+      if (!container) return [];
+      container = getChildByLocalNameNS(container, part, ns) || getChildByLocalName(container, part);
+    }
+    if (!container) return [];
+    const instances = getAllChildrenByLocalNameNS(container, repeatElement, ns);
+    if (instances.length === 0) instances.push(...getAllChildrenByLocalNameNS(container, repeatElement, null));
+    if (sec.parentRepeating) {
+      const remainingParts = sec.id.split('/').slice(repeatParts.length);
+      return instances.map((inst, i) => {
+        let sub = inst;
+        for (const rp of remainingParts) {
+          if (!sub) break;
+          sub = getChildByLocalNameNS(sub, rp, ns) || getChildByLocalName(sub, rp);
+        }
+        return { index: i, el: sub };
+      });
+    }
+    return instances.map((inst, i) => ({ index: i, el: inst }));
+  },
+  createRepeatingInstance: function(formRoot, sec) {
+    const ns = 'http://schemas.cssz.cz/JMHZ/form/1.0';
+    const sectionId = sec.parentRepeating || sec.id;
+    const parts = sectionId.split('/');
+    const childName = parts[parts.length - 1];
+    const containerParts = parts.slice(0, -1);
+    let container = formRoot;
+    for (const part of containerParts) {
+      let next = getChildByLocalNameNS(container, part, ns) || getChildByLocalName(container, part);
+      if (!next) {
+        next = container.ownerDocument.createElementNS(ns, 'form:' + part);
+        container.appendChild(next);
+      }
+      container = next;
+    }
+    const newEl = container.ownerDocument.createElementNS(ns, 'form:' + childName);
+    container.appendChild(newEl);
+    return newEl;
   },
   headerFields: [],
   readField: function(targetEl, field) {

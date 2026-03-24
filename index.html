@@ -355,6 +355,16 @@ function getChildByLocalNameNS(parent, localName, ns) {
   return null;
 }
 
+function getAllChildrenByLocalNameNS(parent, localName, ns) {
+  if (!parent) return [];
+  const result = [];
+  for (let i = 0; i < parent.childNodes.length; i++) {
+    const ch = parent.childNodes[i];
+    if (ch.nodeType === 1 && ch.localName === localName && (!ns || ch.namespaceURI === ns)) result.push(ch);
+  }
+  return result;
+}
+
 const REGZEC_CONFIG = {
   name: 'REGZEC',
   ns: 'http://schemas.cssz.cz/REGZEC/2025',
@@ -711,14 +721,14 @@ const JMHZ_CONFIG = {
     { id: 'souhrnDataZec/zvlastniSazbaDane', label: 'Výpočet daně podle zvláštní sazby daně' },
     { id: 'souhrnDataZec/prohlaseniPoplatnikaDane', label: 'Prohlášení poplatníka daně' },
     { id: 'souhrnDataZec/prohlaseniPoplatnikaDane/zvyhodneniDetiMesic', label: 'Daňové zvýhodnění na děti (měsíc)' },
-    { id: 'souhrnDataZec/prohlaseniPoplatnikaDane/zvyhodneniDetiMesic/jineOsoby/jinaOsoba', label: 'Jiná osoba vyživující děti' },
-    { id: 'souhrnDataZec/prohlaseniPoplatnikaDane/zvyhodneniDetiMesic/vyzivovaneDeti/vyzivovaneDite', label: 'Vyživované dítě (měsíc)' },
+    { id: 'souhrnDataZec/prohlaseniPoplatnikaDane/zvyhodneniDetiMesic/jineOsoby/jinaOsoba', label: 'Jiná osoba vyživující děti', repeating: true },
+    { id: 'souhrnDataZec/prohlaseniPoplatnikaDane/zvyhodneniDetiMesic/vyzivovaneDeti/vyzivovaneDite', label: 'Vyživované dítě (měsíc)', repeating: true },
     { id: 'souhrnDataZec/rocniUhrny', label: 'Roční úhrny jednotlivých položek' },
     { id: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani', label: 'Výsledek ročního zúčtování' },
     { id: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/slevaNaPartnera/partner', label: 'Sleva na manželku / manžela' },
     { id: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti', label: 'Daňové zvýhodnění na děti (roční)' },
-    { id: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/jineOsoby/jinaOsoba', label: 'Jiná osoba (roční zúčtování)' },
-    { id: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/vyzivovaneDeti/vyzivovaneDite', label: 'Vyživované dítě (roční zúčtování)' },
+    { id: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/jineOsoby/jinaOsoba', label: 'Jiná osoba (roční zúčtování)', repeating: true },
+    { id: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/vyzivovaneDeti/vyzivovaneDite', label: 'Vyživované dítě (roční zúčtování)', repeating: true },
     { id: 'souhrnDataZec/mzdaCista', label: 'Čistá mzda' },
     { id: 'souhrnDataZec/mzdaCista/vydelekOZP', label: 'Výdělek osob OZP' },
     { id: 'souhrnDataZec/mzdaCista/srazky', label: 'Srážky ze mzdy' },
@@ -728,9 +738,9 @@ const JMHZ_CONFIG = {
     { id: 'pojisteni/trvani', label: 'Trvání pojištění' },
     { id: 'pojisteni/vymerovaciZaklad', label: 'Vyměřovací základ' },
     { id: 'pojisteni/vymerovaciZakladParagraf5', label: 'Vyměřovací základ § 5a' },
-    { id: 'pojisteni/eldpSeznam/eldp', label: 'ELDP' },
-    { id: 'pojisteni/eldpSeznam/eldp/vylouceneDny', label: 'ELDP - Vyloučené dny' },
-    { id: 'pojisteni/eldpSeznam/eldp/odecitaneDny', label: 'ELDP - Odečítané dny' },
+    { id: 'pojisteni/eldpSeznam/eldp', label: 'ELDP', repeating: true },
+    { id: 'pojisteni/eldpSeznam/eldp/vylouceneDny', label: 'ELDP - Vyloučené dny', parentRepeating: 'pojisteni/eldpSeznam/eldp' },
+    { id: 'pojisteni/eldpSeznam/eldp/odecitaneDny', label: 'ELDP - Odečítané dny', parentRepeating: 'pojisteni/eldpSeznam/eldp' },
     { id: 'pojisteni/pojisteniZamestnanec', label: 'Pojistné za zaměstnance' },
     { id: 'pojisteni/pojisteniZamestnavatel', label: 'Pojistné za zaměstnavatele' },
     { id: 'pojisteni/slevaZamestnance', label: 'Sleva na pojistném zaměstnanců' },
@@ -767,6 +777,7 @@ const JMHZ_CONFIG = {
     { id: 'tax',            label: 'Daně',             query: 'zaloha na dan, zvlastni sazba, prohlaseni poplatnika' },
     { id: 'wages',          label: 'Mzda',             query: 'mzda' },
     { id: 'annual',         label: 'Roční zúčtování',  query: 'rocniuhrny' },
+    { id: 'children',       label: 'Děti',             query: 'zvyhodneni deti, jina osoba, vyzivovane dite' },
   ],
   parseDocumentHeader: function(doc) {
     if (!doc) return [];
@@ -1072,7 +1083,7 @@ const JMHZ_CONFIG = {
   actionSections: null,
   fieldRules: null,
   foreignKeywords: null,
-  getRowLabel: function(fields) { return fields['identifikace/idPpv']?.value || '?'; },
+  getRowLabel: function(fields) { return fields['identifikace/idPpv']?.value || ''; },
   rowColumnLabel: 'ID PPV',
   getRowInfo: [
     { key: 'identifikace/ikMpsv', label: 'IK MPSV' },
@@ -1094,6 +1105,53 @@ const JMHZ_CONFIG = {
       el = getChildByLocalNameNS(el, part, 'http://schemas.cssz.cz/JMHZ/form/1.0') || getChildByLocalName(el, part);
     }
     return el;
+  },
+  resolveSectionInstances: function(formRoot, sec) {
+    if (!sec.repeating && !sec.parentRepeating) return null;
+    const ns = 'http://schemas.cssz.cz/JMHZ/form/1.0';
+    const repeatingSectionId = sec.parentRepeating || sec.id;
+    const repeatParts = repeatingSectionId.split('/');
+    const repeatElement = repeatParts[repeatParts.length - 1];
+    const containerParts = repeatParts.slice(0, -1);
+    let container = formRoot;
+    for (const part of containerParts) {
+      if (!container) return [];
+      container = getChildByLocalNameNS(container, part, ns) || getChildByLocalName(container, part);
+    }
+    if (!container) return [];
+    const instances = getAllChildrenByLocalNameNS(container, repeatElement, ns);
+    if (instances.length === 0) instances.push(...getAllChildrenByLocalNameNS(container, repeatElement, null));
+    if (sec.parentRepeating) {
+      const remainingParts = sec.id.split('/').slice(repeatParts.length);
+      return instances.map((inst, i) => {
+        let sub = inst;
+        for (const rp of remainingParts) {
+          if (!sub) break;
+          sub = getChildByLocalNameNS(sub, rp, ns) || getChildByLocalName(sub, rp);
+        }
+        return { index: i, el: sub };
+      });
+    }
+    return instances.map((inst, i) => ({ index: i, el: inst }));
+  },
+  createRepeatingInstance: function(formRoot, sec) {
+    const ns = 'http://schemas.cssz.cz/JMHZ/form/1.0';
+    const sectionId = sec.parentRepeating || sec.id;
+    const parts = sectionId.split('/');
+    const childName = parts[parts.length - 1];
+    const containerParts = parts.slice(0, -1);
+    let container = formRoot;
+    for (const part of containerParts) {
+      let next = getChildByLocalNameNS(container, part, ns) || getChildByLocalName(container, part);
+      if (!next) {
+        next = container.ownerDocument.createElementNS(ns, 'form:' + part);
+        container.appendChild(next);
+      }
+      container = next;
+    }
+    const newEl = container.ownerDocument.createElementNS(ns, 'form:' + childName);
+    container.appendChild(newEl);
+    return newEl;
   },
   headerFields: [],
   readField: function(targetEl, field) {
@@ -1526,8 +1584,8 @@ body {
       <thead>
         <tr>
           <th class="name-col">{{ rowColumnLabel }}</th>
-          <th v-for="field in visibleColumns" :key="field.csszId || fieldKey(field)">
-            {{ field.label }}<span class="col-id">{{ field.csszId || '' }}</span>
+          <th v-for="(field, ci) in visibleColumns" :key="ci">
+            {{ field._colLabel || field.label }}<span class="col-id">{{ field.csszId || '' }}</span>
             <span class="col-sec">{{ fieldSecLabel(field) }}</span>
             <span v-if="actionFilter && getFieldReq(field, actionFilter)" class="col-req" :class="reqClass(getFieldReq(field, actionFilter))" :title="REQ_TITLES[getFieldReq(field, actionFilter)] || ''">{{ getFieldReq(field, actionFilter) }}</span>
           </th>
@@ -1543,25 +1601,25 @@ body {
               <span class="error-dot-sm" v-if="getEmployeeErrorCount(item.emp._index) > 0"></span>
               {{ getRowLabel(item.emp) }}
             </td>
-            <td v-for="field in visibleColumns" :key="field.csszId || fieldKey(field)"
-                :class="{ 'has-error': hasFieldError(item.emp, field), 'cell-match': item.matched && isFieldMatch(item.emp, field) }"
-                :data-err-id="'e' + item.emp._index + '-' + fieldKey(field)"
-                @click="startEdit(item.emp, field)">
-              <template v-if="editingField === item.emp._index + ':' + fieldKey(field)">
-                <input v-if="field.type === 'date'" type="date" :value="getFieldValue(item.emp, field)"
-                       @blur="commitEdit(item.emp, field, $event.target.value)" @keydown.enter="commitEdit(item.emp, field, $event.target.value)"
+            <td v-for="(field, ci) in visibleColumns" :key="ci"
+                :class="{ 'has-error': hasFieldError(item.emp, field, field), 'cell-match': item.matched && isFieldMatch(item.emp, field, field) }"
+                :data-err-id="'e' + item.emp._index + '-' + fieldKey(field, field._instanceIndex)"
+                @click="startEdit(item.emp, field, field)">
+              <template v-if="editingField === item.emp._index + ':' + fieldKey(field, field._instanceIndex)">
+                <input v-if="field.type === 'date'" type="date" :value="getFieldValue(item.emp, field, field)"
+                       @blur="commitEdit(item.emp, field, $event.target.value, field)" @keydown.enter="commitEdit(item.emp, field, $event.target.value, field)"
                        @keydown.escape="cancelEdit" autofocus>
-                <select v-else-if="field.type === 'boolean'" :value="getFieldValue(item.emp, field)"
-                        @change="commitEdit(item.emp, field, $event.target.value)" @blur="commitEdit(item.emp, field, $event.target.value)"
+                <select v-else-if="field.type === 'boolean'" :value="getFieldValue(item.emp, field, field)"
+                        @change="commitEdit(item.emp, field, $event.target.value, field)" @blur="commitEdit(item.emp, field, $event.target.value, field)"
                         @keydown.escape="cancelEdit" autofocus>
                   <option value="">—</option><option value="A">A</option><option value="N">N</option>
                 </select>
-                <input v-else type="text" :value="getFieldValue(item.emp, field)" :maxlength="field.maxLength || undefined"
-                       @blur="commitEdit(item.emp, field, $event.target.value)" @keydown.enter="commitEdit(item.emp, field, $event.target.value)"
+                <input v-else type="text" :value="getFieldValue(item.emp, field, field)" :maxlength="field.maxLength || undefined"
+                       @blur="commitEdit(item.emp, field, $event.target.value, field)" @keydown.enter="commitEdit(item.emp, field, $event.target.value, field)"
                        @keydown.escape="cancelEdit" autofocus>
               </template>
               <template v-else>
-                <template v-if="getFieldValue(item.emp, field)">{{ getFieldValue(item.emp, field) }}</template>
+                <template v-if="getFieldValue(item.emp, field, field)">{{ getFieldValue(item.emp, field, field) }}</template>
                 <span class="cell-empty" v-else></span>
               </template>
             </td>
@@ -1589,30 +1647,32 @@ body {
           <span class="match-badge" v-if="item.matched && getEmpMatchCount(item.emp._index) > 0">{{ getEmpMatchCount(item.emp._index) }} shod</span>
         </div>
         <div class="emp-card-body" v-if="isEmployeeExpanded(item.emp._index, item.matched)">
-          <template v-for="section in getSectionsForEmployee(item.emp)" :key="section.id">
+          <template v-for="section in getSectionsForEmployee(item.emp)" :key="section._virtualId || section.id">
             <div class="section-card" v-if="!item.matched || sectionHasMatchingFields(item.emp, section) || showAllFieldsInSearch">
-              <div class="section-header" @click.stop="toggleSection(item.emp._index + ':' + section.id)">
-                <svg class="section-chevron" :class="{ expanded: isSectionExpanded(item.emp._index, section.id, item.matched) }" viewBox="0 0 16 16" fill="currentColor"><path d="M6 3l5 5-5 5V3z"/></svg>
+              <div class="section-header" @click.stop="toggleSection(item.emp._index + ':' + (section._virtualId || section.id))">
+                <svg class="section-chevron" :class="{ expanded: isSectionExpanded(item.emp._index, section._virtualId || section.id, item.matched, section) }" viewBox="0 0 16 16" fill="currentColor"><path d="M6 3l5 5-5 5V3z"/></svg>
                 <span class="section-title">{{ section.label }}</span>
-                <span class="section-badge errors" v-if="getSectionErrorCount(item.emp._index, section.id) > 0">{{ getSectionErrorCount(item.emp._index, section.id) }}</span>
+                <span class="section-badge errors" v-if="getSectionErrorCount(item.emp._index, section._virtualId || section.id, section) > 0">{{ getSectionErrorCount(item.emp._index, section._virtualId || section.id, section) }}</span>
+                <button v-if="section._instanceIndex !== undefined" class="btn-remove-instance" @click.stop="removeInstance(item.emp, section)" title="Odebrat instanci" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:14px;padding:0 4px;">&times;</button>
+                <button v-if="section.repeating && section._instanceIndex === 0" class="btn-add-instance" @click.stop="addInstance(item.emp, section)" title="Přidat instanci" style="margin-left:4px;background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:14px;padding:0 4px;">+</button>
               </div>
-              <div class="section-body" :class="{ collapsed: !isSectionExpanded(item.emp._index, section.id, item.matched) }"
-                   :style="isSectionExpanded(item.emp._index, section.id, item.matched) ? { maxHeight: (section.fields.length * 38 + 50) + 'px' } : {}">
+              <div class="section-body" :class="{ collapsed: !isSectionExpanded(item.emp._index, section._virtualId || section.id, item.matched, section) }"
+                   :style="isSectionExpanded(item.emp._index, section._virtualId || section.id, item.matched, section) ? { maxHeight: (section.fields.length * 38 + 50) + 'px' } : {}">
                 <table class="field-table">
-                  <tr v-for="field in getVisibleFields(item.emp, section, item.matched)" :key="field.csszId || fieldKey(field)"
-                      class="field-row" :class="{ 'has-error': hasFieldError(item.emp, field), 'field-match': item.matched && isFieldMatch(item.emp, field) }" :data-field-id="field.csszId">
+                  <tr v-for="field in getVisibleFields(item.emp, section, item.matched)" :key="fieldKey(field, section._instanceIndex)"
+                      class="field-row" :class="{ 'has-error': hasFieldError(item.emp, field, section), 'field-match': item.matched && isFieldMatch(item.emp, field, section) }" :data-field-id="field.csszId">
                     <td class="field-id">{{ field.csszId || '' }}</td>
                     <td class="field-label">{{ field.label }}<span class="xpath">{{ fieldXpath(field) }}</span></td>
                     <td class="field-value">
-                      <template v-if="editingField === item.emp._index + ':' + fieldKey(field)">
-                        <input v-if="field.type === 'date'" type="date" :value="getFieldValue(item.emp, field)" @blur="commitEdit(item.emp, field, $event.target.value)" @keydown.enter="commitEdit(item.emp, field, $event.target.value)" @keydown.escape="cancelEdit" autofocus>
-                        <select v-else-if="field.type === 'boolean'" :value="getFieldValue(item.emp, field)" @change="commitEdit(item.emp, field, $event.target.value)" @blur="commitEdit(item.emp, field, $event.target.value)" @keydown.escape="cancelEdit" autofocus><option value="">—</option><option value="A">A (Ano)</option><option value="N">N (Ne)</option></select>
-                        <input v-else type="text" :value="getFieldValue(item.emp, field)" :maxlength="field.maxLength || undefined" :inputmode="field.type === 'number' ? 'numeric' : 'text'" @blur="commitEdit(item.emp, field, $event.target.value)" @keydown.enter="commitEdit(item.emp, field, $event.target.value)" @keydown.escape="cancelEdit" autofocus>
+                      <template v-if="editingField === item.emp._index + ':' + fieldKey(field, section._instanceIndex)">
+                        <input v-if="field.type === 'date'" type="date" :value="getFieldValue(item.emp, field, section)" @blur="commitEdit(item.emp, field, $event.target.value, section)" @keydown.enter="commitEdit(item.emp, field, $event.target.value, section)" @keydown.escape="cancelEdit" autofocus>
+                        <select v-else-if="field.type === 'boolean'" :value="getFieldValue(item.emp, field, section)" @change="commitEdit(item.emp, field, $event.target.value, section)" @blur="commitEdit(item.emp, field, $event.target.value, section)" @keydown.escape="cancelEdit" autofocus><option value="">—</option><option value="A">A (Ano)</option><option value="N">N (Ne)</option></select>
+                        <input v-else type="text" :value="getFieldValue(item.emp, field, section)" :maxlength="field.maxLength || undefined" :inputmode="field.type === 'number' ? 'numeric' : 'text'" @blur="commitEdit(item.emp, field, $event.target.value, section)" @keydown.enter="commitEdit(item.emp, field, $event.target.value, section)" @keydown.escape="cancelEdit" autofocus>
                       </template>
                       <template v-else>
-                        <span @click.stop="startEdit(item.emp, field)" style="cursor: pointer; display: block; min-height: 24px; padding: 2px 0;">
-                          <span class="modified-dot" v-if="isFieldModified(item.emp, field)"></span>
-                          <template v-if="getFieldValue(item.emp, field)">{{ getFieldValue(item.emp, field) }}</template>
+                        <span @click.stop="startEdit(item.emp, field, section)" style="cursor: pointer; display: block; min-height: 24px; padding: 2px 0;">
+                          <span class="modified-dot" v-if="isFieldModified(item.emp, field, section)"></span>
+                          <template v-if="getFieldValue(item.emp, field, section)">{{ getFieldValue(item.emp, field, section) }}</template>
                           <span class="empty" v-else>—</span>
                         </span>
                       </template>
@@ -1853,9 +1913,26 @@ createApp({
         fields[format.sections[0].id + '/' + attr] = { value: v, _norm: norm(v), el: rowEl, attr, modified: false };
       });
       // Section fields
+      const instanceCounts = {};
       format.sections.forEach(sec => {
         if (sec.id === (format.headerFields.length > 0 ? format.sections[0].id : null)) return;
         const sectionFields = FIELDS_BY_SECTION[sec.id] || [];
+        // Repeating sections: read all instances
+        if (format.resolveSectionInstances) {
+          const instances = format.resolveSectionInstances(formRoot, sec);
+          if (instances !== null) {
+            const countKey = sec.parentRepeating || sec.id;
+            if (!instanceCounts[countKey]) instanceCounts[countKey] = instances.length;
+            instances.forEach(({ index: idx, el: targetEl }) => {
+              sectionFields.forEach(f => {
+                const v = format.readField(targetEl, f);
+                const attrKey = format.fieldAttrKey(f);
+                fields[f.section + '[' + idx + ']/' + attrKey] = { value: v, _norm: norm(v), el: targetEl, attr: attrKey, modified: false, _field: f, _instanceIndex: idx };
+              });
+            });
+            return;
+          }
+        }
         const targetEl = format.resolveSection(formRoot, sec);
         sectionFields.forEach(f => {
           const v = format.readField(targetEl, f);
@@ -1866,7 +1943,7 @@ createApp({
       const label = format.getRowLabel(fields);
       const labelParts = label.split(/\s+/).filter(Boolean);
       return {
-        _index: index, _empEl: rowEl, _formRoot: formRoot,
+        _index: index, _empEl: rowEl, _formRoot: formRoot, _instanceCounts: instanceCounts,
         sqnr: fields[format.sections[0]?.id + '/sqnr']?.value || String(index + 1),
         act: fields[format.sections[0]?.id + '/act']?.value || '',
         dat: fields[format.sections[0]?.id + '/dat']?.value || '',
@@ -1976,14 +2053,28 @@ createApp({
       employees.value.forEach(emp => {
         const empMatches = new Set();
         FIELD_META.forEach(f => {
-          const key = fieldKey(f);
-          const fieldRef = emp.fields[key];
-          const nVal = fieldRef?._norm || '';
-          const foreignHit = f._isForeign && fqParts.some(fq => FOREIGN_KEYWORDS.some(kw => kw.includes(fq) || fq.includes(kw)));
-          const fieldHit = fqParts.length === 0 || fqParts.some(fq => fieldMatchesTerm(f, fq)) || foreignHit;
-          const valHit = vqParts.length === 0 || (nVal && vqParts.some(vq => nVal.includes(vq)));
-          if (fieldHit && valHit && (fqParts.length > 0 || vqParts.length > 0)) {
-            empMatches.add(key);
+          const sec = SECTIONS.find(s => s.id === f.section);
+          const isRepeating = sec && (sec.repeating || sec.parentRepeating);
+          if (isRepeating) {
+            const countKey = sec.parentRepeating || sec.id;
+            const count = emp._instanceCounts?.[countKey] || 0;
+            for (let idx = 0; idx < count; idx++) {
+              const key = fieldKey(f, idx);
+              const fieldRef = emp.fields[key];
+              const nVal = fieldRef?._norm || '';
+              const foreignHit = f._isForeign && fqParts.some(fq => FOREIGN_KEYWORDS.some(kw => kw.includes(fq) || fq.includes(kw)));
+              const fieldHit = fqParts.length === 0 || fqParts.some(fq => fieldMatchesTerm(f, fq)) || foreignHit;
+              const valHit = vqParts.length === 0 || (nVal && vqParts.some(vq => nVal.includes(vq)));
+              if (fieldHit && valHit && (fqParts.length > 0 || vqParts.length > 0)) empMatches.add(key);
+            }
+          } else {
+            const key = fieldKey(f);
+            const fieldRef = emp.fields[key];
+            const nVal = fieldRef?._norm || '';
+            const foreignHit = f._isForeign && fqParts.some(fq => FOREIGN_KEYWORDS.some(kw => kw.includes(fq) || fq.includes(kw)));
+            const fieldHit = fqParts.length === 0 || fqParts.some(fq => fieldMatchesTerm(f, fq)) || foreignHit;
+            const valHit = vqParts.length === 0 || (nVal && vqParts.some(vq => nVal.includes(vq)));
+            if (fieldHit && valHit && (fqParts.length > 0 || vqParts.length > 0)) empMatches.add(key);
           }
         });
         if (fqParts.length > 0) {
@@ -2041,11 +2132,11 @@ createApp({
       return totalFields + ' shod u ' + empCount + ' zaměstnanců';
     });
 
-    function isFieldMatch(emp, field) {
+    function isFieldMatch(emp, field, section) {
       if (!searchMatches.value) return false;
       const empMatches = searchMatches.value.get(emp._index);
       if (!empMatches) return false;
-      return empMatches.has(fieldKey(field));
+      return empMatches.has(fieldKey(field, section?._instanceIndex));
     }
 
     function getEmpMatchCount(empIndex) {
@@ -2094,7 +2185,43 @@ createApp({
           return fqParts.some(fq => fieldMatchesTerm(f, fq)) || foreignHit;
         });
       }
-      return cols;
+      // Expand repeating section fields into per-instance columns, grouped by instance
+      const maxInstances = {};
+      const repeatingGroups = {}; // countKey -> [fields]
+      const expanded = [];
+      const emittedGroups = new Set();
+      // First pass: compute max instances and collect repeating fields by group
+      cols.forEach(f => {
+        const sec = SECTIONS.find(s => s.id === f.section);
+        if (sec && (sec.repeating || sec.parentRepeating)) {
+          const countKey = sec.parentRepeating || sec.id;
+          if (!(countKey in maxInstances)) {
+            let max = 0;
+            employees.value.forEach(emp => { max = Math.max(max, emp._instanceCounts?.[countKey] || 0); });
+            maxInstances[countKey] = max;
+          }
+          if (!repeatingGroups[countKey]) repeatingGroups[countKey] = [];
+          repeatingGroups[countKey].push(f);
+        }
+      });
+      // Second pass: emit columns, inserting grouped instance blocks at first occurrence
+      cols.forEach(f => {
+        const sec = SECTIONS.find(s => s.id === f.section);
+        if (sec && (sec.repeating || sec.parentRepeating)) {
+          const countKey = sec.parentRepeating || sec.id;
+          if (emittedGroups.has(countKey)) return;
+          emittedGroups.add(countKey);
+          const groupFields = repeatingGroups[countKey];
+          for (let i = 0; i < maxInstances[countKey]; i++) {
+            groupFields.forEach(gf => {
+              expanded.push({ ...gf, _instanceIndex: i, _colLabel: gf.label + ' #' + (i + 1) });
+            });
+          }
+        } else {
+          expanded.push(f);
+        }
+      });
+      return expanded;
     });
     const autoExpandMatched = ref(true);
 
@@ -2108,11 +2235,26 @@ createApp({
     function sectionHasMatchingFields(emp, section) {
       if (!searchMatches.value?.has(emp._index)) return false;
       const matches = searchMatches.value.get(emp._index);
-      return section.fields.some(f => matches.has(fieldKey(f)));
+      return section.fields.some(f => matches.has(fieldKey(f, section._instanceIndex)));
     }
 
     function getSectionsForEmployee(emp) {
-      return SECTIONS.map(sec => ({ ...sec, fields: FIELDS_BY_SECTION[sec.id] || [] })).filter(sec => sec.fields.length > 0);
+      const result = [];
+      SECTIONS.forEach(sec => {
+        const fields = FIELDS_BY_SECTION[sec.id] || [];
+        if (!fields.length) return;
+        const countKey = sec.parentRepeating || sec.id;
+        const count = emp._instanceCounts?.[countKey];
+        if (sec.repeating || sec.parentRepeating) {
+          const n = count || 0;
+          for (let i = 0; i < n; i++) {
+            result.push({ ...sec, fields, _instanceIndex: i, _virtualId: sec.id + '[' + i + ']', _baseSectionId: sec.id, label: sec.label + ' #' + (i + 1) });
+          }
+        } else {
+          result.push({ ...sec, fields });
+        }
+      });
+      return result;
     }
 
     function toggleSection(key) {
@@ -2129,23 +2271,28 @@ createApp({
     }
     const collapsedSections = reactive(new Set()); // manually collapsed despite search match
 
-    function isSectionExpanded(empIdx, secId, isMatched) {
+    function isSectionExpanded(empIdx, secId, isMatched, section) {
       const key = empIdx + ':' + secId;
       if (collapsedSections.has(key)) return false;
       // For matched employees during search: auto-expand sections with matching fields
       if (isMatched && hasSearch.value && searchMatches.value?.has(empIdx)) {
         const matches = searchMatches.value.get(empIdx);
-        const sectionFields = FIELDS_BY_SECTION[secId] || [];
-        if (sectionFields.some(f => matches.has(fieldKey(f)))) return true;
+        const baseSec = section?._baseSectionId || secId;
+        const sectionFields = FIELDS_BY_SECTION[baseSec] || [];
+        if (sectionFields.some(f => matches.has(fieldKey(f, section?._instanceIndex)))) return true;
       }
       return expandedSections.has(key);
     }
     function toggleShowAll(key) { showAllSections.has(key) ? showAllSections.delete(key) : showAllSections.add(key); }
     function isShowAll(empIdx, secId) { return showAllSections.has(empIdx + ':' + secId); }
 
-    function fieldKey(field) { return field.section + '/' + (activeFormat ? activeFormat.fieldAttrKey(field) : (field.attr || field.element)); }
-    function getFieldValue(emp, field) { return emp.fields[fieldKey(field)]?.value || ''; }
-    function isFieldModified(emp, field) { return emp.fields[fieldKey(field)]?.modified || false; }
+    function fieldKey(field, instanceIndex) {
+      const base = field.section + '/' + (activeFormat ? activeFormat.fieldAttrKey(field) : (field.attr || field.element));
+      if (instanceIndex !== undefined) return field.section + '[' + instanceIndex + ']/' + (activeFormat ? activeFormat.fieldAttrKey(field) : (field.attr || field.element));
+      return base;
+    }
+    function getFieldValue(emp, field, section) { return emp.fields[fieldKey(field, section?._instanceIndex)]?.value || ''; }
+    function isFieldModified(emp, field, section) { return emp.fields[fieldKey(field, section?._instanceIndex)]?.modified || false; }
     function getFieldRequirement(field) { return null; }
     function getFieldError(field) { return null; }
 
@@ -2153,18 +2300,18 @@ createApp({
       if (isMatched && hasSearch.value && searchMatches.value?.has(emp._index)) {
         if (showAllFieldsInSearch.value) return section.fields;
         const matches = searchMatches.value.get(emp._index);
-        const filtered = section.fields.filter(f => matches.has(fieldKey(f)));
+        const filtered = section.fields.filter(f => matches.has(fieldKey(f, section._instanceIndex)));
         return filtered.length > 0 ? filtered : section.fields;
       }
       return section.fields;
     }
 
-    function startEdit(emp, field) {
-      editingField.value = emp._index + ':' + fieldKey(field);
+    function startEdit(emp, field, section) {
+      editingField.value = emp._index + ':' + fieldKey(field, section?._instanceIndex);
       nextTick(() => { const el = document.querySelector('.field-value input, .field-value select'); if (el) el.focus(); });
     }
-    function commitEdit(emp, field, newValue) {
-      const key = fieldKey(field);
+    function commitEdit(emp, field, newValue, section) {
+      const key = fieldKey(field, section?._instanceIndex);
       const fieldRef = emp.fields[key];
       if (!fieldRef) return;
       const oldValue = fieldRef.value;
@@ -2189,6 +2336,31 @@ createApp({
       editingField.value = null;
     }
     function cancelEdit() { editingField.value = null; }
+
+    function rebuildSingleEmployee(empIndex) {
+      const emp = employees.value[empIndex];
+      if (!emp) return;
+      const newMirror = buildEmployeeMirror(emp._empEl, empIndex);
+      employees.value[empIndex] = newMirror;
+    }
+    function addInstance(emp, section) {
+      const sec = SECTIONS.find(s => s.id === (section._baseSectionId || section.id));
+      if (!sec || !activeFormat.createRepeatingInstance) return;
+      activeFormat.createRepeatingInstance(emp._formRoot, sec);
+      rebuildSingleEmployee(emp._index);
+      isDirty.value = true;
+    }
+    function removeInstance(emp, section) {
+      if (section._instanceIndex === undefined || !activeFormat.resolveSectionInstances) return;
+      const sec = SECTIONS.find(s => s.id === (section._baseSectionId || section.id));
+      if (!sec) return;
+      const instances = activeFormat.resolveSectionInstances(emp._formRoot, sec);
+      if (!instances || section._instanceIndex >= instances.length) return;
+      const el = instances[section._instanceIndex].el;
+      if (el && el.parentNode) el.parentNode.removeChild(el);
+      rebuildSingleEmployee(emp._index);
+      isDirty.value = true;
+    }
 
     function loadFile() { fileInput.value?.click(); }
     function handleFileSelect(e) {
@@ -2237,7 +2409,7 @@ createApp({
       const dCell = v => `<Cell><Data ss:Type="String">${esc(v)}</Data></Cell>`;
       function colHeader(f) {
         const parts = [];
-        if (xlsOptTitle.value && f.label) parts.push(f.label);
+        if (xlsOptTitle.value) parts.push(f._colLabel || f.label || '');
         if (xlsOptId.value && f.csszId) parts.push(f.csszId);
         if (xlsOptCategory.value) { const sec = fieldSecLabel(f); if (sec) parts.push(sec); }
         return parts.join(' · ');
@@ -2247,7 +2419,7 @@ createApp({
         ? '<Row>' + [rowColumnLabel.value, ...cols.map(colHeader)].map(hCell).join('') + '</Row>'
         : '';
       const dataRows = rows.map(item =>
-        '<Row>' + [getRowLabel(item.emp), ...cols.map(f => getFieldValue(item.emp, f))].map(dCell).join('') + '</Row>'
+        '<Row>' + [getRowLabel(item.emp), ...cols.map(f => getFieldValue(item.emp, f, f))].map(dCell).join('') + '</Row>'
       ).join('');
       const xml = `<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Styles><Style ss:ID="h"><Font ss:Bold="1"/></Style></Styles><Worksheet ss:Name="Export"><Table>${headerRow}${dataRows}</Table></Worksheet></Workbook>`;
       const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8' });
@@ -2362,8 +2534,22 @@ createApp({
             if (ei >= 0 && fieldKey) {
               if (!validationErrors.value.has(ei)) validationErrors.value.set(ei, new Map());
               const empErrors = validationErrors.value.get(ei);
-              if (!empErrors.has(fieldKey)) empErrors.set(fieldKey, []);
-              empErrors.get(fieldKey).push(err.message);
+              // For repeating sections, attach error to all instances
+              const matchedField = FIELDS.find(f => fieldKey === f.section + '/' + (activeFormat ? activeFormat.fieldAttrKey(f) : (f.attr || f.element)));
+              const matchedSec = matchedField ? SECTIONS.find(s => s.id === matchedField.section) : null;
+              if (matchedSec && (matchedSec.repeating || matchedSec.parentRepeating)) {
+                const emp = employees.value[ei];
+                const countKey = matchedSec.parentRepeating || matchedSec.id;
+                const count = emp?._instanceCounts?.[countKey] || 0;
+                for (let idx = 0; idx < count; idx++) {
+                  const iKey = matchedField.section + '[' + idx + ']/' + (activeFormat ? activeFormat.fieldAttrKey(matchedField) : (matchedField.attr || matchedField.element));
+                  if (!empErrors.has(iKey)) empErrors.set(iKey, []);
+                  empErrors.get(iKey).push(err.message);
+                }
+              } else {
+                if (!empErrors.has(fieldKey)) empErrors.set(fieldKey, []);
+                empErrors.get(fieldKey).push(err.message);
+              }
             }
 
             errors.value.push({
@@ -2382,25 +2568,26 @@ createApp({
       }
     }
 
-    function hasFieldError(emp, field) {
+    function hasFieldError(emp, field, section) {
       const empErrors = validationErrors.value.get(emp._index);
       if (!empErrors) return false;
-      return empErrors.has(fieldKey(field));
+      return empErrors.has(fieldKey(field, section?._instanceIndex));
     }
 
-    function getFieldErrorMsg(emp, field) {
+    function getFieldErrorMsg(emp, field, section) {
       const empErrors = validationErrors.value.get(emp._index);
       if (!empErrors) return '';
-      const msgs = empErrors.get(fieldKey(field));
+      const msgs = empErrors.get(fieldKey(field, section?._instanceIndex));
       return msgs ? msgs.join('\n') : '';
     }
 
-    function getSectionErrorCount(empIndex, sectionId) {
+    function getSectionErrorCount(empIndex, sectionId, section) {
       const empErrors = validationErrors.value.get(empIndex);
       if (!empErrors) return 0;
       let count = 0;
-      const sectionFields = FIELDS_BY_SECTION[sectionId] || [];
-      sectionFields.forEach(f => { if (empErrors.has(fieldKey(f))) count++; });
+      const baseSec = section?._baseSectionId || sectionId;
+      const sectionFields = FIELDS_BY_SECTION[baseSec] || [];
+      sectionFields.forEach(f => { if (empErrors.has(fieldKey(f, section?._instanceIndex))) count++; });
       return count;
     }
 
@@ -2421,7 +2608,10 @@ createApp({
           // Card view: expand card and section, scroll to field
           expandedEmployee.value = err.empIndex;
           if (err.fieldKey) {
-            const sectionId = err.fieldKey.substring(0, err.fieldKey.lastIndexOf('/'));
+            let sectionId = err.fieldKey.substring(0, err.fieldKey.lastIndexOf('/'));
+            // For repeating sections without index, expand the first instance
+            const sec = SECTIONS.find(s => s.id === sectionId);
+            if (sec && (sec.repeating || sec.parentRepeating)) sectionId = sectionId + '[0]';
             const secKey = err.empIndex + ':' + sectionId;
             expandedSections.add(secKey);
             collapsedSections.delete(secKey);
@@ -2478,7 +2668,7 @@ createApp({
       currentFormatGroups, applyGroupQuery,
       toggleEmployee, getSectionsForEmployee, toggleSection, isSectionExpanded,
       fieldKey, getFieldValue, isFieldModified, getFieldRequirement, hasFieldError, getFieldErrorMsg,
-      getVisibleFields, startEdit, commitEdit, cancelEdit,
+      getVisibleFields, startEdit, commitEdit, cancelEdit, addInstance, removeInstance,
       headerExpanded, documentHeader,
       xlsDialog, xlsOptTitle, xlsOptId, xlsOptCategory, exportToExcel,
       loadFile, handleFileSelect, handleDrop, saveFile, validateAll, getSectionErrorCount,
