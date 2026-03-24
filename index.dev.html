@@ -378,10 +378,10 @@ body {
     </div>
     <div style="display: flex; align-items: center; gap: 16px; margin-top: 6px; padding-left: 4px;">
       <span class="match-count" v-if="(fieldSearch || valueSearch) && searchMatchInfo">{{ searchMatchInfo }}</span>
-      <label v-if="hasSearch" style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+      <label v-if="hasSearch && viewMode === 'cards'" style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
         <input type="checkbox" v-model="autoExpandMatched"> Automaticky rozbalit
       </label>
-      <label v-if="hasSearch" style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+      <label v-if="hasSearch && viewMode === 'cards'" style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
         <input type="checkbox" v-model="showAllFieldsInSearch"> Zobrazit všechna pole
       </label>
       <span v-if="viewMode === 'table' && hasActions" style="font-size: 12px; color: #6B7280; display: flex; align-items: center; gap: 4px;">
