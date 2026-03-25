@@ -320,7 +320,7 @@ body {
     <span class="spacer"></span>
     <span style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 1px; pointer-events: none;">
       <span class="filename" v-if="filename" style="pointer-events: auto;">{{ filename }}{{ isDirty ? ' *' : '' }}</span>
-      <span style="font-size: 11px; color: var(--text-muted);">Lokální zpracování v prohlížeči, nic se nikam neposílá</span>
+      <span v-if="!xmlDoc" style="font-size: 16px; color: var(--text-muted);">Lokální zpracování v prohlížeči, nic se nikam neposílá</span>
     </span>
     <span class="spacer"></span>
     <button @click="loadFile" v-if="xmlDoc">Nahrát XML</button>
@@ -376,21 +376,6 @@ body {
       </div>
       <input placeholder="Hledat v hodnotách..." @input="onValueSearchInput" @keydown.escape="clearValueSearch">
     </div>
-    <div style="display: flex; align-items: center; gap: 16px; margin-top: 6px; padding-left: 4px;">
-      <span class="match-count" v-if="(fieldSearch || valueSearch) && searchMatchInfo">{{ searchMatchInfo }}</span>
-      <label v-if="hasSearch && viewMode === 'cards'" style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-        <input type="checkbox" v-model="autoExpandMatched"> Automaticky rozbalit
-      </label>
-      <label v-if="hasSearch && viewMode === 'cards'" style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-        <input type="checkbox" v-model="showAllFieldsInSearch"> Zobrazit všechna pole
-      </label>
-      <span v-if="viewMode === 'table' && hasActions" style="font-size: 12px; color: #6B7280; display: flex; align-items: center; gap: 4px;">
-        Akce:
-        <span class="action-filter">
-          <button v-for="a in ['', '1', '2', '3', '4', '8']" :key="a" @click="actionFilter = a" :class="{ active: actionFilter === a }">{{ a ? 'A' + a : 'Vše' }}</button>
-        </span>
-      </span>
-    </div>
   </div>
 
   <!-- Group filter pills -->
@@ -404,6 +389,22 @@ body {
         {{ group.label }}
       </button>
     </div>
+  </div>
+
+  <div v-if="xmlDoc && (hasSearch || (viewMode === 'table' && hasActions))" style="display: flex; align-items: center; gap: 16px; padding: 4px 16px;">
+    <span class="match-count" v-if="(fieldSearch || valueSearch) && searchMatchInfo">{{ searchMatchInfo }}</span>
+    <label v-if="hasSearch && viewMode === 'cards'" style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+      <input type="checkbox" v-model="autoExpandMatched"> Automaticky rozbalit
+    </label>
+    <label v-if="hasSearch && viewMode === 'cards'" style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+      <input type="checkbox" v-model="showAllFieldsInSearch"> Zobrazit všechna pole
+    </label>
+    <span v-if="viewMode === 'table' && hasActions" style="font-size: 12px; color: #6B7280; display: flex; align-items: center; gap: 4px;">
+      Akce:
+      <span class="action-filter">
+        <button v-for="a in ['', '1', '2', '3', '4', '8']" :key="a" @click="actionFilter = a" :class="{ active: actionFilter === a }">{{ a ? 'A' + a : 'Vše' }}</button>
+      </span>
+    </span>
   </div>
 
   <!-- Table View -->
@@ -742,6 +743,7 @@ createApp({
       });
       // Section fields
       const instanceCounts = {};
+      const instanceOrders = {};
       format.sections.forEach(sec => {
         if (sec.id === (format.headerFields.length > 0 ? format.sections[0].id : null)) return;
         const sectionFields = FIELDS_BY_SECTION[sec.id] || [];
@@ -751,7 +753,8 @@ createApp({
           if (instances !== null) {
             const countKey = sec.parentRepeating || sec.id;
             if (!instanceCounts[countKey]) instanceCounts[countKey] = instances.length;
-            instances.forEach(({ index: idx, el: targetEl }) => {
+            instances.forEach(({ index: idx, el: targetEl, _orderValue }) => {
+              if (_orderValue) instanceOrders[sec.id + '[' + idx + ']'] = _orderValue;
               sectionFields.forEach(f => {
                 const v = format.readField(targetEl, f);
                 const attrKey = format.fieldAttrKey(f);
@@ -771,7 +774,7 @@ createApp({
       const label = format.getRowLabel(fields);
       const labelParts = label.split(/\s+/).filter(Boolean);
       return {
-        _index: index, _empEl: rowEl, _formRoot: formRoot, _instanceCounts: instanceCounts,
+        _index: index, _empEl: rowEl, _formRoot: formRoot, _instanceCounts: instanceCounts, _instanceOrders: instanceOrders,
         sqnr: fields[format.sections[0]?.id + '/sqnr']?.value || String(index + 1),
         act: fields[format.sections[0]?.id + '/act']?.value || '',
         dat: fields[format.sections[0]?.id + '/dat']?.value || '',
@@ -977,7 +980,7 @@ createApp({
     }
 
     function toggleEmployee(index, isMatched) {
-      if (isMatched && hasSearch.value) {
+      if (isMatched && hasSearch.value && autoExpandMatched.value) {
         if (collapsedMatchedEmps.has(index)) collapsedMatchedEmps.delete(index);
         else collapsedMatchedEmps.add(index);
       } else {
@@ -1076,7 +1079,9 @@ createApp({
         if (sec.repeating || sec.parentRepeating) {
           const n = count || 0;
           for (let i = 0; i < n; i++) {
-            result.push({ ...sec, fields, _instanceIndex: i, _virtualId: sec.id + '[' + i + ']', _baseSectionId: sec.id, label: sec.label + ' #' + (i + 1) });
+            const orderVal = emp._instanceOrders?.[sec.id + '[' + i + ']'];
+            const instanceLabel = orderVal || String(i + 1);
+            result.push({ ...sec, fields, _instanceIndex: i, _virtualId: sec.id + '[' + i + ']', _baseSectionId: sec.id, label: sec.label + ' #' + instanceLabel });
           }
         } else {
           result.push({ ...sec, fields });

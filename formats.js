@@ -357,7 +357,7 @@ const REGZEC_CONFIG = {
     { id: 'insurance',  label: 'Pojišťovny',      query: 'zdravotni pojistovna, organ np' },
     { id: 'pension',    label: 'Důchod',          query: 'duchod' },
     { id: 'termination',label: 'Ukončení',        query: 'podpora v nezamestnanosti' },
-    { id: 'health',     label: 'Zdraví',          query: 'dalsi udaje, zdravotni omezeni' },
+    { id: 'health',     label: 'Zdraví',          query: 'dalsi udaje ztp, zdravotni omezeni' },
     { id: 'foreign',    label: 'Cizinec',         query: 'cizozemsky, cizi pravni predpisy, pracovni opravneni, danove identifikace, doklad' },
   ],
 };
@@ -384,13 +384,14 @@ const JMHZ_CONFIG = {
     { id: 'souhrnDataZec/prohlaseniPoplatnikaDane', label: 'Prohlášení poplatníka daně' },
     { id: 'souhrnDataZec/prohlaseniPoplatnikaDane/zvyhodneniDetiMesic', label: 'Daňové zvýhodnění na děti (měsíc)' },
     { id: 'souhrnDataZec/prohlaseniPoplatnikaDane/zvyhodneniDetiMesic/jineOsoby/jinaOsoba', label: 'Jiná osoba vyživující děti', repeating: true },
-    { id: 'souhrnDataZec/prohlaseniPoplatnikaDane/zvyhodneniDetiMesic/vyzivovaneDeti/vyzivovaneDite', label: 'Vyživované dítě (měsíc)', repeating: true },
+    { id: 'souhrnDataZec/prohlaseniPoplatnikaDane/zvyhodneniDetiMesic/vyzivovaneDeti/vyzivovaneDite', label: 'Vyživované dítě (měsíc)', repeating: true, orderElement: 'poradi' },
+    { id: 'prispevekZamestnavateleOstatni', label: 'Příspěvek zaměstnavatele (z osvobozených příjmů)', _resolvePath: 'souhrnDataZec/prijmy/prispevekZamestnavatele' },
     { id: 'souhrnDataZec/rocniUhrny', label: 'Roční úhrny jednotlivých položek' },
     { id: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani', label: 'Výsledek ročního zúčtování' },
     { id: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/slevaNaPartnera/partner', label: 'Sleva na manželku / manžela' },
     { id: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti', label: 'Daňové zvýhodnění na děti (roční)' },
     { id: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/jineOsoby/jinaOsoba', label: 'Jiná osoba (roční zúčtování)', repeating: true },
-    { id: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/vyzivovaneDeti/vyzivovaneDite', label: 'Vyživované dítě (roční zúčtování)', repeating: true },
+    { id: 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/vyzivovaneDeti/vyzivovaneDite', label: 'Vyživované dítě (roční zúčtování)', repeating: true, orderElement: 'poradi' },
     { id: 'souhrnDataZec/mzdaCista', label: 'Čistá mzda' },
     { id: 'souhrnDataZec/mzdaCista/vydelekOZP', label: 'Výdělek osob OZP' },
     { id: 'souhrnDataZec/mzdaCista/srazky', label: 'Srážky ze mzdy' },
@@ -530,12 +531,6 @@ const JMHZ_CONFIG = {
     { section: 'souhrnDataZec/prijmy', element: 'odmenyNerezident', csszId: '10416', label: 'Odměny nerezidentů (členů orgánů PO)', type: 'number' },
 
     { section: 'souhrnDataZec/prijmy/prispevekZamestnavatele', element: 'prispevekZelSporeniOsvob', csszId: '10417', label: 'Příspěvek na spoření na stáří (osvobozený)', type: 'number' },
-    { section: 'souhrnDataZec/prijmy/prispevekZamestnavatele', element: 'prispevekZelPojDlPece', csszId: '10418', label: 'Příspěvek na pojištění dlouhodobé péče', type: 'number' },
-    { section: 'souhrnDataZec/prijmy/prispevekZamestnavatele', element: 'prispevekPenzPripoj', csszId: '10292', label: 'Příspěvek na penzijní připojištění', type: 'number' },
-    { section: 'souhrnDataZec/prijmy/prispevekZamestnavatele', element: 'prispevekDoplnPenzPripoj', csszId: '10293', label: 'Příspěvek na doplňkové penzijní spoření', type: 'number' },
-    { section: 'souhrnDataZec/prijmy/prispevekZamestnavatele', element: 'prispevekPenzPoj', csszId: '10294', label: 'Příspěvek na penzijní pojištění', type: 'number' },
-    { section: 'souhrnDataZec/prijmy/prispevekZamestnavatele', element: 'prispevekZivotPoj', csszId: '10295', label: 'Příspěvek na soukromé životní pojištění', type: 'number' },
-    { section: 'souhrnDataZec/prijmy/prispevekZamestnavatele', element: 'prispevekDip', csszId: '10296', label: 'Příspěvek na dlouhodobý investiční produkt', type: 'number' },
 
     { section: 'souhrnDataZec/zalohaNaDan', element: 'zakladDane', csszId: '10297', label: 'Základ pro výpočet zálohy na daň', type: 'number' },
     { section: 'souhrnDataZec/zalohaNaDan', element: 'vypoctenaZaloha', csszId: '10298', label: 'Vypočtená záloha na daň', type: 'number' },
@@ -699,6 +694,13 @@ const JMHZ_CONFIG = {
 
     { section: 'mzda/vydelek', element: 'vydelekPrumernyHod', csszId: '10345', label: 'Průměrný hodinový výdělek', type: 'number' },
 
+    { section: 'prispevekZamestnavateleOstatni', element: 'prispevekZelPojDlPece', csszId: '10418', label: 'Příspěvek na pojištění dlouhodobé péče', type: 'number' },
+    { section: 'prispevekZamestnavateleOstatni', element: 'prispevekPenzPripoj', csszId: '10292', label: 'Příspěvek na penzijní připojištění', type: 'number' },
+    { section: 'prispevekZamestnavateleOstatni', element: 'prispevekDoplnPenzPripoj', csszId: '10293', label: 'Příspěvek na doplňkové penzijní spoření', type: 'number' },
+    { section: 'prispevekZamestnavateleOstatni', element: 'prispevekPenzPoj', csszId: '10294', label: 'Příspěvek na penzijní pojištění', type: 'number' },
+    { section: 'prispevekZamestnavateleOstatni', element: 'prispevekZivotPoj', csszId: '10295', label: 'Příspěvek na soukromé životní pojištění', type: 'number' },
+    { section: 'prispevekZamestnavateleOstatni', element: 'prispevekDip', csszId: '10296', label: 'Příspěvek na dlouhodobý investiční produkt', type: 'number' },
+
     { section: 'souhrnDataZec/rocniUhrny', element: 'prijemSrazkDanZvlSazba', csszId: '10311', label: 'Příjmy podléhající srážkové dani (rok)', type: 'number' },
     { section: 'souhrnDataZec/rocniUhrny', element: 'danSrazenaZvlSazba', csszId: '10312', label: 'Sražená daň zvláštní sazby (rok)', type: 'number' },
     { section: 'souhrnDataZec/rocniUhrny', element: 'prijemZdanitelnyCelkem', csszId: '10313', label: 'Zdanitelné příjmy celkem (rok)', type: 'number' },
@@ -760,7 +762,7 @@ const JMHZ_CONFIG = {
   },
   formVariants: ['bezPriznaku', 'odlozenyPrijem', 'pestoun', 'cinnostKS', 'vezen', 'mezinarodniPronajemSily', 'jinyPrijem', 'ozpTpp'],
   resolveSection: function(formRoot, sec) {
-    const parts = sec.id.split('/');
+    const parts = (sec._resolvePath || sec.id).split('/');
     let el = formRoot;
     for (const part of parts) {
       if (!el) return null;
@@ -781,8 +783,17 @@ const JMHZ_CONFIG = {
       container = getChildByLocalNameNS(container, part, ns) || getChildByLocalName(container, part);
     }
     if (!container) return [];
-    const instances = getAllChildrenByLocalNameNS(container, repeatElement, ns);
-    if (instances.length === 0) instances.push(...getAllChildrenByLocalNameNS(container, repeatElement, null));
+    let instances = getAllChildrenByLocalNameNS(container, repeatElement, ns);
+    if (instances.length === 0) instances = getAllChildrenByLocalNameNS(container, repeatElement, null);
+    // Sort by orderElement if defined (e.g. poradi for vyzivovaneDite)
+    const orderEl = sec.orderElement;
+    if (orderEl && instances.length > 1) {
+      instances.sort((a, b) => {
+        const aVal = getChildByLocalName(a, orderEl)?.textContent || '';
+        const bVal = getChildByLocalName(b, orderEl)?.textContent || '';
+        return (parseInt(aVal, 10) || 0) - (parseInt(bVal, 10) || 0);
+      });
+    }
     if (sec.parentRepeating) {
       const remainingParts = sec.id.split('/').slice(repeatParts.length);
       return instances.map((inst, i) => {
@@ -791,10 +802,10 @@ const JMHZ_CONFIG = {
           if (!sub) break;
           sub = getChildByLocalNameNS(sub, rp, ns) || getChildByLocalName(sub, rp);
         }
-        return { index: i, el: sub };
+        return { index: i, el: sub, _orderValue: orderEl ? (getChildByLocalName(inst, orderEl)?.textContent || '') : null };
       });
     }
-    return instances.map((inst, i) => ({ index: i, el: inst }));
+    return instances.map((inst, i) => ({ index: i, el: inst, _orderValue: orderEl ? (getChildByLocalName(inst, orderEl)?.textContent || '') : null }));
   },
   createRepeatingInstance: function(formRoot, sec) {
     const ns = 'http://schemas.cssz.cz/JMHZ/form/1.0';
