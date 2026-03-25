@@ -1574,7 +1574,7 @@ body {
     </div>
   </div>
 
-  <div v-if="xmlDoc && (hasSearch || (viewMode === 'table' && hasActions))" style="display: flex; align-items: center; gap: 16px; padding: 4px 16px;">
+  <div v-if="xmlDoc && (hasSearch || (viewMode === 'table' && hasActions))" style="display: flex; align-items: center; gap: 16px; padding: 0 36px 6px; max-width: 1000px; margin: 0 auto; width: 100%; font-size: 0.75rem; color: var(--text-muted);">
     <span class="match-count" v-if="(fieldSearch || valueSearch) && searchMatchInfo">{{ searchMatchInfo }}</span>
     <label v-if="hasSearch && viewMode === 'cards'" style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
       <input type="checkbox" v-model="autoExpandMatched"> Automaticky rozbalit
