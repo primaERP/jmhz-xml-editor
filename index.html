@@ -1568,20 +1568,20 @@ body {
   <!-- Stats Bar -->
   <div class="stats-bar" v-if="xmlDoc && employees.length > 0">
    <div class="stats-bar-inner">
-    <div class="stat-row">
+    <div class="stat-row" style="flex-wrap:nowrap;">
       <span><span class="stat-label">{{ formatName }}</span> <span class="stat-value" v-if="xmlVersion">{{ xmlVersion }}</span></span>
-      <span class="stat-value" v-if="actionSummary">{{ actionSummary }}</span>
       <span><span class="stat-value">{{ employees.length }}</span> <span class="stat-label">zaměstnanců</span></span>
       <span v-if="employerName"><span class="stat-label">Zaměstnavatel:</span> <span class="stat-value">{{ employerName }}</span></span>
       <span v-if="datumVyplneni"><span class="stat-label">Datum:</span> <span class="stat-value">{{ datumVyplneni }}</span></span>
-      <span v-if="czForeignerSplit"><span class="stat-value">{{ czForeignerSplit }}</span></span>
       <span v-if="hasValidated">
         <span :class="errors.length > 0 ? 'stat-error' : 'stat-ok'">{{ errors.length }} {{ errors.length === 1 ? 'chyba' : errors.length < 5 ? 'chyby' : 'chyb' }}</span>
       </span>
-      <button v-if="documentHeader.length" class="btn" @click="headerExpanded = !headerExpanded" style="margin-left:auto;font-size:0.75rem;padding:2px 8px;">{{ headerExpanded ? 'Záhlaví ▲' : 'Záhlaví ▼' }}</button>
+      <button v-if="documentHeader.length" class="btn" @click="headerExpanded = !headerExpanded" style="margin-left:auto;font-size:0.75rem;padding:2px 8px;white-space:nowrap;">{{ headerExpanded ? 'Záhlaví ▲' : 'Záhlaví ▼' }}</button>
     </div>
     <div v-if="headerExpanded && documentHeader.length" class="stat-row" style="margin-top:var(--sp-2);flex-wrap:wrap;gap:var(--sp-1) var(--sp-6);">
       <span v-for="f in documentHeader" :key="f.label"><span class="stat-label">{{ f.label }}:</span> <span class="stat-value">{{ f.value }}</span></span>
+      <span v-if="actionSummary"><span class="stat-label">Akce:</span> <span class="stat-value">{{ actionSummary }}</span></span>
+      <span v-if="czForeignerSplit"><span class="stat-value">{{ czForeignerSplit }}</span></span>
     </div>
    </div>
   </div>
