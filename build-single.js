@@ -11,6 +11,14 @@ const svg = fs.readFileSync('abra-logo-2026.svg', 'utf8');
 const svgDataUri = 'data:image/svg+xml;base64,' + Buffer.from(svg).toString('base64');
 html = html.replace('src="abra-logo-2026.svg"', 'src="' + svgDataUri + '"');
 
+// Inline preview screenshots
+['preview-table.png', 'preview-cards.png'].forEach(file => {
+  if (fs.existsSync(file)) {
+    const dataUri = 'data:image/png;base64,' + fs.readFileSync(file).toString('base64');
+    html = html.replace('src="' + file + '"', 'src="' + dataUri + '"');
+  }
+});
+
 html = html.replace('<script src="vue.global.prod.js"></script>', '<script>' + vue + '</script>');
 html = html.replace('<script src="xmllint-wasm-bundle.js"></script>', '<script>' + xmllint + '</script>');
 html = html.replace('<script src="xsd-data.js"></script>', '<script>' + xsd + '</script>');

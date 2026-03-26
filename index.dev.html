@@ -113,6 +113,8 @@ body {
 .emp-card-header .info-label { color: var(--text-faint); margin-right: 3px; }
 .emp-card-header .info-value { font-weight: 500; color: var(--text-primary); }
 .emp-card-header .info-empty { color: var(--text-faint); font-style: italic; }
+.expand-all-btn { cursor: pointer; color: var(--text-muted); padding: 2px; border-radius: var(--radius-sm); transition: color var(--duration) var(--ease); }
+.expand-all-btn:hover { color: var(--accent); }
 .emp-card-header .error-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--error); flex-shrink: 0; }
 .emp-card-header .spacer { flex: 1; }
 
@@ -301,6 +303,19 @@ body {
 .group-pill:hover { background: var(--bg-hover); color: var(--text-primary); }
 .group-pill.active { background: var(--accent-subtle); color: var(--accent); border-color: var(--accent); font-weight: 600; }
 
+/* === View mode picker === */
+.view-picker-overlay { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.4); }
+.view-picker-box { background: var(--bg-elevated); border-radius: var(--radius-lg); padding: var(--sp-8); text-align: center; max-width: 1200px; width: 90%; }
+.view-picker-box h2 { margin: 0 0 8px; font-size: 1.25rem; font-weight: 600; color: var(--text-primary); }
+.view-picker-box p { margin: 0 0 var(--sp-6); font-size: 0.875rem; color: var(--text-muted); }
+.view-picker-options { display: flex; gap: var(--sp-6); justify-content: center; }
+.view-picker-card { flex: 1; max-width: 520px; border: 2px solid var(--border); border-radius: var(--radius-lg); padding: var(--sp-4); cursor: pointer; transition: border-color var(--duration) var(--ease), box-shadow var(--duration) var(--ease); }
+.view-picker-card:hover { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-focus); }
+.view-picker-preview { background: var(--bg-base); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); margin-bottom: var(--sp-3); overflow: hidden; }
+.view-picker-preview img { width: 100%; height: auto; display: block; }
+.view-picker-card h3 { margin: 0 0 4px; font-size: 1rem; font-weight: 600; color: var(--text-primary); }
+.view-picker-card span { font-size: 0.8rem; color: var(--text-muted); }
+
 /* === Requirement badges in table headers === */
 .col-req { display: inline-block; font-size: 0.625rem; font-weight: 700; padding: 0 var(--sp-1); border-radius: 3px; margin-left: 3px; cursor: help; }
 .col-req-P { color: var(--error); background: var(--error-bg); }
@@ -320,14 +335,14 @@ body {
     <span class="spacer"></span>
     <span style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 1px; pointer-events: none;">
       <span class="filename" v-if="filename" style="pointer-events: auto;">{{ filename }}{{ isDirty ? ' *' : '' }}</span>
-      <span v-if="!xmlDoc" style="font-size: 16px; color: var(--text-muted);">Lokální zpracování v prohlížeči, nic se nikam neposílá</span>
+      <span v-if="!xmlDoc" style="font-size: 14px; color: var(--text-muted);">Tento nástroj funguje zcela ve vašem prohlížeči, žádná data se nikdy neodesílají na server</span>
     </span>
     <span class="spacer"></span>
     <button @click="loadFile" v-if="xmlDoc">Nahrát XML</button>
     <button class="primary" @click="saveFile" v-if="xmlDoc">Uložit XML</button>
     <button @click="validateAll" v-if="xmlDoc">Validovat</button>
     <button @click="toggleViewMode" v-if="xmlDoc" style="margin-left: 4px;">Zobrazení: {{ viewMode === 'cards' ? 'Karty' : 'Tabulka' }}</button>
-    <button @click="xlsDialog = true" v-if="xmlDoc && viewMode === 'table'">Export XLS</button>
+    <button @click="xlsDialog = true" v-if="xmlDoc">Export XLS</button>
   </div>
 
   <!-- XLS Export Dialog -->
@@ -342,6 +357,26 @@ body {
       <div style="display:flex;gap:var(--sp-2);justify-content:flex-end;">
         <button class="btn" @click="xlsDialog=false">Zrušit</button>
         <button class="btn primary" @click="exportToExcel">Exportovat</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- View mode picker (first visit) -->
+  <div v-if="showViewPicker && xmlDoc && employees.length > 0" class="view-picker-overlay" @click.self="pickViewMode('table')">
+    <div class="view-picker-box">
+      <h2>Zvolte výchozí zobrazení</h2>
+      <p>Můžete kdykoliv přepnout tlačítkem v horní liště</p>
+      <div class="view-picker-options">
+        <div class="view-picker-card" @click="pickViewMode('table')">
+          <div class="view-picker-preview"><img src="preview-table.png" alt="Tabulka"></div>
+          <h3>Tabulka</h3>
+          <span>Přehled všech zaměstnanců a hodnot na jednom místě. Rychlé porovnávání a hromadné kontroly.</span>
+        </div>
+        <div class="view-picker-card" @click="pickViewMode('cards')">
+          <div class="view-picker-preview"><img src="preview-cards.png" alt="Karty"></div>
+          <h3>Karty</h3>
+          <span>Přehledné zobrazení po sekcích. Ideální pro menší soubory a kontrolu jednotlivých záznamů.</span>
+        </div>
       </div>
     </div>
   </div>
@@ -372,7 +407,7 @@ body {
     <div class="search-row">
       <div style="flex: 1; position: relative; display: flex; align-items: center;">
         <input ref="searchInput" placeholder="Filtrovat zobrazená pole — ID, název, XML cesta..." @input="onFieldSearchInput" @keydown.escape="clearFieldSearch" style="flex: 1;">
-        <span class="search-help" title="Filtrovat zobrazená pole podle:&#10;• ID pole — např. 10053, 10228&#10;• Názvu pole — např. příjmení, datum narození&#10;• Názvu sekce — např. identifikace, pojištění&#10;• XML cesty — např. client/name, job/rel&#10;&#10;Více výrazů oddělte čárkou — např. 10053, příjmení">?</span>
+        <span class="search-help" title="Filtrovat pole:&#10;• ID — 10053, 10228&#10;• Název — příjmení, datum narození&#10;• Název sekce — zobrazí celou kategorii&#10;• Sekce + pole — trvalé bydliště PSČ&#10;Oddělte čárkou pro více filtrů">?</span>
       </div>
       <input placeholder="Hledat v hodnotách..." @input="onValueSearchInput" @keydown.escape="clearValueSearch">
     </div>
@@ -408,7 +443,7 @@ body {
   </div>
 
   <!-- Table View -->
-  <div class="table-view" v-if="xmlDoc && employees.length > 0 && viewMode === 'table'">
+  <div class="table-view" v-if="xmlDoc && employees.length > 0 && viewMode === 'table' && !showViewPicker">
     <table>
       <thead>
         <tr>
@@ -459,7 +494,7 @@ body {
   </div>
 
   <!-- Content: Cards list -->
-  <div class="content" v-if="xmlDoc && employees.length > 0 && viewMode === 'cards'"
+  <div class="content" v-if="xmlDoc && employees.length > 0 && viewMode === 'cards' && !showViewPicker"
        @dragover.prevent="isDragging = true" @dragleave="isDragging = false" @drop.prevent="handleDrop">
    <div class="content-inner">
     <!-- Unified display list: matched + separator + unmatched -->
@@ -474,10 +509,11 @@ body {
           <span class="spacer"></span>
           <span class="error-dot" v-if="getEmployeeErrorCount(item.emp._index) > 0" :title="getEmployeeErrorCount(item.emp._index) + ' chyb'"></span>
           <span class="match-badge" v-if="item.matched && getEmpMatchCount(item.emp._index) > 0">{{ getEmpMatchCount(item.emp._index) }} shod</span>
+          <span v-if="isEmployeeExpanded(item.emp._index, item.matched)" class="expand-all-btn" @click.stop="toggleAllSections(item.emp)" title="Rozbalit/sbalit všechny sekce"><svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M4 6l4-4 4 4H4zm0 4l4 4 4-4H4z"/></svg></span>
         </div>
         <div class="emp-card-body" v-if="isEmployeeExpanded(item.emp._index, item.matched)">
           <template v-for="section in getSectionsForEmployee(item.emp)" :key="section._virtualId || section.id">
-            <div class="section-card" v-if="!item.matched || sectionHasMatchingFields(item.emp, section) || showAllFieldsInSearch">
+            <div class="section-card" v-if="!item.matched || sectionMatchesFieldFilter(section) || sectionHasMatchingFields(item.emp, section) || showAllFieldsInSearch">
               <div class="section-header" @click.stop="toggleSection(item.emp._index + ':' + (section._virtualId || section.id))">
                 <svg class="section-chevron" :class="{ expanded: isSectionExpanded(item.emp._index, section._virtualId || section.id, item.matched, section) }" viewBox="0 0 16 16" fill="currentColor"><path d="M6 3l5 5-5 5V3z"/></svg>
                 <span class="section-title">{{ section.label }}</span>
@@ -566,9 +602,17 @@ let ACTION_SECTIONS = null;
 let FIELD_RULES = {};
 
 function fieldMatchesTerm(f, fq) {
+  if (f._nSecLabel === fq) return true;
+  if (f._nSecLabel && fq.startsWith(f._nSecLabel + ' ')) {
+    const remainder = fq.slice(f._nSecLabel.length + 1);
+    const tokens = remainder.split(/\s+/).filter(t => t.length >= 2);
+    if (!tokens.length) return true;
+    const haystack = f._nId + ' ' + f._nLabel + ' ' + f._nXpath;
+    return tokens.every(t => haystack.includes(t));
+  }
   const tokens = fq.split(/\s+/).filter(t => t.length >= 2);
   if (!tokens.length) return true;
-  const haystack = f._nId + ' ' + f._nLabel + ' ' + f._nXpath + ' ' + f._nSecLabel;
+  const haystack = f._nId + ' ' + f._nLabel + ' ' + f._nXpath;
   return tokens.every(t => haystack.includes(t));
 }
 
@@ -576,8 +620,6 @@ function rebuildMetadata(format) {
   activeFormat = format;
   SECTIONS = format.sections;
   FIELDS = format.fields;
-  FIELDS_BY_SECTION = {};
-  FIELDS.forEach(f => { const key = f.section; if (!FIELDS_BY_SECTION[key]) FIELDS_BY_SECTION[key] = []; FIELDS_BY_SECTION[key].push(f); });
   SECTION_MAP = {};
   SECTIONS.forEach(s => { SECTION_MAP[s.id] = s; });
   FOREIGN_KEYWORDS = format.foreignKeywords || [];
@@ -592,6 +634,8 @@ function rebuildMetadata(format) {
     _nSecLabel: norm((SECTION_MAP[f.section] || {}).label || ''),
     _isForeign: !!(SECTION_MAP[f.section] || {})._foreign
   }));
+  FIELDS_BY_SECTION = {};
+  FIELD_META.forEach(f => { const key = f.section; if (!FIELDS_BY_SECTION[key]) FIELDS_BY_SECTION[key] = []; FIELDS_BY_SECTION[key].push(f); });
 }
 
 function detectFormat(xmlDoc) {
@@ -990,9 +1034,11 @@ createApp({
 
     const collapsedMatchedEmps = reactive(new Set());
     const showAllFieldsInSearch = ref(false);
-    const viewMode = ref('table');
+    const viewMode = ref(localStorage.getItem('preferredViewMode') || 'table');
+    const showViewPicker = ref(!localStorage.getItem('preferredViewMode'));
     const actionFilter = ref('');
     function toggleViewMode() { viewMode.value = viewMode.value === 'cards' ? 'table' : 'cards'; }
+    function pickViewMode(mode) { viewMode.value = mode; localStorage.setItem('preferredViewMode', mode); showViewPicker.value = false; }
 
     // Table view: which columns to show (filtered by field search)
     const visibleColumns = computed(() => {
@@ -1014,6 +1060,20 @@ createApp({
         cols = cols.filter(f => {
           const foreignHit = f._isForeign && fqParts.some(fq => FOREIGN_KEYWORDS.some(kw => kw.includes(fq) || fq.includes(kw)));
           return fqParts.some(fq => fieldMatchesTerm(f, fq)) || foreignHit;
+        });
+      }
+      // Value-only search: filter columns to those with matching values
+      const vqParts = splitQuery(valueSearch.value);
+      if (vqParts.length && !fqParts.length) {
+        const matchedCols = new Set();
+        employees.value.forEach(emp => {
+          if (!searchMatches.value?.has(emp._index)) return;
+          const matches = searchMatches.value.get(emp._index);
+          matches.forEach(key => { if (key !== '_card_') matchedCols.add(key); });
+        });
+        cols = cols.filter(f => {
+          const key = fieldKey(f);
+          return matchedCols.has(key);
         });
       }
       // Expand repeating section fields into per-instance columns, grouped by instance
@@ -1063,6 +1123,11 @@ createApp({
       return expandedEmployee.value === index;
     }
 
+    function sectionMatchesFieldFilter(section) {
+      const fqParts = splitQuery(fieldSearch.value);
+      if (!fqParts.length) return false;
+      return section.fields.some(f => fqParts.some(fq => fieldMatchesTerm(f, fq)));
+    }
     function sectionHasMatchingFields(emp, section) {
       if (!searchMatches.value?.has(emp._index)) return false;
       const matches = searchMatches.value.get(emp._index);
@@ -1102,6 +1167,15 @@ createApp({
         collapsedSections.delete(key);
       }
     }
+    function toggleAllSections(emp) {
+      const sections = getSectionsForEmployee(emp);
+      const allExpanded = sections.every(sec => isSectionExpanded(emp._index, sec._virtualId || sec.id, false, sec));
+      sections.forEach(sec => {
+        const key = emp._index + ':' + (sec._virtualId || sec.id);
+        if (allExpanded) { expandedSections.delete(key); collapsedSections.add(key); }
+        else { expandedSections.add(key); collapsedSections.delete(key); }
+      });
+    }
     const collapsedSections = reactive(new Set()); // manually collapsed despite search match
 
     function isSectionExpanded(empIdx, secId, isMatched, section) {
@@ -1130,13 +1204,15 @@ createApp({
     function getFieldError(field) { return null; }
 
     function getVisibleFields(emp, section, isMatched) {
-      if (isMatched && hasSearch.value && searchMatches.value?.has(emp._index)) {
-        if (showAllFieldsInSearch.value) return section.fields;
-        const matches = searchMatches.value.get(emp._index);
-        const filtered = section.fields.filter(f => matches.has(fieldKey(f, section._instanceIndex)));
-        return filtered.length > 0 ? filtered : section.fields;
+      if (!isMatched || !hasSearch.value) return section.fields;
+      if (showAllFieldsInSearch.value) return section.fields;
+      const fqParts = splitQuery(fieldSearch.value);
+      if (fqParts.length > 0) {
+        return section.fields.filter(f => fqParts.some(fq => fieldMatchesTerm(f, fq)));
       }
-      return section.fields;
+      if (!searchMatches.value?.has(emp._index)) return section.fields;
+      const matches = searchMatches.value.get(emp._index);
+      return section.fields.filter(f => matches.has(fieldKey(f, section._instanceIndex)));
     }
 
     function startEdit(emp, field, section) {
@@ -1494,12 +1570,12 @@ createApp({
       xmlDoc, filename, employees, expandedEmployee, fieldSearch, valueSearch, expandedSections, showAllSections,
       isDirty, isDragging, errors, validationCollapsed, editingField, toastMessage, fileInput, searchInput,
       actionLabels, formatName, hasActions, rowInfoDefs, rowColumnLabel, getRowLabel, fieldXpath, fieldHint, fieldSecLabel,
-      displayList, filteredEmployees, matchedEmployees, unmatchedEmployees, searchMatchInfo, isFieldMatch, isEmployeeExpanded, getEmpMatchCount, sectionHasMatchingFields, showAllFieldsInSearch, autoExpandMatched,
+      displayList, filteredEmployees, matchedEmployees, unmatchedEmployees, searchMatchInfo, isFieldMatch, isEmployeeExpanded, getEmpMatchCount, sectionHasMatchingFields, sectionMatchesFieldFilter, showAllFieldsInSearch, autoExpandMatched,
       onFieldSearchInput, onValueSearchInput, clearFieldSearch, clearValueSearch,
       hasSearch, hasValidated, xmlVersion, actionSummary, employerName, datumVyplneni, czForeignerSplit, partialAcceptValue,
-      viewMode, toggleViewMode, visibleColumns, actionFilter, getFieldReq, reqClass, REQ_TITLES,
+      viewMode, toggleViewMode, showViewPicker, pickViewMode, visibleColumns, actionFilter, getFieldReq, reqClass, REQ_TITLES,
       currentFormatGroups, applyGroupQuery,
-      toggleEmployee, getSectionsForEmployee, toggleSection, isSectionExpanded,
+      toggleEmployee, getSectionsForEmployee, toggleSection, toggleAllSections, isSectionExpanded,
       fieldKey, getFieldValue, isFieldModified, getFieldRequirement, hasFieldError, getFieldErrorMsg,
       getVisibleFields, startEdit, commitEdit, cancelEdit, addInstance, removeInstance,
       headerExpanded, documentHeader,

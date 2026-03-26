@@ -354,11 +354,11 @@ const REGZEC_CONFIG = {
     { id: 'addresses',  label: 'Adresy',          query: 'trvale bydliste, pobyt v cr, adresa rezidence' },
     { id: 'employer',   label: 'Zaměstnavatel',   query: 'zamestnavatel' },
     { id: 'employment', label: 'Pracovní poměr',  query: 'pracovni pomer, profese, pozice' },
-    { id: 'insurance',  label: 'Pojišťovny',      query: 'zdravotni pojistovna, organ np' },
+    { id: 'insurance',  label: 'Pojišťovny',      query: 'zdravotni pojistovna, soucasny organ np mimo cssz, predchozi organ np mimo cssz' },
     { id: 'pension',    label: 'Důchod',          query: 'duchod' },
     { id: 'termination',label: 'Ukončení',        query: 'podpora v nezamestnanosti' },
     { id: 'health',     label: 'Zdraví',          query: 'dalsi udaje ztp, zdravotni omezeni' },
-    { id: 'foreign',    label: 'Cizinec',         query: 'cizozemsky, cizi pravni predpisy, pracovni opravneni, danove identifikace, doklad' },
+    { id: 'foreign',    label: 'Cizinec',         query: 'cizozemsky nositel pojisteni, cizi pravni predpisy, cizinec \u2013 pracovni opravneni, danova identifikace, doklad totoznosti' },
   ],
 };
 
@@ -433,13 +433,13 @@ const JMHZ_CONFIG = {
   ],
   fieldGroups: [
     { id: 'identification', label: 'Identifikace',     query: 'identifikace zamestnance' },
-    { id: 'work',           label: 'Práce a pozice',   query: 'vykonavana pozice, prubeh zamestna, prijem v danem' },
+    { id: 'work',           label: 'Práce a pozice',   query: 'vykonavana pozice, prubeh zamestnani, prijem v danem mesici' },
     { id: 'insurance',      label: 'Pojištění a ELDP', query: 'trvani pojisteni, vymero, eldp' },
-    { id: 'contributions',  label: 'Pojistné',         query: 'pojistne za zamestn, sleva na pojistnem' },
-    { id: 'income',         label: 'Příjmy',           query: 'prijmy, cista mzda, zdravotni pojisteni' },
+    { id: 'contributions',  label: 'Pojistné',         query: 'pojistne za zamestnance, pojistne za zamestnavatele, sleva na pojistnem zamestnancu, sleva na pojistnem zamestnavatele' },
+    { id: 'income',         label: 'Příjmy',           query: 'prijmy, cista mzda, zdravotni pojisteni za zamestnavatele, zdravotni pojisteni za zamestnance' },
     { id: 'tax',            label: 'Daně',             query: 'zaloha na dan, zvlastni sazba, prohlaseni poplatnika' },
     { id: 'wages',          label: 'Mzda',             query: 'mzda' },
-    { id: 'annual',         label: 'Roční zúčtování',  query: 'rocniuhrny' },
+    { id: 'annual',         label: 'Roční zúčtování',  query: 'rocni uhrny jednotlivych polozek' },
     { id: 'children',       label: 'Děti',             query: 'zvyhodneni deti, jina osoba, vyzivovane dite' },
   ],
   parseDocumentHeader: function(doc) {
@@ -647,7 +647,6 @@ const JMHZ_CONFIG = {
     { section: 'vykonavanaPozice/fondPracovniDoby', element: 'stanovenaTydenniDoba', csszId: '10261', label: 'Stanovená týdenní pracovní doba', type: 'number' },
 
     { section: 'prubehZamestnani/odpracovaneDny', element: 'dnyEvidencniStav', csszId: '10265', label: 'Počet dní v evidenčním stavu', type: 'number' },
-    { section: 'prubehZamestnani/odpracovaneDny', element: 'dnyOdpracovanePocet', csszId: '10267', label: 'Počet odpracovaných dnů', type: 'number' },
 
     { section: 'prubehZamestnani/odpracovaneHodiny', element: 'pocet', csszId: '10268', label: 'Počet odpracovaných hodin', type: 'number' },
     { section: 'prubehZamestnani/odpracovaneHodiny/rozpad', element: 'prescas', csszId: '10269', label: 'Přesčasové hodiny', type: 'number' },
@@ -700,6 +699,8 @@ const JMHZ_CONFIG = {
     { section: 'prispevekZamestnavateleOstatni', element: 'prispevekPenzPoj', csszId: '10294', label: 'Příspěvek na penzijní pojištění', type: 'number' },
     { section: 'prispevekZamestnavateleOstatni', element: 'prispevekZivotPoj', csszId: '10295', label: 'Příspěvek na soukromé životní pojištění', type: 'number' },
     { section: 'prispevekZamestnavateleOstatni', element: 'prispevekDip', csszId: '10296', label: 'Příspěvek na dlouhodobý investiční produkt', type: 'number' },
+
+    { section: 'prubehZamestnani/odpracovaneDny', element: 'dnyOdpracovanePocet', csszId: '10267', label: 'Počet odpracovaných dnů', type: 'number' },
 
     { section: 'souhrnDataZec/rocniUhrny', element: 'prijemSrazkDanZvlSazba', csszId: '10311', label: 'Příjmy podléhající srážkové dani (rok)', type: 'number' },
     { section: 'souhrnDataZec/rocniUhrny', element: 'danSrazenaZvlSazba', csszId: '10312', label: 'Sražená daň zvláštní sazby (rok)', type: 'number' },
