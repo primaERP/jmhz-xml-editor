@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JMHZ XML Editor</title>
+<title>Nástroj na kontrolu XML REGZEC a měsíčního hlášení</title>
 <script src="vue.global.prod.js"></script>
 <script src="xmllint-wasm-bundle.js"></script>
 <script src="xsd-data.js"></script>
@@ -331,7 +331,7 @@ body {
   <!-- Toolbar -->
   <div class="toolbar">
     <img src="abra-logo-2026.svg" alt="ABRA" style="flex-shrink: 0; height: 28px; width: auto;">
-    <span style="font-weight: 600; font-size: 0.875rem; color: var(--text-primary);">JMHZ XML Editor</span>
+    <span style="font-weight: 600; font-size: 0.875rem; color: var(--text-primary);">Nástroj na kontrolu XML REGZEC a měsíčního hlášení</span>
     <span class="spacer"></span>
     <span style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 1px; pointer-events: none;">
       <span class="filename" v-if="filename" style="pointer-events: auto;">{{ filename }}{{ isDirty ? ' *' : '' }}</span>
@@ -340,7 +340,7 @@ body {
     <span class="spacer"></span>
     <button @click="loadFile" v-if="xmlDoc">Nahrát XML</button>
     <button class="primary" @click="saveFile" v-if="xmlDoc">Uložit XML</button>
-    <button @click="validateAll" v-if="xmlDoc">Validovat</button>
+    <button @click="validateAll" v-if="xmlDoc">Zkontrolovat</button>
     <button @click="toggleViewMode" v-if="xmlDoc" style="margin-left: 4px;">Zobrazení: {{ viewMode === 'cards' ? 'Karty' : 'Tabulka' }}</button>
     <button @click="xlsDialog = true" v-if="xmlDoc">Export XLS</button>
   </div>
@@ -427,7 +427,6 @@ body {
   </div>
 
   <div v-if="xmlDoc && (hasSearch || (viewMode === 'table' && hasActions))" style="display: flex; align-items: center; gap: 16px; padding: 0 36px 6px; max-width: 1000px; margin: 0 auto; width: 100%; font-size: 0.75rem; color: var(--text-muted);">
-    <span class="match-count" v-if="(fieldSearch || valueSearch) && searchMatchInfo">{{ searchMatchInfo }}</span>
     <label v-if="hasSearch && viewMode === 'cards'" style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
       <input type="checkbox" v-model="autoExpandMatched"> Automaticky rozbalit
     </label>
@@ -440,6 +439,7 @@ body {
         <button v-for="a in ['', '1', '2', '3', '4', '8']" :key="a" @click="actionFilter = a" :class="{ active: actionFilter === a }">{{ a ? 'A' + a : 'Vše' }}</button>
       </span>
     </span>
+    <span class="match-count" v-if="(fieldSearch || valueSearch) && searchMatchInfo" style="margin-left: auto;">{{ searchMatchInfo }}</span>
   </div>
 
   <!-- Table View -->
@@ -1340,7 +1340,7 @@ createApp({
       URL.revokeObjectURL(url);
     }
     function showToast(msg) { toastMessage.value = msg; setTimeout(() => { toastMessage.value = ''; }, 2500); }
-    function updateTitle() { document.title = (isDirty.value ? '* ' : '') + (filename.value || 'JMHZ XML Editor'); }
+    function updateTitle() { document.title = (isDirty.value ? '* ' : '') + (filename.value || 'Nástroj na kontrolu XML REGZEC a měsíčního hlášení'); }
 
     // === XSD Validation with error mapping ===
     // validationErrors: Map<empIndex, Map<fieldKey, string[]>> for field-level error lookup
