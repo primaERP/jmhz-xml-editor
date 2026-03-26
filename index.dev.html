@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nástroj na kontrolu XML REGZEC a měsíčního hlášení</title>
+<title>JMHZ XML Editor</title>
 <script src="vue.global.prod.js"></script>
 <script src="xmllint-wasm-bundle.js"></script>
 <script src="xsd-data.js"></script>
@@ -331,7 +331,7 @@ body {
   <!-- Toolbar -->
   <div class="toolbar">
     <img src="abra-logo-2026.svg" alt="ABRA" style="flex-shrink: 0; height: 28px; width: auto;">
-    <span style="font-weight: 600; font-size: 0.875rem; color: var(--text-primary);">Nástroj na kontrolu XML REGZEC a měsíčního hlášení</span>
+    <span style="font-weight: 600; font-size: 0.875rem; color: var(--text-primary);">JMHZ XML Editor</span>
     <span class="spacer"></span>
     <span style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 1px; pointer-events: none;">
       <span class="filename" v-if="filename" style="pointer-events: auto;">{{ filename }}{{ isDirty ? ' *' : '' }}</span>
@@ -1340,7 +1340,7 @@ createApp({
       URL.revokeObjectURL(url);
     }
     function showToast(msg) { toastMessage.value = msg; setTimeout(() => { toastMessage.value = ''; }, 2500); }
-    function updateTitle() { document.title = (isDirty.value ? '* ' : '') + (filename.value || 'Nástroj na kontrolu XML REGZEC a měsíčního hlášení'); }
+    function updateTitle() { document.title = (isDirty.value ? '* ' : '') + (filename.value || 'JMHZ XML Editor'); }
 
     // === XSD Validation with error mapping ===
     // validationErrors: Map<empIndex, Map<fieldKey, string[]>> for field-level error lookup
