@@ -525,7 +525,7 @@ body {
                    :style="isSectionExpanded(item.emp._index, section._virtualId || section.id, item.matched, section) ? { maxHeight: (section.fields.length * 38 + 50) + 'px' } : {}">
                 <table class="field-table">
                   <tr v-for="field in getVisibleFields(item.emp, section, item.matched)" :key="fieldKey(field, section._instanceIndex)"
-                      class="field-row" :class="{ 'has-error': hasFieldError(item.emp, field, section), 'field-match': item.matched && isFieldMatch(item.emp, field, section) }" :data-field-id="field.csszId">
+                      class="field-row" :class="{ 'has-error': hasFieldError(item.emp, field, section), 'field-match': item.matched && isFieldMatch(item.emp, field, section) }" :data-field-id="field.csszId" :data-err-id="'e' + item.emp._index + '-' + fieldKey(field, section._instanceIndex)">
                     <td class="field-id">{{ field.csszId || '' }}</td>
                     <td class="field-label">{{ field.label }}<span class="xpath">{{ fieldXpath(field) }}</span></td>
                     <td class="field-value">
@@ -1515,7 +1515,12 @@ createApp({
           });
         } else {
           // Card view: expand card and section, scroll to field
+          // Clear search so employee card is guaranteed visible
+          fieldSearch.value = '';
+          valueSearch.value = '';
+          // Expand the employee card
           expandedEmployee.value = err.empIndex;
+          collapsedMatchedEmps.delete(err.empIndex);
           if (err.fieldKey) {
             let sectionId = err.fieldKey.substring(0, err.fieldKey.lastIndexOf('/'));
             // For repeating sections without index, expand the first instance
@@ -1524,11 +1529,13 @@ createApp({
             const secKey = err.empIndex + ':' + sectionId;
             expandedSections.add(secKey);
             collapsedSections.delete(secKey);
-            nextTick(() => {
-              const el = document.querySelector('[data-field-id="' + (err.fieldLabel || '') + '"]');
-              if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1500); }
-            });
           }
+          // Use setTimeout to allow Vue to fully render card body + section content
+          setTimeout(() => {
+            const selector = '[data-err-id="e' + err.empIndex + '-' + (err.fieldKey || '') + '"]';
+            const el = document.querySelector(selector);
+            if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1500); }
+          }, 150);
         }
       }
     }
