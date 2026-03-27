@@ -53,7 +53,7 @@ if (_target) {
 </body>
 </html>`;
 
-// ── Build sample-inline-mh.html (partner template) ──────────
+// ── Build sample-inline.html (integration template) ─────────
 const sampleHtml = `<!DOCTYPE html>
 <html lang="cs">
 <head>
@@ -63,29 +63,28 @@ const sampleHtml = `<!DOCTYPE html>
 </head>
 <body>
   <!--
-    Ukázka pro sesterský produkt:
-    1) aplikace vygeneruje celý tento HTML soubor
-    2) místo komentáře níže vloží skutečný XML obsah
-    3) soubor se otevře v prohlížeči
-    4) viewer se načte z produkční URL a XML přečte přímo z této stránky
+    Ukázka integrace:
+    - aplikace vygeneruje tento HTML soubor
+    - XML vloží do <script id="jmhz-data" type="application/xml">
+    - aplikace nastaví i data-filename na název generovaného XML souboru
+    - viewer se načte z produkční URL a XML přečte přímo z této stránky
   -->
   <div id="jmhz-viewer-root"></div>
-  <script id="jmhz-data" type="application/xml" data-filename="mh.xml">
+  <script id="jmhz-data" type="application/xml" data-filename="mesicni-hlaseni-2026-03.xml">
 <!--
-  SEM VLOŽTE SKUTEČNÝ XML OBSAH.
-
-  Příklad:
+  Vložte celý XML dokument místo komentáře.
+  Hodnotu data-filename nastavte na skutečný název XML souboru.
+  Např.:
   <?xml version="1.0" encoding="UTF-8"?>
   <jmhz>...</jmhz>
-
-  Tento komentář nahraďte kompletním XML dokumentem.
 -->
   <\/script>
   <script src="https://support.flexibee.eu/service/jmhz-viewer/embed.js"><\/script>
   <script>
     window.JMHZViewer.mount('#jmhz-viewer-root', {
       initialViewMode: 'cards',
-      autoValidateOnLoad: true
+      autoValidateOnLoad: true,
+      manageDocumentTitle: true
     });
   <\/script>
 </body>

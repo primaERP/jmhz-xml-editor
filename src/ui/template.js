@@ -53,7 +53,7 @@ window.JMHZ_VIEWER_TEMPLATE = `<!-- Toolbar -->
     </div>
   </div>
 
-  <div class="top-controls" v-if="xmlDoc && employees.length > 0" ref="topControlsRef" @wheel="handleTopControlsWheel">
+  <div class="top-controls" v-if="xmlDoc && employees.length > 0">
     <!-- Global Search -->
     <div class="global-search">
       <div class="header-card" :class="{ expanded: headerExpanded }" style="margin-bottom: var(--sp-3);">
@@ -142,7 +142,7 @@ window.JMHZ_VIEWER_TEMPLATE = `<!-- Toolbar -->
   </div>
 
   <!-- Table View -->
-  <div class="table-view" ref="tableViewRef" v-if="xmlDoc && employees.length > 0 && viewMode === 'table' && !showViewPicker" @wheel="handlePrimaryContentWheel">
+  <div class="table-view" v-if="xmlDoc && employees.length > 0 && viewMode === 'table' && !showViewPicker">
     <table>
       <thead>
         <tr>
@@ -193,7 +193,7 @@ window.JMHZ_VIEWER_TEMPLATE = `<!-- Toolbar -->
   </div>
 
   <!-- Content: Cards list -->
-  <div class="content" ref="cardsContentRef" v-if="xmlDoc && employees.length > 0 && viewMode === 'cards' && !showViewPicker" @wheel="handlePrimaryContentWheel"
+  <div class="content" v-if="xmlDoc && employees.length > 0 && viewMode === 'cards' && !showViewPicker"
        @dragover.prevent="isDragging = true" @dragleave="isDragging = false" @drop.prevent="handleDrop">
    <div class="content-inner">
     <!-- Unified display list: matched + separator + unmatched -->
@@ -266,7 +266,8 @@ window.JMHZ_VIEWER_TEMPLATE = `<!-- Toolbar -->
   </div>
 
   <!-- Validation Panel -->
-  <div class="validation-panel" v-if="errors.length > 0">
+  <div class="validation-panel-spacer" v-if="errors.length > 0" :style="{ height: validationDockHeight + 'px' }"></div>
+  <div class="validation-panel" v-if="errors.length > 0" ref="validationPanelRef">
     <div class="validation-header" @click="validationCollapsed = !validationCollapsed">
       Validace ({{ errors.length }} {{ errors.length === 1 ? 'chyba' : errors.length < 5 ? 'chyby' : 'chyb' }})
       {{ validationCollapsed ? '▲' : '▼' }}

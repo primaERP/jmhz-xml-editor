@@ -51,15 +51,14 @@ function mountJmhzViewer(target, options = {}) {
     const isDragging = ref(false);
     const errors = ref([]);
     const validationCollapsed = ref(false);
+    const validationPanelRef = ref(null);
+    const validationDockHeight = ref(0);
     const editingField = ref(null);
     const editingHeaderKey = ref(null);
     const toastMessage = ref('');
     const fileHandle = ref(null);
     const fileInput = ref(null);
     const searchInput = ref(null);
-    const topControlsRef = ref(null);
-    const cardsContentRef = ref(null);
-    const tableViewRef = ref(null);
     const headerExpanded = ref(false);
     const xlsDialog = ref(false);
     const xlsOptTitle = ref(true);
@@ -238,6 +237,27 @@ function mountJmhzViewer(target, options = {}) {
     const employeeCountText = computed(() => employees.value.length + ' ' + czPlural(employees.value.length, 'zaměstnanec', 'zaměstnanci', 'zaměstnanců'));
     const validationCountText = computed(() => errors.value.length + ' ' + czPlural(errors.value.length, 'chyba', 'chyby', 'chyb'));
 
+    function updateValidationDockHeight() {
+      const panelEl = validationPanelRef.value;
+      validationDockHeight.value = panelEl ? Math.ceil(panelEl.getBoundingClientRect().height) : 0;
+    }
+    let validationPanelObserver = null;
+    watch(validationPanelRef, (panelEl) => {
+      if (validationPanelObserver) {
+        validationPanelObserver.disconnect();
+        validationPanelObserver = null;
+      }
+      if (panelEl && typeof ResizeObserver !== 'undefined') {
+        validationPanelObserver = new ResizeObserver(() => updateValidationDockHeight());
+        validationPanelObserver.observe(panelEl);
+      }
+      nextTick(() => updateValidationDockHeight());
+    });
+    watch(() => [errors.value.length, validationCollapsed.value], () => {
+      nextTick(() => updateValidationDockHeight());
+    });
+    window.addEventListener('resize', updateValidationDockHeight);
+
     function splitQuery(raw) { return raw.split(',').map(s => norm(s.trim())).filter(Boolean); }
 
     const hasSearch = computed(() => {
@@ -381,33 +401,6 @@ function mountJmhzViewer(target, options = {}) {
     const actionFilter = ref('');
     function toggleViewMode() { viewMode.value = viewMode.value === 'cards' ? 'table' : 'cards'; }
     function pickViewMode(mode) { viewMode.value = mode; localStorage.setItem('preferredViewMode', mode); showViewPicker.value = false; }
-    function canScrollInDirection(el, deltaY) {
-      if (!el || !deltaY) return false;
-      if (deltaY < 0) return el.scrollTop > 0;
-      return Math.ceil(el.scrollTop + el.clientHeight) < el.scrollHeight;
-    }
-    function getPrimaryScrollTarget() {
-      return viewMode.value === 'table' ? tableViewRef.value : cardsContentRef.value;
-    }
-    function handleTopControlsWheel(e) {
-      const topEl = topControlsRef.value;
-      const targetEl = getPrimaryScrollTarget();
-      if (!topEl || !e.deltaY) return;
-      if (canScrollInDirection(topEl, e.deltaY)) return;
-      if (!canScrollInDirection(targetEl, e.deltaY)) return;
-      e.preventDefault();
-      targetEl.scrollTop += e.deltaY;
-    }
-    function handlePrimaryContentWheel(e) {
-      const topEl = topControlsRef.value;
-      const targetEl = getPrimaryScrollTarget();
-      if (!topEl || !targetEl || e.deltaY >= 0) return;
-      if (canScrollInDirection(targetEl, e.deltaY)) return;
-      if (!canScrollInDirection(topEl, e.deltaY)) return;
-      e.preventDefault();
-      topEl.scrollTop += e.deltaY;
-    }
-
     // Table view: which columns to show (filtered by field search)
     const visibleColumns = computed(() => {
       void xmlDoc.value;
@@ -1039,14 +1032,15 @@ function mountJmhzViewer(target, options = {}) {
     return {
       assetBase,
       xmlDoc, filename, employees, expandedEmployee, fieldSearch, valueSearch, expandedSections, showAllSections,
-      isDirty, isDragging, errors, validationCollapsed, editingField, toastMessage, fileInput, searchInput, topControlsRef, cardsContentRef, tableViewRef,
+      isDirty, isDragging, errors, validationCollapsed, editingField, toastMessage, fileInput, searchInput,
+      validationPanelRef, validationDockHeight,
       actionLabels, formatName, hasActions, rowInfoDefs, rowColumnLabel, getRowLabel, fieldXpath, fieldHint, fieldSecLabel,
       displayList, filteredEmployees, matchedEmployees, unmatchedEmployees, searchMatchInfo, isFieldMatch, isEmployeeExpanded, getEmpMatchCount, sectionHasMatchingFields, sectionMatchesFieldFilter, showAllFieldsInSearch, autoExpandMatched,
       onFieldSearchInput, onValueSearchInput, clearFieldSearch, clearValueSearch,
       hasSearch, hasValidated, xmlVersion, actionSummary, employerName, datumVyplneni, czForeignerSplit, partialAcceptValue,
       employeeCountText, validationCountText,
       viewMode, toggleViewMode, showViewPicker, pickViewMode, visibleColumns, actionFilter, getFieldReq, reqClass, REQ_TITLES,
-      currentFormatGroups, applyGroupQuery, handleTopControlsWheel, handlePrimaryContentWheel,
+      currentFormatGroups, applyGroupQuery,
       toggleEmployee, getSectionsForEmployee, toggleSection, toggleAllSections, isSectionExpanded,
       setSectionBodyRef, getSectionBodyStyle,
       fieldKey, getFieldValue, isFieldModified, getFieldRequirement, hasFieldError, getFieldErrorMsg,
