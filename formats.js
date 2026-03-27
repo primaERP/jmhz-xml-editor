@@ -310,15 +310,16 @@ const REGZEC_CONFIG = {
     if (!doc) return [];
     const root = doc.documentElement;
     const fields = [];
-    const ver = root.getAttribute('version');
-    if (ver) fields.push({ label: 'Verze', value: ver });
-    const pa = root.getAttribute('partialAccept');
-    if (pa) fields.push({ label: 'Částečné přijetí', value: pa });
+    function attrField(label, key, el, attr) {
+      const v = el.getAttribute(attr) || '';
+      if (v) fields.push({ label, value: v, key, el, attr, _writeBack: 'attribute', modified: false });
+    }
+    attrField('Verze', 'root/version', root, 'version');
+    attrField('Částečné přijetí', 'root/partialAccept', root, 'partialAccept');
     for (const c of root.children) {
       if (c.localName === 'VENDOR') {
-        const pn = c.getAttribute('productName') || '';
-        const pv = c.getAttribute('productVersion') || '';
-        if (pn || pv) fields.push({ label: 'Software', value: [pn, pv].filter(Boolean).join(' ') });
+        attrField('Software (název)', 'VENDOR/productName', c, 'productName');
+        attrField('Software (verze)', 'VENDOR/productVersion', c, 'productVersion');
       }
     }
     return fields;
@@ -336,6 +337,14 @@ const REGZEC_CONFIG = {
   writeField: function(fieldRef, value) {
     if (value) fieldRef.el.setAttribute(fieldRef.attr, value);
     else fieldRef.el.removeAttribute(fieldRef.attr);
+  },
+  writeHeaderField: function(headerRef, value) {
+    if (headerRef._writeBack === 'attribute') {
+      if (value) headerRef.el.setAttribute(headerRef.attr, value);
+      else headerRef.el.removeAttribute(headerRef.attr);
+    } else {
+      headerRef.el.textContent = value;
+    }
   },
   fieldAttrKey: function(field) { return field.attr; },
   fieldXpath: function(field) { return field.section + '/@' + field.attr; },
@@ -444,76 +453,79 @@ const JMHZ_CONFIG = {
   ],
   parseDocumentHeader: function(doc) {
     if (!doc) return [];
-    function el(parent, localName) {
+    function findEl(parent, localName) {
       if (!parent) return null;
       for (const c of parent.children) if (c.localName === localName) return c;
       return null;
     }
-    function txt(parent, localName) {
-      const e = el(parent, localName); return e ? e.textContent.trim() : '';
+    function textField(label, key, parent, localName) {
+      const e = findEl(parent, localName);
+      if (!e) return null;
+      const v = e.textContent.trim();
+      if (!v) return null;
+      return { label, value: v, key, el: e, attr: null, _writeBack: 'textContent', modified: false };
     }
+    function attrField(label, key, el, attr) {
+      const v = el.getAttribute(attr) || '';
+      if (!v) return null;
+      return { label, value: v, key, el, attr, _writeBack: 'attribute', modified: false };
+    }
+    function push(f) { if (f) fields.push(f); }
     const root = doc.documentElement;
-    const hlavicka = el(root, 'hlavicka');
-    const vendor   = el(root, 'VENDOR');
-    const sender   = el(root, 'SENDER');
+    const hlavicka = findEl(root, 'hlavicka');
+    const vendor   = findEl(root, 'VENDOR');
+    const sender   = findEl(root, 'SENDER');
     const fields = [];
     if (hlavicka) {
-      const mesic = txt(hlavicka, 'mesic'), rok = txt(hlavicka, 'rok');
-      if (mesic || rok) fields.push({ label: 'Období', value: mesic + '/' + rok });
-      const typ = txt(hlavicka, 'typPodani');
-      if (typ) fields.push({ label: 'Typ podání', value: typ });
-      const vs = txt(hlavicka, 'variabilniSymbol');
-      if (vs) fields.push({ label: 'Variabilní symbol', value: vs });
-      const dat = txt(hlavicka, 'datumVyplneni');
-      if (dat) fields.push({ label: 'Datum vyplnění', value: dat.replace('T', ' ').replace('Z', '') });
-      const id = txt(hlavicka, 'idPodani');
-      if (id) fields.push({ label: 'ID podání', value: id });
-      const bp = txt(hlavicka, 'balikPoradi'), bpc = txt(hlavicka, 'balikyPocet');
-      if (bp || bpc) fields.push({ label: 'Balík', value: bp + ' / ' + bpc });
-      const fv = txt(hlavicka, 'formularePocetVBaliku'), fc = txt(hlavicka, 'formularePocetCelkem');
-      if (fv || fc) fields.push({ label: 'Formulářů v balíku / celkem', value: fv + ' / ' + fc });
+      push(textField('Měsíc', 'hlavicka/mesic', hlavicka, 'mesic'));
+      push(textField('Rok', 'hlavicka/rok', hlavicka, 'rok'));
+      push(textField('Typ podání', 'hlavicka/typPodani', hlavicka, 'typPodani'));
+      push(textField('Variabilní symbol', 'hlavicka/variabilniSymbol', hlavicka, 'variabilniSymbol'));
+      const datF = textField('Datum vyplnění', 'hlavicka/datumVyplneni', hlavicka, 'datumVyplneni');
+      if (datF) { datF.value = datF.value.replace('T', ' ').replace('Z', ''); push(datF); }
+      push(textField('ID podání', 'hlavicka/idPodani', hlavicka, 'idPodani'));
+      push(textField('Balík pořadí', 'hlavicka/balikPoradi', hlavicka, 'balikPoradi'));
+      push(textField('Balíky počet', 'hlavicka/balikyPocet', hlavicka, 'balikyPocet'));
+      push(textField('Formulářů v balíku', 'hlavicka/formularePocetVBaliku', hlavicka, 'formularePocetVBaliku'));
+      push(textField('Formulářů celkem', 'hlavicka/formularePocetCelkem', hlavicka, 'formularePocetCelkem'));
     }
     if (vendor) {
-      const pn = vendor.getAttribute('productName') || '';
-      const pv = vendor.getAttribute('productVersion') || '';
-      if (pn || pv) fields.push({ label: 'Software', value: [pn, pv].filter(Boolean).join(' ') });
+      push(attrField('Software (název)', 'VENDOR/productName', vendor, 'productName'));
+      push(attrField('Software (verze)', 'VENDOR/productVersion', vendor, 'productVersion'));
     }
     if (sender) {
-      const vp = sender.getAttribute('VerzeProtokolu') || '';
-      if (vp) fields.push({ label: 'Verze protokolu', value: vp });
-      const em = sender.getAttribute('EmailNotifikace') || '';
-      if (em) fields.push({ label: 'E-mail notifikace', value: em });
-      const isds = sender.getAttribute('ISDSreport') || '';
-      if (isds) fields.push({ label: 'ISDS report', value: isds });
+      push(attrField('Verze protokolu', 'SENDER/VerzeProtokolu', sender, 'VerzeProtokolu'));
+      push(attrField('E-mail notifikace', 'SENDER/EmailNotifikace', sender, 'EmailNotifikace'));
+      push(attrField('ISDS report', 'SENDER/ISDSreport', sender, 'ISDSreport'));
     }
-    const souhrn = el(root, 'souhrn');
+    const souhrn = findEl(root, 'souhrn');
     if (souhrn) {
-      const mesic = el(souhrn, 'danUdajeMesic');
+      const mesic = findEl(souhrn, 'danUdajeMesic');
       if (mesic) {
-        const z = txt(mesic, 'danZalohaPoSleve'); if (z) fields.push({ label: 'Záloha na daň (měsíc)', value: z });
-        const b = txt(mesic, 'danBonus'); if (b) fields.push({ label: 'Daňový bonus (měsíc)', value: b });
+        push(textField('Záloha na daň (měsíc)', 'souhrn/danUdajeMesic/danZalohaPoSleve', mesic, 'danZalohaPoSleve'));
+        push(textField('Daňový bonus (měsíc)', 'souhrn/danUdajeMesic/danBonus', mesic, 'danBonus'));
       }
-      const rok = el(souhrn, 'danUdajeRok');
+      const rok = findEl(souhrn, 'danUdajeRok');
       if (rok) {
-        const p = txt(rok, 'danPreplatek'); if (p) fields.push({ label: 'Přeplatek na dani (rok)', value: p });
-        const d = txt(rok, 'danBonusDoplatek'); if (d) fields.push({ label: 'Doplatek daňového bonusu (rok)', value: d });
+        push(textField('Přeplatek na dani (rok)', 'souhrn/danUdajeRok/danPreplatek', rok, 'danPreplatek'));
+        push(textField('Doplatek daňového bonusu (rok)', 'souhrn/danUdajeRok/danBonusDoplatek', rok, 'danBonusDoplatek'));
       }
     }
-    const pvpoj = el(root, 'PVPOJ');
+    const pvpoj = findEl(root, 'PVPOJ');
     if (pvpoj) {
-      const poj = el(pvpoj, 'pojistne');
+      const poj = findEl(pvpoj, 'pojistne');
       if (poj) {
-        const za = txt(poj, 'zakladZamestnavateleA'); if (za) fields.push({ label: 'Základ poj. zaměstnavatele A', value: za });
-        const pa = txt(poj, 'pojistneZamestnavateleA'); if (pa) fields.push({ label: 'Pojistné zaměstnavatele A', value: pa });
-        const zb = txt(poj, 'zakladZamestnavateleB'); if (zb) fields.push({ label: 'Základ poj. zaměstnavatele B', value: zb });
-        const pb = txt(poj, 'pojistneZamestnavateleB'); if (pb) fields.push({ label: 'Pojistné zaměstnavatele B', value: pb });
-        const zc = txt(poj, 'zakladZamestnavateleC'); if (zc) fields.push({ label: 'Základ poj. zaměstnavatele C', value: zc });
-        const pc = txt(poj, 'pojistneZamestnavateleC'); if (pc) fields.push({ label: 'Pojistné zaměstnavatele C', value: pc });
-        const cel = txt(poj, 'pojistneZamestnavateleCelkem'); if (cel) fields.push({ label: 'Pojistné zaměstnavatele celkem', value: cel });
-        const zam = txt(poj, 'pojistneZamestnance'); if (zam) fields.push({ label: 'Pojistné zaměstnance', value: zam });
-        const tot = txt(poj, 'pojistneCelkem'); if (tot) fields.push({ label: 'Pojistné celkem', value: tot });
+        push(textField('Základ poj. zaměstnavatele A', 'PVPOJ/pojistne/zakladZamestnavateleA', poj, 'zakladZamestnavateleA'));
+        push(textField('Pojistné zaměstnavatele A', 'PVPOJ/pojistne/pojistneZamestnavateleA', poj, 'pojistneZamestnavateleA'));
+        push(textField('Základ poj. zaměstnavatele B', 'PVPOJ/pojistne/zakladZamestnavateleB', poj, 'zakladZamestnavateleB'));
+        push(textField('Pojistné zaměstnavatele B', 'PVPOJ/pojistne/pojistneZamestnavateleB', poj, 'pojistneZamestnavateleB'));
+        push(textField('Základ poj. zaměstnavatele C', 'PVPOJ/pojistne/zakladZamestnavateleC', poj, 'zakladZamestnavateleC'));
+        push(textField('Pojistné zaměstnavatele C', 'PVPOJ/pojistne/pojistneZamestnavateleC', poj, 'pojistneZamestnavateleC'));
+        push(textField('Pojistné zaměstnavatele celkem', 'PVPOJ/pojistne/pojistneZamestnavateleCelkem', poj, 'pojistneZamestnavateleCelkem'));
+        push(textField('Pojistné zaměstnance', 'PVPOJ/pojistne/pojistneZamestnance', poj, 'pojistneZamestnance'));
+        push(textField('Pojistné celkem', 'PVPOJ/pojistne/pojistneCelkem', poj, 'pojistneCelkem'));
       }
-      const uh = txt(pvpoj, 'pojistneUhrada'); if (uh) fields.push({ label: 'Pojistné k úhradě', value: uh });
+      push(textField('Pojistné k úhradě', 'PVPOJ/pojistneUhrada', pvpoj, 'pojistneUhrada'));
     }
     return fields;
   },
@@ -848,6 +860,14 @@ const JMHZ_CONFIG = {
       if (!el) return;
     }
     el.textContent = value;
+  },
+  writeHeaderField: function(headerRef, value) {
+    if (headerRef._writeBack === 'attribute') {
+      if (value) headerRef.el.setAttribute(headerRef.attr, value);
+      else headerRef.el.removeAttribute(headerRef.attr);
+    } else {
+      headerRef.el.textContent = value;
+    }
   },
   fieldAttrKey: function(field) { return field.element || field.attr; },
   fieldXpath: function(field) { return field.section + '/' + (field.element || field.attr); },

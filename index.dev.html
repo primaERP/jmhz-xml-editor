@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JMHZ XML Editor</title>
+<title>JMHZ Viewer</title>
 <script src="vue.global.prod.js"></script>
 <script src="xmllint-wasm-bundle.js"></script>
 <script src="xsd-data.js"></script>
@@ -66,8 +66,8 @@ body {
 /* === Layout === */
 .app { display: flex; flex-direction: column; height: 100vh; }
 .toolbar {
-  display: flex; align-items: center; gap: var(--sp-3); padding: 0 var(--sp-4);
-  height: 48px; background: var(--bg-elevated); border-bottom: 1px solid var(--border);
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--sp-3); padding: 0 var(--sp-4);
+  min-height: 48px; background: var(--bg-elevated); border-bottom: 1px solid var(--border);
   z-index: 10; flex-shrink: 0; position: relative;
 }
 .content { flex: 1; overflow-y: auto; padding: var(--sp-4) var(--sp-6); min-height: 0; }
@@ -84,8 +84,32 @@ body {
 .toolbar button.primary, .btn.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
 .toolbar button.primary:hover, .btn.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 .toolbar button.primary:active, .btn.primary:active { transform: scale(0.98); }
-.toolbar .spacer { flex: 1; }
-.toolbar .filename { color: var(--text-muted); font-size: 0.8125rem; }
+.toolbar-left, .toolbar-center, .toolbar-actions { min-width: 0; }
+.toolbar-left {
+  display: flex; align-items: center; gap: var(--sp-3); position: relative; z-index: 1;
+}
+.toolbar-center {
+  display: flex; align-items: center; justify-content: center; min-width: 0; overflow: hidden;
+}
+.toolbar-actions {
+  display: flex; align-items: center; gap: var(--sp-3); justify-self: end; min-width: max-content; position: relative; z-index: 1;
+}
+.toolbar .privacy-note {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+.toolbar .privacy-note { font-size: 14px; color: var(--text-muted); }
+.toolbar-empty-note {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  max-width: calc(100% - 320px);
+  pointer-events: none;
+}
 .toolbar .error-badge { background: var(--error); color: var(--accent-text); font-size: 0.6875rem; font-weight: 600; padding: 2px var(--sp-2); border-radius: 10px; }
 
 /* === Employee Card === */
@@ -223,9 +247,86 @@ body {
 .stats-bar .stat-sep { color: var(--border); margin: 0 2px; }
 .stats-bar .stat-error { font-weight: 600; color: var(--error); }
 .stats-bar .stat-ok { font-weight: 600; color: var(--success); }
+.stats-bar .stats-filename { min-width: 0; flex: 1 1 auto; }
+.stats-bar .stats-filename .stat-value {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+.header-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 1px 2px oklch(20% 0.02 250 / 0.05);
+}
+.header-card.expanded {
+  border-color: oklch(72% 0.08 255);
+  box-shadow: 0 4px 16px oklch(20% 0.02 250 / 0.1);
+}
+.header-card-header {
+  padding: var(--sp-3) var(--sp-4);
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: 0.8125rem;
+  transition: background var(--duration) var(--ease);
+}
+.header-card-header:hover { background: var(--bg-hover); }
+.header-card.expanded .header-card-header { background: var(--accent-subtle); }
+.header-card-info {
+  white-space: nowrap;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.header-card-info-value {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.header-card-info-filename {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.header-card-info-filename .header-card-info-value {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+.header-toggle-text {
+  color: var(--accent);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.header-card-body {
+  border-top: 1px solid var(--border-subtle);
+  padding: 0;
+}
+.editable-header:hover { text-decoration: underline dotted; cursor: pointer; }
+.header-modified { font-weight: 600; color: var(--accent); }
+.editable-header.has-error { color: var(--error); font-weight: 600; }
 .stats-bar .stat-warn { font-weight: 600; color: var(--warning); }
 
 /* === Global Search === */
+.top-controls {
+  flex-shrink: 0;
+  width: 100%;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  max-height: min(50vh, calc(100vh - 160px));
+  scrollbar-width: thin;
+  scrollbar-color: oklch(80% 0.01 250) transparent;
+}
+.top-controls::-webkit-scrollbar { width: 6px; }
+.top-controls::-webkit-scrollbar-thumb { background: oklch(80% 0.01 250); border-radius: 3px; }
+.top-controls::-webkit-scrollbar-track { background: transparent; }
 .global-search { max-width: 1000px; margin: 0 auto; padding: var(--sp-4) var(--sp-8) var(--sp-3); flex-shrink: 0; width: 100%; }
 .global-search .search-row { display: flex; gap: var(--sp-3); }
 .global-search input {
@@ -328,21 +429,22 @@ body {
 </head>
 <body>
 <div id="app" class="app">
+  <!-- APP_TEMPLATE_START -->
   <!-- Toolbar -->
   <div class="toolbar">
-    <img src="abra-logo-2026.svg" alt="ABRA" style="flex-shrink: 0; height: 28px; width: auto;">
-    <span style="font-weight: 600; font-size: 0.875rem; color: var(--text-primary);">JMHZ XML Editor</span>
-    <span class="spacer"></span>
-    <span style="position: absolute; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 1px; pointer-events: none;">
-      <span class="filename" v-if="filename" style="pointer-events: auto;">{{ filename }}{{ isDirty ? ' *' : '' }}</span>
-      <span v-if="!xmlDoc" style="font-size: 14px; color: var(--text-muted);">Tento nástroj funguje zcela ve vašem prohlížeči, žádná data se nikdy neodesílají na server</span>
-    </span>
-    <span class="spacer"></span>
-    <button @click="loadFile" v-if="xmlDoc">Nahrát XML</button>
-    <button class="primary" @click="saveFile" v-if="xmlDoc">Uložit XML</button>
-    <button @click="validateAll" v-if="xmlDoc">Zkontrolovat</button>
-    <button @click="toggleViewMode" v-if="xmlDoc" style="margin-left: 4px;">Zobrazení: {{ viewMode === 'cards' ? 'Karty' : 'Tabulka' }}</button>
-    <button @click="xlsDialog = true" v-if="xmlDoc">Export XLS</button>
+    <div class="toolbar-left">
+      <img src="abra-logo-2026.svg" alt="ABRA" style="flex-shrink: 0; height: 28px; width: auto;">
+      <span style="font-weight: 600; font-size: 0.875rem; color: var(--text-primary);">JMHZ Viewer</span>
+    </div>
+    <div class="toolbar-center"></div>
+    <div class="toolbar-actions">
+      <button @click="loadFile" v-if="xmlDoc">Nahrát XML</button>
+      <button class="primary" @click="saveFile" v-if="xmlDoc">Uložit XML</button>
+      <button @click="validateAll" v-if="xmlDoc">Zkontrolovat</button>
+      <button @click="toggleViewMode" v-if="xmlDoc">Zobrazení: {{ viewMode === 'cards' ? 'Karty' : 'Tabulka' }}</button>
+      <button @click="xlsDialog = true" v-if="xmlDoc">Export XLS</button>
+    </div>
+    <span class="privacy-note toolbar-empty-note" v-if="!xmlDoc">Tento nástroj funguje zcela ve vašem prohlížeči, žádná data se nikdy neodesílají na server</span>
   </div>
 
   <!-- XLS Export Dialog -->
@@ -381,69 +483,96 @@ body {
     </div>
   </div>
 
-  <!-- Stats Bar -->
-  <div class="stats-bar" v-if="xmlDoc && employees.length > 0">
-   <div class="stats-bar-inner">
-    <div class="stat-row" style="flex-wrap:nowrap;">
-      <span><span class="stat-label">{{ formatName }}</span> <span class="stat-value" v-if="xmlVersion">{{ xmlVersion }}</span></span>
-      <span><span class="stat-value">{{ employees.length }}</span> <span class="stat-label">zaměstnanců</span></span>
-      <span v-if="employerName"><span class="stat-label">Zaměstnavatel:</span> <span class="stat-value">{{ employerName }}</span></span>
-      <span v-if="datumVyplneni"><span class="stat-label">Datum:</span> <span class="stat-value">{{ datumVyplneni }}</span></span>
-      <span v-if="hasValidated">
-        <span :class="errors.length > 0 ? 'stat-error' : 'stat-ok'">{{ errors.length }} {{ errors.length === 1 ? 'chyba' : errors.length < 5 ? 'chyby' : 'chyb' }}</span>
-      </span>
-      <button v-if="documentHeader.length" class="btn" @click="headerExpanded = !headerExpanded" style="margin-left:auto;font-size:0.75rem;padding:2px 8px;white-space:nowrap;">{{ headerExpanded ? 'Záhlaví ▲' : 'Záhlaví ▼' }}</button>
-    </div>
-    <div v-if="headerExpanded && documentHeader.length" class="stat-row" style="margin-top:var(--sp-2);flex-wrap:wrap;gap:var(--sp-1) var(--sp-6);">
-      <span v-for="f in documentHeader" :key="f.label"><span class="stat-label">{{ f.label }}:</span> <span class="stat-value">{{ f.value }}</span></span>
-      <span v-if="actionSummary"><span class="stat-label">Akce:</span> <span class="stat-value">{{ actionSummary }}</span></span>
-      <span v-if="czForeignerSplit"><span class="stat-value">{{ czForeignerSplit }}</span></span>
-    </div>
-   </div>
-  </div>
-
-  <!-- Global Search -->
-  <div class="global-search" v-if="xmlDoc && employees.length > 0">
-    <div class="search-row">
-      <div style="flex: 1; position: relative; display: flex; align-items: center;">
-        <input ref="searchInput" placeholder="Filtrovat zobrazená pole — ID, název, XML cesta..." @input="onFieldSearchInput" @keydown.escape="clearFieldSearch" style="flex: 1;">
-        <span class="search-help" title="Filtrovat pole:&#10;• ID — 10053, 10228&#10;• Název — příjmení, datum narození&#10;• Název sekce — zobrazí celou kategorii&#10;• Sekce + pole — trvalé bydliště PSČ&#10;Oddělte čárkou pro více filtrů">?</span>
+  <div class="top-controls" v-if="xmlDoc && employees.length > 0" ref="topControlsRef" @wheel="handleTopControlsWheel">
+    <!-- Global Search -->
+    <div class="global-search">
+      <div class="header-card" :class="{ expanded: headerExpanded }" style="margin-bottom: var(--sp-3);">
+        <div class="header-card-header" @click="headerExpanded = !headerExpanded">
+          <span class="header-card-info"><span class="stat-label">{{ formatName }}</span> <span class="header-card-info-value" v-if="xmlVersion">{{ xmlVersion }}</span></span>
+          <span class="header-card-info"><span class="header-card-info-value">{{ employeeCountText }}</span></span>
+          <span class="header-card-info" v-if="hasValidated"><span class="stat-label">Kontrola:</span> <span :class="errors.length > 0 ? 'stat-error' : 'stat-ok'">{{ validationCountText }}</span></span>
+          <span class="header-card-info header-card-info-filename" v-if="filename"><span class="header-card-info-value">{{ filename }}{{ isDirty ? ' *' : '' }}</span></span>
+          <span class="spacer"></span>
+          <span class="header-toggle-text">{{ headerExpanded ? 'Skrýt hlavičku' : 'Zobrazit hlavičku' }}</span>
+        </div>
+        <div v-if="headerExpanded" class="header-card-body">
+          <div class="section-card">
+            <div class="section-body" style="max-height:none;">
+              <table class="field-table">
+                <tr v-for="f in documentHeader" :key="f.key" class="field-row" :class="{ 'has-error': f._hasError }" :data-hdr-key="f.key">
+                  <td class="field-id"></td>
+                  <td class="field-label">{{ f.label }}</td>
+                  <td class="field-value" @click="!isEditingHeader(f.key) && startHeaderEdit(f)">
+                    <input v-if="isEditingHeader(f.key)" type="text" :value="f.value" @blur="commitHeaderEdit(f, $event.target.value)" @keydown.enter="commitHeaderEdit(f, $event.target.value)" @keydown.escape="cancelHeaderEdit" autofocus>
+                    <span v-else class="editable-header" :class="{ 'header-modified': f.modified, 'has-error': f._hasError }"><span v-if="f.modified" class="modified-dot"></span>{{ f.value || '—' }}</span>
+                  </td>
+                </tr>
+                <tr v-if="employerName" class="field-row">
+                  <td class="field-id"></td>
+                  <td class="field-label">Zaměstnavatel</td>
+                  <td class="field-value">{{ employerName }}</td>
+                </tr>
+                <tr v-if="datumVyplneni" class="field-row">
+                  <td class="field-id"></td>
+                  <td class="field-label">Datum</td>
+                  <td class="field-value">{{ datumVyplneni }}</td>
+                </tr>
+                <tr v-if="actionSummary" class="field-row">
+                  <td class="field-id"></td>
+                  <td class="field-label">Akce</td>
+                  <td class="field-value">{{ actionSummary }}</td>
+                </tr>
+                <tr v-if="czForeignerSplit" class="field-row">
+                  <td class="field-id"></td>
+                  <td class="field-label">Rozdělení</td>
+                  <td class="field-value">{{ czForeignerSplit }}</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
-      <input placeholder="Hledat v hodnotách..." @input="onValueSearchInput" @keydown.escape="clearValueSearch">
+      <div class="search-row">
+        <div style="flex: 1; position: relative; display: flex; align-items: center;">
+          <input ref="searchInput" placeholder="Filtrovat zobrazená pole — ID, název, XML cesta..." @input="onFieldSearchInput" @keydown.escape="clearFieldSearch" style="flex: 1;">
+          <span class="search-help" title="Filtrovat pole:&#10;• ID — 10053, 10228&#10;• Název — příjmení, datum narození&#10;• Název sekce — zobrazí celou kategorii&#10;• Sekce + pole — trvalé bydliště PSČ&#10;Oddělte čárkou pro více filtrů">?</span>
+        </div>
+        <input placeholder="Hledat v hodnotách..." @input="onValueSearchInput" @keydown.escape="clearValueSearch">
+      </div>
     </div>
-  </div>
 
-  <!-- Group filter pills -->
-  <div class="group-filter-bar" v-if="xmlDoc && employees.length > 0 && currentFormatGroups.length > 0">
-    <div class="group-filter-pills">
-      <button
-        v-for="group in currentFormatGroups" :key="group.id"
-        class="group-pill"
-        :class="{ active: fieldSearch === group.query }"
-        @click="fieldSearch === group.query ? applyGroupQuery('') : applyGroupQuery(group.query)">
-        {{ group.label }}
-      </button>
+    <!-- Group filter pills -->
+    <div class="group-filter-bar" v-if="currentFormatGroups.length > 0">
+      <div class="group-filter-pills">
+        <button
+          v-for="group in currentFormatGroups" :key="group.id"
+          class="group-pill"
+          :class="{ active: fieldSearch === group.query }"
+          @click="fieldSearch === group.query ? applyGroupQuery('') : applyGroupQuery(group.query)">
+          {{ group.label }}
+        </button>
+      </div>
     </div>
-  </div>
 
-  <div v-if="xmlDoc && (hasSearch || (viewMode === 'table' && hasActions))" style="display: flex; align-items: center; gap: 16px; padding: 0 36px 6px; max-width: 1000px; margin: 0 auto; width: 100%; font-size: 0.75rem; color: var(--text-muted);">
-    <label v-if="hasSearch && viewMode === 'cards'" style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-      <input type="checkbox" v-model="autoExpandMatched"> Automaticky rozbalit
-    </label>
-    <label v-if="hasSearch && viewMode === 'cards'" style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-      <input type="checkbox" v-model="showAllFieldsInSearch"> Zobrazit všechna pole
-    </label>
-    <span v-if="viewMode === 'table' && hasActions" style="font-size: 12px; color: #6B7280; display: flex; align-items: center; gap: 4px;">
-      Akce:
-      <span class="action-filter">
-        <button v-for="a in ['', '1', '2', '3', '4', '8']" :key="a" @click="actionFilter = a" :class="{ active: actionFilter === a }">{{ a ? 'A' + a : 'Vše' }}</button>
+    <div v-if="hasSearch || (viewMode === 'table' && hasActions)" style="display: flex; align-items: center; gap: 16px; padding: 0 36px 6px; max-width: 1000px; margin: 0 auto; width: 100%; font-size: 0.75rem; color: var(--text-muted);">
+      <label v-if="hasSearch && viewMode === 'cards'" style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+        <input type="checkbox" v-model="autoExpandMatched"> Automaticky rozbalit
+      </label>
+      <label v-if="hasSearch && viewMode === 'cards'" style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+        <input type="checkbox" v-model="showAllFieldsInSearch"> Zobrazit všechna pole
+      </label>
+      <span v-if="viewMode === 'table' && hasActions" style="font-size: 12px; color: #6B7280; display: flex; align-items: center; gap: 4px;">
+        Akce:
+        <span class="action-filter">
+          <button v-for="a in ['', '1', '2', '3', '4', '8']" :key="a" @click="actionFilter = a" :class="{ active: actionFilter === a }">{{ a ? 'A' + a : 'Vše' }}</button>
+        </span>
       </span>
-    </span>
-    <span class="match-count" v-if="(fieldSearch || valueSearch) && searchMatchInfo" style="margin-left: auto;">{{ searchMatchInfo }}</span>
+      <span class="match-count" v-if="(fieldSearch || valueSearch) && searchMatchInfo" style="margin-left: auto;">{{ searchMatchInfo }}</span>
+    </div>
   </div>
 
   <!-- Table View -->
-  <div class="table-view" v-if="xmlDoc && employees.length > 0 && viewMode === 'table' && !showViewPicker">
+  <div class="table-view" ref="tableViewRef" v-if="xmlDoc && employees.length > 0 && viewMode === 'table' && !showViewPicker" @wheel="handlePrimaryContentWheel">
     <table>
       <thead>
         <tr>
@@ -494,7 +623,7 @@ body {
   </div>
 
   <!-- Content: Cards list -->
-  <div class="content" v-if="xmlDoc && employees.length > 0 && viewMode === 'cards' && !showViewPicker"
+  <div class="content" ref="cardsContentRef" v-if="xmlDoc && employees.length > 0 && viewMode === 'cards' && !showViewPicker" @wheel="handlePrimaryContentWheel"
        @dragover.prevent="isDragging = true" @dragleave="isDragging = false" @drop.prevent="handleDrop">
    <div class="content-inner">
     <!-- Unified display list: matched + separator + unmatched -->
@@ -522,7 +651,8 @@ body {
                 <button v-if="section.repeating && section._instanceIndex === 0" class="btn-add-instance" @click.stop="addInstance(item.emp, section)" title="Přidat instanci" style="margin-left:4px;background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:14px;padding:0 4px;">+</button>
               </div>
               <div class="section-body" :class="{ collapsed: !isSectionExpanded(item.emp._index, section._virtualId || section.id, item.matched, section) }"
-                   :style="isSectionExpanded(item.emp._index, section._virtualId || section.id, item.matched, section) ? { maxHeight: (section.fields.length * 38 + 50) + 'px' } : {}">
+                   :ref="el => setSectionBodyRef(item.emp._index + ':' + (section._virtualId || section.id), el)"
+                   :style="getSectionBodyStyle(item.emp._index + ':' + (section._virtualId || section.id), isSectionExpanded(item.emp._index, section._virtualId || section.id, item.matched, section))">
                 <table class="field-table">
                   <tr v-for="field in getVisibleFields(item.emp, section, item.matched)" :key="fieldKey(field, section._instanceIndex)"
                       class="field-row" :class="{ 'has-error': hasFieldError(item.emp, field, section), 'field-match': item.matched && isFieldMatch(item.emp, field, section) }" :data-field-id="field.csszId" :data-err-id="'e' + item.emp._index + '-' + fieldKey(field, section._instanceIndex)">
@@ -574,7 +704,7 @@ body {
     <div class="validation-list" v-if="!validationCollapsed">
       <div v-for="(err, i) in errors" :key="i" class="validation-item">
         <span class="severity" :class="err.severity || 'error'"></span>
-        <span class="path">{{ err.employeeName }} › {{ err.sectionLabel }} ›</span>
+        <span class="path">{{ err.headerKey ? 'Záhlaví' : err.employeeName }} › {{ err.sectionLabel }} ›</span>
         <span class="message">{{ err.fieldLabel }}: {{ err.message }}</span>
         <span class="goto-btn" @click="navigateToError(err)">Přejít</span>
       </div>
@@ -586,7 +716,11 @@ body {
 
   <!-- Hidden file input -->
   <input type="file" ref="fileInput" accept=".xml" style="display:none" @change="handleFileSelect">
+  <!-- APP_TEMPLATE_END -->
 </div>
+
+<!-- Optional host-provided XML bootstrap payload -->
+<script id="jmhz-data" type="application/xml"></script>
 
 <script>
 // === Active format — set on XML load, used everywhere ===
@@ -697,12 +831,31 @@ function reqClass(req) {
 function norm(s) { return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
 
 
-const { createApp, reactive, ref, computed, nextTick, watch } = Vue;
+const { createApp, reactive, ref, computed, nextTick, watch } = window.Vue;
 
-createApp({
+function resolveMountTarget(target) {
+  if (typeof target === 'string') return document.querySelector(target);
+  return target;
+}
+
+function mountJmhzViewer(target, options = {}) {
+  const mountTarget = resolveMountTarget(target);
+  if (!mountTarget) throw new Error('JMHZ Viewer mount target not found');
+  const runtimeOptions = {
+    xml: null,
+    filename: '',
+    autoBootstrap: true,
+    initialViewMode: null,
+    autoValidateOnLoad: false,
+    bootstrapScriptId: 'jmhz-data',
+    manageDocumentTitle: false,
+    warnBeforeUnload: false,
+    ...options
+  };
+  const app = createApp({
   setup() {
     const xmlDoc = ref(null);
-    const filename = ref('');
+    const filename = ref(runtimeOptions.filename || '');
     const employees = ref([]);
     const expandedEmployee = ref(-1);
     const fieldSearch = ref('');
@@ -723,15 +876,21 @@ createApp({
     function clearValueSearch(e) { e.target.value = ''; valueSearch.value = ''; }
     const expandedSections = reactive(new Set());
     const showAllSections = reactive(new Set());
+    const sectionBodyHeights = reactive({});
+    const sectionBodyEls = new Map();
     const isDirty = ref(false);
     const isDragging = ref(false);
     const errors = ref([]);
     const validationCollapsed = ref(false);
     const editingField = ref(null);
+    const editingHeaderKey = ref(null);
     const toastMessage = ref('');
     const fileHandle = ref(null);
     const fileInput = ref(null);
     const searchInput = ref(null);
+    const topControlsRef = ref(null);
+    const cardsContentRef = ref(null);
+    const tableViewRef = ref(null);
     const headerExpanded = ref(false);
     const xlsDialog = ref(false);
     const xlsOptTitle = ref(true);
@@ -756,9 +915,9 @@ createApp({
     function parseXml(xmlText) {
       const parser = new DOMParser();
       const doc = parser.parseFromString(xmlText, 'application/xml');
-      if (doc.querySelector('parsererror')) { alert('Chyba při parsování XML:\n' + doc.querySelector('parsererror').textContent); return; }
+      if (doc.querySelector('parsererror')) { alert('Chyba při parsování XML:\n' + doc.querySelector('parsererror').textContent); return false; }
       const format = detectFormat(doc);
-      if (!format) return;
+      if (!format) return false;
       rebuildMetadata(format);
       formatRef.value = format;
       xmlDoc.value = doc;
@@ -767,13 +926,17 @@ createApp({
       expandedEmployee.value = -1;
       hasValidated.value = false;
       validationErrors.value = new Map();
+      sectionBodyEls.clear();
+      Object.keys(sectionBodyHeights).forEach(key => delete sectionBodyHeights[key]);
       actionFilter.value = '';
       fieldSearch.value = '';
       valueSearch.value = '';
       const rowElements = findRows(doc, activeFormat);
       for (let i = 0; i < rowElements.length; i++) employees.value.push(buildEmployeeMirror(rowElements[i], i));
+      documentHeader.value = activeFormat?.parseDocumentHeader?.(doc) || [];
       isDirty.value = false;
       updateTitle();
+      return true;
     }
 
     function buildEmployeeMirror(rowEl, index) {
@@ -834,10 +997,7 @@ createApp({
     const hasValidated = ref(false);
 
     // === Stats computeds ===
-    const documentHeader = computed(() => {
-      if (!xmlDoc.value) return [];
-      return activeFormat?.parseDocumentHeader?.(xmlDoc.value) || [];
-    });
+    const documentHeader = ref([]);
     const xmlVersion = computed(() => {
       if (!xmlDoc.value) return '';
       const root = xmlDoc.value.documentElement;
@@ -896,6 +1056,18 @@ createApp({
       const root = xmlDoc.value.documentElement;
       return root ? (root.getAttribute('partialAccept') || '') : '';
     });
+
+    function czPlural(count, one, few, many) {
+      const abs = Math.abs(count);
+      const mod100 = abs % 100;
+      if (mod100 >= 11 && mod100 <= 14) return many;
+      const mod10 = abs % 10;
+      if (mod10 === 1) return one;
+      if (mod10 >= 2 && mod10 <= 4) return few;
+      return many;
+    }
+    const employeeCountText = computed(() => employees.value.length + ' ' + czPlural(employees.value.length, 'zaměstnanec', 'zaměstnanci', 'zaměstnanců'));
+    const validationCountText = computed(() => errors.value.length + ' ' + czPlural(errors.value.length, 'chyba', 'chyby', 'chyb'));
 
     function splitQuery(raw) { return raw.split(',').map(s => norm(s.trim())).filter(Boolean); }
 
@@ -1034,11 +1206,38 @@ createApp({
 
     const collapsedMatchedEmps = reactive(new Set());
     const showAllFieldsInSearch = ref(false);
-    const viewMode = ref(localStorage.getItem('preferredViewMode') || 'table');
-    const showViewPicker = ref(!localStorage.getItem('preferredViewMode'));
+    const savedPreferredViewMode = runtimeOptions.initialViewMode ? null : localStorage.getItem('preferredViewMode');
+    const viewMode = ref(runtimeOptions.initialViewMode || savedPreferredViewMode || 'table');
+    const showViewPicker = ref(!runtimeOptions.initialViewMode && !savedPreferredViewMode);
     const actionFilter = ref('');
     function toggleViewMode() { viewMode.value = viewMode.value === 'cards' ? 'table' : 'cards'; }
     function pickViewMode(mode) { viewMode.value = mode; localStorage.setItem('preferredViewMode', mode); showViewPicker.value = false; }
+    function canScrollInDirection(el, deltaY) {
+      if (!el || !deltaY) return false;
+      if (deltaY < 0) return el.scrollTop > 0;
+      return Math.ceil(el.scrollTop + el.clientHeight) < el.scrollHeight;
+    }
+    function getPrimaryScrollTarget() {
+      return viewMode.value === 'table' ? tableViewRef.value : cardsContentRef.value;
+    }
+    function handleTopControlsWheel(e) {
+      const topEl = topControlsRef.value;
+      const targetEl = getPrimaryScrollTarget();
+      if (!topEl || !e.deltaY) return;
+      if (canScrollInDirection(topEl, e.deltaY)) return;
+      if (!canScrollInDirection(targetEl, e.deltaY)) return;
+      e.preventDefault();
+      targetEl.scrollTop += e.deltaY;
+    }
+    function handlePrimaryContentWheel(e) {
+      const topEl = topControlsRef.value;
+      const targetEl = getPrimaryScrollTarget();
+      if (!topEl || !targetEl || e.deltaY >= 0) return;
+      if (canScrollInDirection(targetEl, e.deltaY)) return;
+      if (!canScrollInDirection(topEl, e.deltaY)) return;
+      e.preventDefault();
+      topEl.scrollTop += e.deltaY;
+    }
 
     // Table view: which columns to show (filtered by field search)
     const visibleColumns = computed(() => {
@@ -1155,6 +1354,25 @@ createApp({
       return result;
     }
 
+    function measureSectionBody(key) {
+      const el = sectionBodyEls.get(key);
+      if (el) sectionBodyHeights[key] = el.scrollHeight;
+    }
+    function setSectionBodyRef(key, el) {
+      if (el) {
+        sectionBodyEls.set(key, el);
+        sectionBodyHeights[key] = el.scrollHeight;
+      } else {
+        sectionBodyEls.delete(key);
+        delete sectionBodyHeights[key];
+      }
+    }
+    function getSectionBodyStyle(key, isExpanded) {
+      if (!isExpanded) return {};
+      const height = sectionBodyHeights[key];
+      return height ? { maxHeight: height + 'px' } : { maxHeight: 'none' };
+    }
+
     function toggleSection(key) {
       const parts = key.split(':');
       const empIdx = parseInt(parts[0]);
@@ -1163,6 +1381,7 @@ createApp({
         expandedSections.delete(key);
         collapsedSections.add(key);
       } else {
+        measureSectionBody(key);
         expandedSections.add(key);
         collapsedSections.delete(key);
       }
@@ -1173,7 +1392,7 @@ createApp({
       sections.forEach(sec => {
         const key = emp._index + ':' + (sec._virtualId || sec.id);
         if (allExpanded) { expandedSections.delete(key); collapsedSections.add(key); }
-        else { expandedSections.add(key); collapsedSections.delete(key); }
+        else { measureSectionBody(key); expandedSections.add(key); collapsedSections.delete(key); }
       });
     }
     const collapsedSections = reactive(new Set()); // manually collapsed despite search match
@@ -1246,6 +1465,27 @@ createApp({
     }
     function cancelEdit() { editingField.value = null; }
 
+    function startHeaderEdit(f) {
+      editingField.value = 'hdr:' + f.key;
+      editingHeaderKey.value = f.key;
+      nextTick(() => { const el = document.querySelector('.field-value input'); if (el) el.focus(); });
+    }
+    function commitHeaderEdit(f, newValue) {
+      const oldValue = f.value;
+      if (oldValue !== newValue) {
+        f.value = newValue; f.modified = true;
+        activeFormat.writeHeaderField(f, newValue);
+        undoStack.value.push({ isHeader: true, headerRef: f, oldValue, newValue });
+        if (undoStack.value.length > 200) undoStack.value.shift();
+        redoStack.value = [];
+        isDirty.value = true; updateTitle();
+      }
+      editingField.value = null;
+      editingHeaderKey.value = null;
+    }
+    function cancelHeaderEdit() { editingField.value = null; editingHeaderKey.value = null; }
+    function isEditingHeader(key) { return editingHeaderKey.value === key; }
+
     function rebuildSingleEmployee(empIndex) {
       const emp = employees.value[empIndex];
       if (!emp) return;
@@ -1271,13 +1511,34 @@ createApp({
       isDirty.value = true;
     }
 
+    function loadXmlText(xmlText, sourceName) {
+      if (!xmlText) return;
+      filename.value = sourceName || filename.value || 'JMHZ.xml';
+      fileHandle.value = null;
+      const parsed = parseXml(xmlText);
+      if (parsed && runtimeOptions.autoValidateOnLoad) {
+        nextTick(() => { validateAll(); });
+      }
+    }
+    function tryLoadBootstrapXml() {
+      const inlineXml = typeof runtimeOptions.xml === 'string' ? runtimeOptions.xml.trim() : '';
+      if (inlineXml) {
+        loadXmlText(inlineXml, runtimeOptions.filename || 'JMHZ.xml');
+        return true;
+      }
+      if (runtimeOptions.autoBootstrap === false) return false;
+      const scriptEl = document.getElementById(runtimeOptions.bootstrapScriptId || 'jmhz-data');
+      if (!scriptEl) return false;
+      const rawXml = scriptEl.textContent || '';
+      if (!rawXml.trim()) return false;
+      loadXmlText(rawXml.trim(), scriptEl.getAttribute('data-filename') || runtimeOptions.filename || 'JMHZ.xml');
+      return true;
+    }
     function loadFile() { fileInput.value?.click(); }
     function handleFileSelect(e) {
       const file = e.target.files[0]; if (!file) return;
-      filename.value = file.name;
-      fileHandle.value = null;
       const reader = new FileReader();
-      reader.onload = (ev) => parseXml(ev.target.result);
+      reader.onload = (ev) => loadXmlText(ev.target.result, file.name);
       reader.readAsText(file);
       e.target.value = '';
     }
@@ -1285,10 +1546,8 @@ createApp({
       isDragging.value = false;
       const file = e.dataTransfer?.files[0];
       if (!file || !file.name.endsWith('.xml')) return;
-      filename.value = file.name;
-      fileHandle.value = null;
       const reader = new FileReader();
-      reader.onload = (ev) => parseXml(ev.target.result);
+      reader.onload = (ev) => loadXmlText(ev.target.result, file.name);
       reader.readAsText(file);
     }
     async function saveFile() {
@@ -1340,7 +1599,10 @@ createApp({
       URL.revokeObjectURL(url);
     }
     function showToast(msg) { toastMessage.value = msg; setTimeout(() => { toastMessage.value = ''; }, 2500); }
-    function updateTitle() { document.title = (isDirty.value ? '* ' : '') + (filename.value || 'JMHZ XML Editor'); }
+    function updateTitle() {
+      if (!runtimeOptions.manageDocumentTitle) return;
+      document.title = (isDirty.value ? '* ' : '') + (filename.value || 'JMHZ Viewer');
+    }
 
     // === XSD Validation with error mapping ===
     // validationErrors: Map<empIndex, Map<fieldKey, string[]>> for field-level error lookup
@@ -1350,6 +1612,7 @@ createApp({
       if (!xmlDoc.value) return;
       errors.value = [];
       validationErrors.value = new Map();
+      documentHeader.value.forEach(h => h._hasError = false);
       hasValidated.value = true;
 
       const serializer = new XMLSerializer();
@@ -1461,9 +1724,20 @@ createApp({
               }
             }
 
+            // Try matching header fields for errors outside employee rows
+            let headerKey = '';
+            if (ei < 0) {
+              const hdr = documentHeader.value.find(h => {
+                if (attrName && h.attr === attrName) return true;
+                if (elementName && h.key && h.key.endsWith('/' + elementName)) return true;
+                return false;
+              });
+              if (hdr) { headerKey = hdr.key; hdr._hasError = true; }
+            }
+
             errors.value.push({
               severity: 'error', empIndex: ei, employeeName, sectionLabel,
-              fieldLabel: attrName, fieldKey, message: err.message
+              fieldLabel: attrName, fieldKey, headerKey, message: err.message
             });
           });
           showToast(errors.value.length + ' chyb nalezeno');
@@ -1506,7 +1780,14 @@ createApp({
     }
 
     function navigateToError(err) {
-      if (err.empIndex >= 0) {
+      if (err.headerKey) {
+        // Header field error: expand header and scroll/flash the field
+        headerExpanded.value = true;
+        nextTick(() => {
+          const el = document.querySelector('[data-hdr-key="' + err.headerKey + '"]');
+          if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1500); }
+        });
+      } else if (err.empIndex >= 0) {
         if (viewMode.value === 'table') {
           // Table view: scroll to the error cell
           nextTick(() => {
@@ -1547,11 +1828,16 @@ createApp({
         e.preventDefault();
         if (undoStack.value.length) {
           const entry = undoStack.value.pop();
-          const emp = employees.value[entry.empIndex];
-          if (emp?.fields[entry.key]) {
-            emp.fields[entry.key].value = entry.oldValue;
-            const fr = emp.fields[entry.key];
-            if (fr.el) { activeFormat.writeField(fr, entry.oldValue); }
+          if (entry.isHeader) {
+            entry.headerRef.value = entry.oldValue;
+            activeFormat.writeHeaderField(entry.headerRef, entry.oldValue);
+          } else {
+            const emp = employees.value[entry.empIndex];
+            if (emp?.fields[entry.key]) {
+              emp.fields[entry.key].value = entry.oldValue;
+              const fr = emp.fields[entry.key];
+              if (fr.el) { activeFormat.writeField(fr, entry.oldValue); }
+            }
           }
           redoStack.value.push(entry);
         }
@@ -1560,38 +1846,58 @@ createApp({
         e.preventDefault();
         if (redoStack.value.length) {
           const entry = redoStack.value.pop();
-          const emp = employees.value[entry.empIndex];
-          if (emp?.fields[entry.key]) {
-            emp.fields[entry.key].value = entry.newValue;
-            const fr = emp.fields[entry.key];
-            if (fr.el) { activeFormat.writeField(fr, entry.newValue); }
+          if (entry.isHeader) {
+            entry.headerRef.value = entry.newValue;
+            activeFormat.writeHeaderField(entry.headerRef, entry.newValue);
+          } else {
+            const emp = employees.value[entry.empIndex];
+            if (emp?.fields[entry.key]) {
+              emp.fields[entry.key].value = entry.newValue;
+              const fr = emp.fields[entry.key];
+              if (fr.el) { activeFormat.writeField(fr, entry.newValue); }
+            }
           }
           undoStack.value.push(entry);
         }
       }
     });
-    window.addEventListener('beforeunload', (e) => { if (isDirty.value) { e.preventDefault(); e.returnValue = ''; } });
+    if (runtimeOptions.warnBeforeUnload) {
+      window.addEventListener('beforeunload', (e) => { if (isDirty.value) { e.preventDefault(); e.returnValue = ''; } });
+    }
     updateTitle();
+    tryLoadBootstrapXml();
 
     return {
       xmlDoc, filename, employees, expandedEmployee, fieldSearch, valueSearch, expandedSections, showAllSections,
-      isDirty, isDragging, errors, validationCollapsed, editingField, toastMessage, fileInput, searchInput,
+      isDirty, isDragging, errors, validationCollapsed, editingField, toastMessage, fileInput, searchInput, topControlsRef, cardsContentRef, tableViewRef,
       actionLabels, formatName, hasActions, rowInfoDefs, rowColumnLabel, getRowLabel, fieldXpath, fieldHint, fieldSecLabel,
       displayList, filteredEmployees, matchedEmployees, unmatchedEmployees, searchMatchInfo, isFieldMatch, isEmployeeExpanded, getEmpMatchCount, sectionHasMatchingFields, sectionMatchesFieldFilter, showAllFieldsInSearch, autoExpandMatched,
       onFieldSearchInput, onValueSearchInput, clearFieldSearch, clearValueSearch,
       hasSearch, hasValidated, xmlVersion, actionSummary, employerName, datumVyplneni, czForeignerSplit, partialAcceptValue,
+      employeeCountText, validationCountText,
       viewMode, toggleViewMode, showViewPicker, pickViewMode, visibleColumns, actionFilter, getFieldReq, reqClass, REQ_TITLES,
-      currentFormatGroups, applyGroupQuery,
+      currentFormatGroups, applyGroupQuery, handleTopControlsWheel, handlePrimaryContentWheel,
       toggleEmployee, getSectionsForEmployee, toggleSection, toggleAllSections, isSectionExpanded,
+      setSectionBodyRef, getSectionBodyStyle,
       fieldKey, getFieldValue, isFieldModified, getFieldRequirement, hasFieldError, getFieldErrorMsg,
       getVisibleFields, startEdit, commitEdit, cancelEdit, addInstance, removeInstance,
-      headerExpanded, documentHeader,
+      headerExpanded, documentHeader, startHeaderEdit, commitHeaderEdit, cancelHeaderEdit, isEditingHeader,
       xlsDialog, xlsOptTitle, xlsOptId, xlsOptCategory, exportToExcel,
       loadFile, handleFileSelect, handleDrop, saveFile, validateAll, getSectionErrorCount,
       getEmployeeErrorCount, navigateToError
     };
   }
-}).mount('#app');
+  });
+  const vm = app.mount(mountTarget);
+  return { app, vm };
+}
+
+window.JMHZViewerRuntime = { mount: mountJmhzViewer };
+
+const defaultMountTarget = document.getElementById('app');
+if (defaultMountTarget && defaultMountTarget.children.length) {
+  mountJmhzViewer(defaultMountTarget, { manageDocumentTitle: true, warnBeforeUnload: true });
+}
 </script>
 </body>
 </html>
