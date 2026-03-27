@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "build": "node build.js"
+  },
   "dependencies": {
     "xmllint-wasm": "^5.1.0"
   }
