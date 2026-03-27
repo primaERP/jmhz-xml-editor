@@ -26,8 +26,10 @@
   // Expose queuing mount API immediately
   window.JMHZViewer = {
     mount: function (target, options) {
-      if (ready) return realMount(target, options);
-      pendingCalls.push({ target: target, options: options });
+      if (ready) return Promise.resolve(realMount(target, options));
+      return new Promise(function (resolve) {
+        pendingCalls.push({ target: target, options: options, resolve: resolve });
+      });
     }
   };
 
@@ -68,8 +70,10 @@
 
     // Ready — swap mount and replay queue
     ready = true;
-    window.JMHZViewer.mount = realMount;
-    pendingCalls.forEach(function (c) { realMount(c.target, c.options); });
+    window.JMHZViewer.mount = function (target, options) {
+      return Promise.resolve(realMount(target, options));
+    };
+    pendingCalls.forEach(function (c) { c.resolve(realMount(c.target, c.options)); });
     pendingCalls = [];
   }
 

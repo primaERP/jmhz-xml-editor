@@ -84,7 +84,12 @@ const sampleHtml = `<!DOCTYPE html>
     window.JMHZViewer.mount('#jmhz-viewer-root', {
       initialViewMode: 'cards',
       autoValidateOnLoad: true,
-      manageDocumentTitle: true
+      manageDocumentTitle: true,
+      onReady: function (handle) {
+        // handle.validate(), handle.loadXml(xml, filename),
+        // handle.destroy(), handle.getState()
+        console.log('JMHZ Viewer ready', handle.getState());
+      }
     });
   <\/script>
 </body>

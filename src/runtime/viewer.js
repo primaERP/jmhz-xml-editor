@@ -18,6 +18,7 @@ function mountJmhzViewer(target, options = {}) {
     manageDocumentTitle: false,
     warnBeforeUnload: false,
     assetBase: '',
+    onReady: null,
     ...options
   };
   const app = createApp({
@@ -1048,12 +1049,35 @@ function mountJmhzViewer(target, options = {}) {
       headerExpanded, documentHeader, startHeaderEdit, commitHeaderEdit, cancelHeaderEdit, isEditingHeader,
       xlsDialog, xlsOptTitle, xlsOptId, xlsOptCategory, exportToExcel,
       loadFile, handleFileSelect, handleDrop, saveFile, validateAll, getSectionErrorCount,
-      getEmployeeErrorCount, navigateToError
+      getEmployeeErrorCount, navigateToError,
+      loadXmlText
     };
   }
   });
   const vm = app.mount(mountTarget);
-  return { app, vm };
+
+  const handle = {
+    app,
+    vm,
+    validate() { return vm.validateAll(); },
+    loadXml(xml, filename) { vm.loadXmlText(xml, filename); },
+    destroy() { app.unmount(); },
+    getState() {
+      return {
+        filename: vm.filename,
+        isDirty: vm.isDirty,
+        errorCount: vm.errors ? vm.errors.length : 0,
+        employeeCount: vm.employees ? vm.employees.length : 0,
+        hasData: !!vm.xmlDoc
+      };
+    }
+  };
+
+  if (typeof runtimeOptions.onReady === 'function') {
+    runtimeOptions.onReady(handle);
+  }
+
+  return handle;
 }
 
 window.JMHZViewerRuntime = { mount: mountJmhzViewer };
