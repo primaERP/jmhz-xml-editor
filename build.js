@@ -104,7 +104,7 @@ fs.writeFileSync('dist/embed.js', embed);
 
 // HTML pages
 fs.writeFileSync('dist/index.html', standaloneHtml);
-fs.writeFileSync('dist/sample-inline-mh.html', sampleHtml);
+fs.writeFileSync('dist/sample-inline.html', sampleHtml);
 
 // Vendor libraries (not inlined — copied as separate files)
 copyFile('vue.global.prod.js',      'dist/vendor/vue.global.prod.js');
@@ -125,7 +125,7 @@ const sizes = {
   'viewer.css': css.length,
   'embed.js': embed.length,
   'index.html': standaloneHtml.length,
-  'sample-inline-mh.html': sampleHtml.length,
+  'sample-inline.html': sampleHtml.length,
   'formats.js': formats.length,
 };
 
