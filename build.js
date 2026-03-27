@@ -81,13 +81,27 @@ const sampleHtml = `<!DOCTYPE html>
   <\/script>
   <script src="https://support.flexibee.eu/service/jmhz-viewer/embed.js"><\/script>
   <script>
+    // ── Mount ────────────────────────────────────────────────
+    // mount(target, options) → Promise<handle>
+    //   target   CSS selektor nebo DOM element
+    //   options:
+    //     initialViewMode      'cards' | 'table' (výchozí: automaticky)
+    //     autoValidateOnLoad   true/false – spustí validaci ihned po načtení XML
+    //     manageDocumentTitle  true/false – aktualizuje <title> stránky
+    //     onReady              function(handle) – zavolá se po připojení vieweru
+    //
+    // ── Handle (vrácený z mount / předaný do onReady) ────────
+    //   handle.validate()              spustí XSD validaci, vrátí Promise
+    //   handle.loadXml(xml, filename)  načte XML řetězec do vieweru
+    //   handle.destroy()               odpojí viewer z DOM
+    //   handle.getState()              → { filename, isDirty, errorCount,
+    //                                      employeeCount, hasData }
+
     window.JMHZViewer.mount('#jmhz-viewer-root', {
       initialViewMode: 'cards',
       autoValidateOnLoad: true,
       manageDocumentTitle: true,
       onReady: function (handle) {
-        // handle.validate(), handle.loadXml(xml, filename),
-        // handle.destroy(), handle.getState()
         console.log('JMHZ Viewer ready', handle.getState());
       }
     });
