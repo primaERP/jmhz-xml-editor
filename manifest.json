@@ -3,7 +3,7 @@
   "bundle": "assets/embed_1fe71d59.js",
   "files": {
     "assets/viewer.runtime.js": "assets/viewer.runtime_9f098616.js",
-    "assets/viewer.css": "assets/viewer_fe98fb26.css",
+    "assets/viewer.css": "assets/viewer_0a4b4691.css",
     "assets/formats.js": "assets/formats_d8b5781e.js",
     "vendor/vue.global.prod.js": "vendor/vue.global.prod_36d52835.js",
     "vendor/xmllint-wasm-bundle.js": "vendor/xmllint-wasm-bundle_6ec27969.js",

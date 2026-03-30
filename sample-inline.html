@@ -3,56 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ukázka integrace JMHZ Vieweru</title>
+  <title>JMHZ Viewer</title>
 </head>
 <body>
-  <!--
-    Ukázka integrace:
-    - aplikace vygeneruje tento HTML soubor
-    - XML vloží do <script id="jmhz-data" type="application/xml">
-    - aplikace nastaví i data-filename na název generovaného XML souboru
-    - viewer se načte z produkční URL a XML přečte přímo z této stránky
-  -->
   <div id="jmhz-viewer-root"></div>
-  <script id="jmhz-data" type="application/xml" data-filename="mesicni-hlaseni-2026-03.xml">
-<!--
-  Vložte celý XML dokument místo komentáře.
-  Hodnotu data-filename nastavte na skutečný název XML souboru.
-  Např.:
-  <?xml version="1.0" encoding="UTF-8"?>
-  <jmhz>...</jmhz>
--->
-  </script>
+  <script id="jmhz-data" type="application/xml" data-filename="mesicni-hlaseni-2026-03.xml"><!-- XML dokument --></script>
   <script src="https://support.flexibee.eu/service/jmhz-viewer/embed.js"></script>
   <script>
-    // ── Mount ────────────────────────────────────────────────
     // mount(target, options) → Promise<handle>
-    //   target   CSS selektor nebo DOM element
     //   options:
-    //     initialViewMode      'cards' | 'table' (výchozí: automaticky)
-    //     autoValidateOnLoad   true/false – spustí validaci ihned po načtení XML
-    //     manageDocumentTitle  true/false – aktualizuje <title> stránky
-    //     warnBeforeUnload     true/false – zobrazí varování při odchodu ze stránky
-    //     xml                  string – XML obsah (alternativa k <script id="jmhz-data">)
-    //     filename             string – název souboru (alternativa k data-filename)
-    //     autoBootstrap        true/false – automatické načtení XML z <script> (výchozí: true)
-    //     bootstrapScriptId    string – ID elementu s XML daty (výchozí: 'jmhz-data')
-    //     onReady              function(handle) – zavolá se po připojení vieweru
+    //     initialViewMode      'cards' | 'table'
+    //     autoValidateOnLoad   true/false
+    //     manageDocumentTitle  true/false
+    //     warnBeforeUnload     true/false
+    //     xml                  string (alternativa k <script id="jmhz-data">)
+    //     filename             string (alternativa k data-filename)
+    //     autoBootstrap        true/false (výchozí: true)
+    //     bootstrapScriptId    string (výchozí: 'jmhz-data')
+    //     onReady              function(handle)
     //
-    // ── Handle (vrácený z mount / předaný do onReady) ────────
-    //   handle.validate()              spustí XSD validaci, vrátí Promise
-    //   handle.loadXml(xml, filename)  načte XML řetězec do vieweru
-    //   handle.destroy()               odpojí viewer z DOM
-    //   handle.getState()              → { filename, isDirty, errorCount,
-    //                                      employeeCount, hasData }
+    //   handle.validate()              → Promise
+    //   handle.loadXml(xml, filename)
+    //   handle.destroy()
+    //   handle.getState()              → { filename, isDirty, errorCount, employeeCount, hasData }
 
     window.JMHZViewer.mount('#jmhz-viewer-root', {
-      initialViewMode: 'cards',
+      initialViewMode: 'table',
       autoValidateOnLoad: true,
-      manageDocumentTitle: true,
-      onReady: function (handle) {
-        console.log('JMHZ Viewer ready', handle.getState());
-      }
+      manageDocumentTitle: true
     }).catch(function (err) {
       document.getElementById('jmhz-viewer-root').textContent =
         'Chyba při načítání JMHZ Vieweru: ' + err.message;

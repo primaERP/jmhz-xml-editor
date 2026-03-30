@@ -340,7 +340,7 @@ body {
 .search-help:hover { background: var(--accent); color: var(--accent-text); }
 
 /* === Table View === */
-.table-content { overflow: auto; flex-shrink: 0; }
+.table-content { overflow: auto; flex-shrink: 0; padding-bottom: 20px; }
 .table-view table { border-collapse: separate; border-spacing: 0; font-size: 0.75rem; width: max-content; font-variant-numeric: tabular-nums; }
 .table-view thead { z-index: 3; }
 .table-view th {
