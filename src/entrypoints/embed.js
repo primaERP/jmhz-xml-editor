@@ -40,7 +40,7 @@
   }
 
   async function init() {
-    loadCSS(baseUrl + 'viewer.css');
+    loadCSS(baseUrl + 'assets/viewer.css');
 
     // Vendor libraries (independent — load in parallel)
     await Promise.all([
@@ -55,10 +55,10 @@
     ]);
 
     // Format definitions
-    await loadScript(baseUrl + 'formats.js');
+    await loadScript(baseUrl + 'assets/formats.js');
 
     // Viewer runtime (template + helpers + viewer)
-    await loadScript(baseUrl + 'viewer.runtime.js');
+    await loadScript(baseUrl + 'assets/viewer.runtime.js');
 
     // Swap mount before replaying to avoid micro-window race
     window.__JMHZ_STATE__ = 'ready';

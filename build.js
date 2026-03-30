@@ -38,13 +38,13 @@ const standaloneHtml = `<!DOCTYPE html>
 <script src="vendor/xmllint-wasm-bundle.js"><\/script>
 <script src="data/xsd-data.js"><\/script>
 <script src="data/jmhz-xsd-data.js"><\/script>
-<script src="formats.js"><\/script>
-<link rel="stylesheet" href="viewer.css">
+<script src="assets/formats.js"><\/script>
+<link rel="stylesheet" href="assets/viewer.css">
 </head>
 <body>
 <div id="app" class="app"></div>
 <script id="jmhz-data" type="application/xml"></script>
-<script src="viewer.runtime.js"><\/script>
+<script src="assets/viewer.runtime.js"><\/script>
 <script>
 var _target = document.getElementById('app');
 if (_target) {
@@ -116,28 +116,30 @@ const sampleHtml = `<!DOCTYPE html>
 
 // ── Write outputs ────────────────────────────────────────────
 ensureDir('dist');
+ensureDir('dist/assets');
 ensureDir('dist/vendor');
 ensureDir('dist/data');
+ensureDir('dist/images');
 
-// Core runtime and styles
-fs.writeFileSync('dist/viewer.runtime.js', viewerRuntime);
-fs.writeFileSync('dist/viewer.css', css);
-fs.writeFileSync('dist/formats.js', formats);
+// Core runtime and styles → assets/
+fs.writeFileSync('dist/assets/viewer.runtime.js', viewerRuntime);
+fs.writeFileSync('dist/assets/viewer.css', css);
+fs.writeFileSync('dist/assets/formats.js', formats);
 
 // Embed: stable loader + hashed bundle + manifest
 const embedHash = crypto.createHash('sha256').update(embed).digest('hex').slice(0, 8);
-const embedBundleName = 'embed_' + embedHash + '.js';
+const embedBundleName = 'assets/embed_' + embedHash + '.js';
 
-// Clean up stale bundles, keeping 1 most recent previous version
+// Clean up stale bundles in assets/, keeping 1 most recent previous version
 const stalePattern = /^embed_[0-9a-f]{8}\.js$/;
-const staleBundles = fs.readdirSync('dist')
-  .filter(f => stalePattern.test(f) && f !== embedBundleName)
-  .map(f => ({ name: f, mtime: fs.statSync('dist/' + f).mtimeMs }))
+const staleBundles = fs.readdirSync('dist/assets')
+  .filter(f => stalePattern.test(f) && f !== 'embed_' + embedHash + '.js')
+  .map(f => ({ name: f, mtime: fs.statSync('dist/assets/' + f).mtimeMs }))
   .sort((a, b) => b.mtime - a.mtime);
 // Keep the most recent previous bundle, delete the rest
 staleBundles.slice(1).forEach(f => {
-  fs.unlinkSync('dist/' + f.name);
-  console.log('  Removed stale bundle: ' + f.name);
+  fs.unlinkSync('dist/assets/' + f.name);
+  console.log('  Removed stale bundle: assets/' + f.name);
 });
 
 fs.writeFileSync('dist/embed.js', loader);
@@ -156,37 +158,37 @@ copyFile('xmllint-wasm-bundle.js',  'dist/vendor/xmllint-wasm-bundle.js');
 copyFile('xsd-data.js',       'dist/data/xsd-data.js');
 copyFile('jmhz-xsd-data.js',  'dist/data/jmhz-xsd-data.js');
 
-// Assets (images — not inlined)
+// Images
 ['abra-logo-2026.svg', 'preview-table.png', 'preview-cards.png'].forEach(file => {
-  if (fs.existsSync(file)) copyFile(file, 'dist/' + file);
+  if (fs.existsSync(file)) copyFile(file, 'dist/images/' + file);
 });
 
 // ── Summary ──────────────────────────────────────────────────
 const sizes = {
-  'viewer.runtime.js': viewerRuntime.length,
-  'viewer.css': css.length,
+  ['assets/viewer.runtime.js']: viewerRuntime.length,
+  ['assets/viewer.css']: css.length,
   ['embed.js (loader)']: loader.length,
   [embedBundleName + ' (bundle)']: embed.length,
   'manifest.json': JSON.stringify({ file: embedBundleName }).length + 1,
   'index.html': standaloneHtml.length,
   'sample-inline.html': sampleHtml.length,
-  'formats.js': formats.length,
+  ['assets/formats.js']: formats.length,
 };
 
 console.log('Built to dist/:');
 Object.entries(sizes).forEach(([name, size]) => {
   const kb = (size / 1024).toFixed(1);
-  console.log(`  ${name.padEnd(35)} ${kb} KB`);
+  console.log(`  ${name.padEnd(42)} ${kb} KB`);
 });
 
 const vendorFiles = fs.readdirSync('dist/vendor');
 vendorFiles.forEach(f => {
   const size = fs.statSync('dist/vendor/' + f).size;
-  console.log(`  vendor/${f.padEnd(28)} ${(size / 1024).toFixed(1)} KB`);
+  console.log(`  vendor/${f.padEnd(35)} ${(size / 1024).toFixed(1)} KB`);
 });
 
 const dataFiles = fs.readdirSync('dist/data');
 dataFiles.forEach(f => {
   const size = fs.statSync('dist/data/' + f).size;
-  console.log(`  data/${f.padEnd(30)} ${(size / 1024).toFixed(1)} KB`);
+  console.log(`  data/${f.padEnd(37)} ${(size / 1024).toFixed(1)} KB`);
 });
