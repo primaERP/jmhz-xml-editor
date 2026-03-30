@@ -29,7 +29,10 @@
   }
 
   function loadCSS(url) {
-    if (document.querySelector('link[href="' + url + '"]')) return;
+    var exists = [].some.call(document.querySelectorAll('link[rel="stylesheet"]'), function (l) {
+      return l.href === url || l.getAttribute('href') === url;
+    });
+    if (exists) return;
     var link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = url;
@@ -39,13 +42,17 @@
   async function init() {
     loadCSS(baseUrl + 'viewer.css');
 
-    // Vendor libraries
-    await loadScript(baseUrl + 'vendor/vue.global.prod.js');
-    await loadScript(baseUrl + 'vendor/xmllint-wasm-bundle.js');
+    // Vendor libraries (independent — load in parallel)
+    await Promise.all([
+      loadScript(baseUrl + 'vendor/vue.global.prod.js'),
+      loadScript(baseUrl + 'vendor/xmllint-wasm-bundle.js')
+    ]);
 
-    // Schema / data
-    await loadScript(baseUrl + 'data/xsd-data.js');
-    await loadScript(baseUrl + 'data/jmhz-xsd-data.js');
+    // Schema / data (independent — load in parallel)
+    await Promise.all([
+      loadScript(baseUrl + 'data/xsd-data.js'),
+      loadScript(baseUrl + 'data/jmhz-xsd-data.js')
+    ]);
 
     // Format definitions
     await loadScript(baseUrl + 'formats.js');
@@ -54,15 +61,21 @@
     await loadScript(baseUrl + 'viewer.runtime.js');
 
     // Swap mount before replaying to avoid micro-window race
+    window.__JMHZ_STATE__ = 'ready';
     window.JMHZViewer.mount = function (target, options) {
-      return Promise.resolve(realMount(target, options));
+      return Promise.resolve().then(function () { return realMount(target, options); });
     };
-    pending.forEach(function (c) { c.resolve(realMount(c.target, c.options)); });
+    pending.forEach(function (c) {
+      try { c.resolve(realMount(c.target, c.options)); }
+      catch (err) { c.reject(err); }
+    });
     pending.length = 0;
   }
 
   init().catch(function (err) {
     console.error('JMHZ Viewer: failed to load dependencies', err);
+    window.__JMHZ_STATE__ = 'failed';
+    window.JMHZViewer.mount = function () { return Promise.reject(err); };
     pending.forEach(function (c) { if (c.reject) c.reject(err); });
     pending.length = 0;
   });

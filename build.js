@@ -106,6 +106,9 @@ const sampleHtml = `<!DOCTYPE html>
       onReady: function (handle) {
         console.log('JMHZ Viewer ready', handle.getState());
       }
+    }).catch(function (err) {
+      document.getElementById('jmhz-viewer-root').textContent =
+        'Chyba při načítání JMHZ Vieweru: ' + err.message;
     });
   <\/script>
 </body>
