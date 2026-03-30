@@ -90,6 +90,11 @@ const sampleHtml = `<!DOCTYPE html>
     //     initialViewMode      'cards' | 'table' (výchozí: automaticky)
     //     autoValidateOnLoad   true/false – spustí validaci ihned po načtení XML
     //     manageDocumentTitle  true/false – aktualizuje <title> stránky
+    //     warnBeforeUnload     true/false – zobrazí varování při odchodu ze stránky
+    //     xml                  string – XML obsah (alternativa k <script id="jmhz-data">)
+    //     filename             string – název souboru (alternativa k data-filename)
+    //     autoBootstrap        true/false – automatické načtení XML z <script> (výchozí: true)
+    //     bootstrapScriptId    string – ID elementu s XML daty (výchozí: 'jmhz-data')
     //     onReady              function(handle) – zavolá se po připojení vieweru
     //
     // ── Handle (vrácený z mount / předaný do onReady) ────────

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JMHZ Viewer - mh.xml</title>
+  <title>JMHZ Viewer – mh.xml</title>
 </head>
 <body>
   <div id="jmhz-viewer-root"></div>
@@ -300,7 +300,7 @@
   <script src="https://antoninsuva.github.io/jmhz-xml-editor/embed.js"></script>
   <script>
     window.JMHZViewer.mount('#jmhz-viewer-root', {
-      initialViewMode: 'table',
+      initialViewMode: 'cards',
       autoValidateOnLoad: true,
       manageDocumentTitle: true,
       onReady: function (handle) {
@@ -308,7 +308,7 @@
       }
     }).catch(function (err) {
       document.getElementById('jmhz-viewer-root').textContent =
-        'Chyba pri nacitani JMHZ Vieweru: ' + err.message;
+        'Chyba při načítání JMHZ Vieweru: ' + err.message;
     });
   </script>
 </body>
