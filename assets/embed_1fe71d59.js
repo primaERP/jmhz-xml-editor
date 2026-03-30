@@ -4,6 +4,13 @@
 (function () {
   var baseUrl = window.__JMHZ_BASE_URL__ || '';
   var pending = window.__JMHZ_PENDING__ || [];
+  var manifest = window.__JMHZ_MANIFEST__ || {};
+  var mFiles = manifest.files || {};
+  function resolve(name) {
+    if (mFiles[name]) return baseUrl + mFiles[name];
+    console.warn('[jmhz] manifest missing entry for: ' + name + ', falling back to unhashed');
+    return baseUrl + name;
+  }
 
   function realMount(target, options) {
     options = options || {};
@@ -40,25 +47,21 @@
   }
 
   async function init() {
-    loadCSS(baseUrl + 'assets/viewer.css');
+    loadCSS(resolve('assets/viewer.css'));
 
-    // Vendor libraries (independent — load in parallel)
     await Promise.all([
-      loadScript(baseUrl + 'vendor/vue.global.prod.js'),
-      loadScript(baseUrl + 'vendor/xmllint-wasm-bundle.js')
+      loadScript(resolve('vendor/vue.global.prod.js')),
+      loadScript(resolve('vendor/xmllint-wasm-bundle.js'))
     ]);
 
-    // Schema / data (independent — load in parallel)
     await Promise.all([
-      loadScript(baseUrl + 'data/xsd-data.js'),
-      loadScript(baseUrl + 'data/jmhz-xsd-data.js')
+      loadScript(resolve('data/xsd-data.js')),
+      loadScript(resolve('data/jmhz-xsd-data.js'))
     ]);
 
-    // Format definitions
-    await loadScript(baseUrl + 'assets/formats.js');
+    await loadScript(resolve('assets/formats.js'));
 
-    // Viewer runtime (template + helpers + viewer)
-    await loadScript(baseUrl + 'assets/viewer.runtime.js');
+    await loadScript(resolve('assets/viewer.runtime.js'));
 
     // Swap mount before replaying to avoid micro-window race
     window.__JMHZ_STATE__ = 'ready';

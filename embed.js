@@ -35,8 +35,9 @@
       return r.json();
     })
     .then(function (m) {
+      window.__JMHZ_MANIFEST__ = m;
       var s = document.createElement('script');
-      s.src = base + m.file;
+      s.src = base + m.bundle;
       s.onerror = function () { fail(new Error('Failed to load ' + s.src)); };
       document.head.appendChild(s);
     })
