@@ -61,6 +61,7 @@ function mountJmhzViewer(target, options = {}) {
     const fileInput = ref(null);
     const searchInput = ref(null);
     const headerExpanded = ref(false);
+    const tableContentRef = ref(null);
     const xlsDialog = ref(false);
     const xlsOptTitle = ref(true);
     const xlsOptId = ref(false);
@@ -402,6 +403,19 @@ function mountJmhzViewer(target, options = {}) {
     const actionFilter = ref('');
     function toggleViewMode() { viewMode.value = viewMode.value === 'cards' ? 'table' : 'cards'; }
     function pickViewMode(mode) { viewMode.value = mode; localStorage.setItem('preferredViewMode', mode); showViewPicker.value = false; }
+    // Dynamically compute table-content height to fill remaining viewport
+    function updateTableContentHeight() {
+      const el = tableContentRef.value;
+      if (!el) return;
+      const top = el.offsetTop;
+      const bottom = validationDockHeight.value || 0;
+      el.style.height = Math.max(window.innerHeight - top - bottom, 100) + 'px';
+    }
+    watch(tableContentRef, (el) => { if (el) nextTick(updateTableContentHeight); });
+    watch(() => headerExpanded.value, () => nextTick(updateTableContentHeight));
+    watch(() => validationDockHeight.value, updateTableContentHeight);
+    watch(() => [xmlDoc.value, employees.value.length], () => nextTick(updateTableContentHeight));
+    window.addEventListener('resize', updateTableContentHeight);
     // Table view: which columns to show (filtered by field search)
     const visibleColumns = computed(() => {
       void xmlDoc.value;
@@ -1034,7 +1048,7 @@ function mountJmhzViewer(target, options = {}) {
       assetBase,
       xmlDoc, filename, employees, expandedEmployee, fieldSearch, valueSearch, expandedSections, showAllSections,
       isDirty, isDragging, errors, validationCollapsed, editingField, toastMessage, fileInput, searchInput,
-      validationPanelRef, validationDockHeight,
+      validationPanelRef, validationDockHeight, tableContentRef,
       actionLabels, formatName, hasActions, rowInfoDefs, rowColumnLabel, getRowLabel, fieldXpath, fieldHint, fieldSecLabel,
       displayList, filteredEmployees, matchedEmployees, unmatchedEmployees, searchMatchInfo, isFieldMatch, isEmployeeExpanded, getEmpMatchCount, sectionHasMatchingFields, sectionMatchesFieldFilter, showAllFieldsInSearch, autoExpandMatched,
       onFieldSearchInput, onValueSearchInput, clearFieldSearch, clearValueSearch,

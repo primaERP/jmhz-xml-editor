@@ -142,54 +142,56 @@ window.JMHZ_VIEWER_TEMPLATE = `<!-- Toolbar -->
   </div>
 
   <!-- Table View -->
-  <div class="table-view" v-if="xmlDoc && employees.length > 0 && viewMode === 'table' && !showViewPicker">
-    <table>
-      <thead>
-        <tr>
-          <th class="name-col">{{ rowColumnLabel }}</th>
-          <th v-for="(field, ci) in visibleColumns" :key="ci">
-            {{ field._colLabel || field.label }}<span class="col-id">{{ field.csszId || '' }}</span>
-            <span class="col-sec">{{ fieldSecLabel(field) }}</span>
-            <span v-if="actionFilter && getFieldReq(field, actionFilter)" class="col-req" :class="reqClass(getFieldReq(field, actionFilter))" :title="REQ_TITLES[getFieldReq(field, actionFilter)] || ''">{{ getFieldReq(field, actionFilter) }}</span>
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        <template v-for="item in displayList" :key="item.type === 'separator' ? 'sep' : item.emp._index">
-          <tr v-if="item.type === 'separator'" class="separator-row">
-            <td :colspan="visibleColumns.length + 1">{{ item.count }} dalších zaměstnanců</td>
+  <div class="table-content" v-if="xmlDoc && employees.length > 0 && viewMode === 'table' && !showViewPicker" ref="tableContentRef">
+    <div class="table-view">
+      <table>
+        <thead>
+          <tr>
+            <th class="name-col">{{ rowColumnLabel }}</th>
+            <th v-for="(field, ci) in visibleColumns" :key="ci">
+              {{ field._colLabel || field.label }}<span class="col-id">{{ field.csszId || '' }}</span>
+              <span class="col-sec">{{ fieldSecLabel(field) }}</span>
+              <span v-if="actionFilter && getFieldReq(field, actionFilter)" class="col-req" :class="reqClass(getFieldReq(field, actionFilter))" :title="REQ_TITLES[getFieldReq(field, actionFilter)] || ''">{{ getFieldReq(field, actionFilter) }}</span>
+            </th>
           </tr>
-          <tr v-else :class="{ matched: item.matched }">
-            <td class="name-cell">
-              <span class="error-dot-sm" v-if="getEmployeeErrorCount(item.emp._index) > 0"></span>
-              {{ getRowLabel(item.emp) }}
-            </td>
-            <td v-for="(field, ci) in visibleColumns" :key="ci"
-                :class="{ 'has-error': hasFieldError(item.emp, field, field), 'cell-match': item.matched && isFieldMatch(item.emp, field, field) }"
-                :data-err-id="'e' + item.emp._index + '-' + fieldKey(field, field._instanceIndex)"
-                @click="startEdit(item.emp, field, field)">
-              <template v-if="editingField === item.emp._index + ':' + fieldKey(field, field._instanceIndex)">
-                <input v-if="field.type === 'date'" type="date" :value="getFieldValue(item.emp, field, field)"
-                       @blur="commitEdit(item.emp, field, $event.target.value, field)" @keydown.enter="commitEdit(item.emp, field, $event.target.value, field)"
-                       @keydown.escape="cancelEdit" autofocus>
-                <select v-else-if="field.type === 'boolean'" :value="getFieldValue(item.emp, field, field)"
-                        @change="commitEdit(item.emp, field, $event.target.value, field)" @blur="commitEdit(item.emp, field, $event.target.value, field)"
-                        @keydown.escape="cancelEdit" autofocus>
-                  <option value="">—</option><option value="A">A</option><option value="N">N</option>
-                </select>
-                <input v-else type="text" :value="getFieldValue(item.emp, field, field)" :maxlength="field.maxLength || undefined"
-                       @blur="commitEdit(item.emp, field, $event.target.value, field)" @keydown.enter="commitEdit(item.emp, field, $event.target.value, field)"
-                       @keydown.escape="cancelEdit" autofocus>
-              </template>
-              <template v-else>
-                <template v-if="getFieldValue(item.emp, field, field)">{{ getFieldValue(item.emp, field, field) }}</template>
-                <span class="cell-empty" v-else></span>
-              </template>
-            </td>
-          </tr>
-        </template>
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          <template v-for="item in displayList" :key="item.type === 'separator' ? 'sep' : item.emp._index">
+            <tr v-if="item.type === 'separator'" class="separator-row">
+              <td :colspan="visibleColumns.length + 1">{{ item.count }} dalších zaměstnanců</td>
+            </tr>
+            <tr v-else :class="{ matched: item.matched }">
+              <td class="name-cell">
+                <span class="error-dot-sm" v-if="getEmployeeErrorCount(item.emp._index) > 0"></span>
+                {{ getRowLabel(item.emp) }}
+              </td>
+              <td v-for="(field, ci) in visibleColumns" :key="ci"
+                  :class="{ 'has-error': hasFieldError(item.emp, field, field), 'cell-match': item.matched && isFieldMatch(item.emp, field, field) }"
+                  :data-err-id="'e' + item.emp._index + '-' + fieldKey(field, field._instanceIndex)"
+                  @click="startEdit(item.emp, field, field)">
+                <template v-if="editingField === item.emp._index + ':' + fieldKey(field, field._instanceIndex)">
+                  <input v-if="field.type === 'date'" type="date" :value="getFieldValue(item.emp, field, field)"
+                         @blur="commitEdit(item.emp, field, $event.target.value, field)" @keydown.enter="commitEdit(item.emp, field, $event.target.value, field)"
+                         @keydown.escape="cancelEdit" autofocus>
+                  <select v-else-if="field.type === 'boolean'" :value="getFieldValue(item.emp, field, field)"
+                          @change="commitEdit(item.emp, field, $event.target.value, field)" @blur="commitEdit(item.emp, field, $event.target.value, field)"
+                          @keydown.escape="cancelEdit" autofocus>
+                    <option value="">—</option><option value="A">A</option><option value="N">N</option>
+                  </select>
+                  <input v-else type="text" :value="getFieldValue(item.emp, field, field)" :maxlength="field.maxLength || undefined"
+                         @blur="commitEdit(item.emp, field, $event.target.value, field)" @keydown.enter="commitEdit(item.emp, field, $event.target.value, field)"
+                         @keydown.escape="cancelEdit" autofocus>
+                </template>
+                <template v-else>
+                  <template v-if="getFieldValue(item.emp, field, field)">{{ getFieldValue(item.emp, field, field) }}</template>
+                  <span class="cell-empty" v-else></span>
+                </template>
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <!-- Content: Cards list -->
