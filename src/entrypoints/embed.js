@@ -1,14 +1,9 @@
-// Embed loader for JMHZ Viewer
-// Loaded via a single <script> tag; dynamically loads all dependencies from sibling files.
-// Queues mount() calls until the runtime is ready, so callers can call mount() immediately.
+// JMHZ Viewer bundle — loaded by loader.js via manifest.json.
+// Dynamically loads all dependencies from sibling files, then replays
+// any mount() calls that were queued by the loader while we were loading.
 (function () {
-  var currentScript = document.currentScript;
-  var baseUrl = currentScript && currentScript.src
-    ? currentScript.src.replace(/[^\/]*$/, '')
-    : '';
-
-  var pendingCalls = [];
-  var ready = false;
+  var baseUrl = window.__JMHZ_BASE_URL__ || '';
+  var pending = window.__JMHZ_PENDING__ || [];
 
   function realMount(target, options) {
     options = options || {};
@@ -22,16 +17,6 @@
       assetBase: baseUrl
     }, options));
   }
-
-  // Expose queuing mount API immediately
-  window.JMHZViewer = {
-    mount: function (target, options) {
-      if (ready) return Promise.resolve(realMount(target, options));
-      return new Promise(function (resolve) {
-        pendingCalls.push({ target: target, options: options, resolve: resolve });
-      });
-    }
-  };
 
   function loadScript(url) {
     return new Promise(function (resolve, reject) {
@@ -68,16 +53,17 @@
     // Viewer runtime (template + helpers + viewer)
     await loadScript(baseUrl + 'viewer.runtime.js');
 
-    // Ready — swap mount and replay queue
-    ready = true;
+    // Swap mount before replaying to avoid micro-window race
     window.JMHZViewer.mount = function (target, options) {
       return Promise.resolve(realMount(target, options));
     };
-    pendingCalls.forEach(function (c) { c.resolve(realMount(c.target, c.options)); });
-    pendingCalls = [];
+    pending.forEach(function (c) { c.resolve(realMount(c.target, c.options)); });
+    pending.length = 0;
   }
 
   init().catch(function (err) {
     console.error('JMHZ Viewer: failed to load dependencies', err);
+    pending.forEach(function (c) { if (c.reject) c.reject(err); });
+    pending.length = 0;
   });
 })();

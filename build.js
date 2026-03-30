@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 function read(file) {
   return fs.readFileSync(file, 'utf8');
@@ -19,6 +20,7 @@ const css       = read('src/styles/viewer.css');
 const template  = read('src/ui/template.js');
 const helpers   = read('src/runtime/helpers.js');
 const viewer    = read('src/runtime/viewer.js');
+const loader    = read('src/entrypoints/loader.js');
 const embed     = read('src/entrypoints/embed.js');
 const formats   = read('formats.js');
 
@@ -118,7 +120,26 @@ ensureDir('dist/data');
 fs.writeFileSync('dist/viewer.runtime.js', viewerRuntime);
 fs.writeFileSync('dist/viewer.css', css);
 fs.writeFileSync('dist/formats.js', formats);
-fs.writeFileSync('dist/embed.js', embed);
+
+// Embed: stable loader + hashed bundle + manifest
+const embedHash = crypto.createHash('sha256').update(embed).digest('hex').slice(0, 8);
+const embedBundleName = 'embed_' + embedHash + '.js';
+
+// Clean up stale bundles, keeping 1 most recent previous version
+const stalePattern = /^embed_[0-9a-f]{8}\.js$/;
+const staleBundles = fs.readdirSync('dist')
+  .filter(f => stalePattern.test(f) && f !== embedBundleName)
+  .map(f => ({ name: f, mtime: fs.statSync('dist/' + f).mtimeMs }))
+  .sort((a, b) => b.mtime - a.mtime);
+// Keep the most recent previous bundle, delete the rest
+staleBundles.slice(1).forEach(f => {
+  fs.unlinkSync('dist/' + f.name);
+  console.log('  Removed stale bundle: ' + f.name);
+});
+
+fs.writeFileSync('dist/embed.js', loader);
+fs.writeFileSync('dist/' + embedBundleName, embed);
+fs.writeFileSync('dist/manifest.json', JSON.stringify({ file: embedBundleName }) + '\n');
 
 // HTML pages
 fs.writeFileSync('dist/index.html', standaloneHtml);
@@ -141,7 +162,9 @@ copyFile('jmhz-xsd-data.js',  'dist/data/jmhz-xsd-data.js');
 const sizes = {
   'viewer.runtime.js': viewerRuntime.length,
   'viewer.css': css.length,
-  'embed.js': embed.length,
+  ['embed.js (loader)']: loader.length,
+  [embedBundleName + ' (bundle)']: embed.length,
+  'manifest.json': JSON.stringify({ file: embedBundleName }).length + 1,
   'index.html': standaloneHtml.length,
   'sample-inline.html': sampleHtml.length,
   'formats.js': formats.length,
@@ -150,17 +173,17 @@ const sizes = {
 console.log('Built to dist/:');
 Object.entries(sizes).forEach(([name, size]) => {
   const kb = (size / 1024).toFixed(1);
-  console.log(`  ${name.padEnd(28)} ${kb} KB`);
+  console.log(`  ${name.padEnd(35)} ${kb} KB`);
 });
 
 const vendorFiles = fs.readdirSync('dist/vendor');
 vendorFiles.forEach(f => {
   const size = fs.statSync('dist/vendor/' + f).size;
-  console.log(`  vendor/${f.padEnd(21)} ${(size / 1024).toFixed(1)} KB`);
+  console.log(`  vendor/${f.padEnd(28)} ${(size / 1024).toFixed(1)} KB`);
 });
 
 const dataFiles = fs.readdirSync('dist/data');
 dataFiles.forEach(f => {
   const size = fs.statSync('dist/data/' + f).size;
-  console.log(`  data/${f.padEnd(23)} ${(size / 1024).toFixed(1)} KB`);
+  console.log(`  data/${f.padEnd(30)} ${(size / 1024).toFixed(1)} KB`);
 });
