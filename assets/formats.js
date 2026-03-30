@@ -444,7 +444,7 @@ const JMHZ_CONFIG = {
     { id: 'identification', label: 'Identifikace',     query: 'identifikace zamestnance' },
     { id: 'work',           label: 'Práce a pozice',   query: 'vykonavana pozice, prubeh zamestnani, prijem v danem mesici' },
     { id: 'insurance',      label: 'Pojištění a ELDP', query: 'trvani pojisteni, vymero, eldp' },
-    { id: 'contributions',  label: 'Pojistné',         query: 'pojistne za zamestnance, pojistne za zamestnavatele, sleva na pojistnem zamestnancu, sleva na pojistnem zamestnavatele' },
+    { id: 'contributions',  label: 'Pojistné',         query: 'pojistne za zamestnance, pojistne za zamestnavatele, sleva na pojistnem zamestnancu, sleva na pojistnem zamestnavatele, zdravotni' },
     { id: 'income',         label: 'Příjmy',           query: 'prijmy, cista mzda, zdravotni pojisteni za zamestnavatele, zdravotni pojisteni za zamestnance' },
     { id: 'tax',            label: 'Daně',             query: 'zaloha na dan, zvlastni sazba, prohlaseni poplatnika' },
     { id: 'wages',          label: 'Mzda',             query: 'mzda' },
