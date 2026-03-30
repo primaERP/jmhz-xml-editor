@@ -83,7 +83,7 @@ const sampleHtml = `<!DOCTYPE html>
 </head>
 <body>
   <div id="jmhz-viewer-root"></div>
-  <script id="jmhz-data" type="application/xml" data-filename="mesicni-hlaseni-2026-03.xml"><\/script>
+  <script id="jmhz-data" type="application/xml" data-filename="mesicni-hlaseni-2026-03.xml"><!-- XML dokument --><\/script>
   <script src="https://support.flexibee.eu/service/jmhz-viewer/embed.js"><\/script>
   <script>
     // mount(target, options) → Promise<handle>
