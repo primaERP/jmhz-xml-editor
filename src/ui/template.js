@@ -124,14 +124,14 @@ window.JMHZ_VIEWER_TEMPLATE = `<!-- Toolbar -->
       </div>
     </div>
 
-    <div v-if="hasSearch || (viewMode === 'table' && hasActions)" style="display: flex; align-items: center; gap: 16px; padding: 0 36px 6px; max-width: 1000px; margin: 0 auto; width: 100%; font-size: 0.75rem; color: var(--text-muted);">
-      <label v-if="hasSearch && viewMode === 'cards'" style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+    <div v-if="hasSearch || hasActions" style="display: flex; align-items: center; gap: 16px; padding: 0 36px 6px; max-width: 1000px; margin: 0 auto; width: 100%; font-size: 0.75rem; color: var(--text-muted);">
+      <label v-if="hasCardFilter && viewMode === 'cards'" style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
         <input type="checkbox" v-model="autoExpandMatched"> Automaticky rozbalit
       </label>
-      <label v-if="hasSearch && viewMode === 'cards'" style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+      <label v-if="hasCardFilter && viewMode === 'cards'" style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
         <input type="checkbox" v-model="showAllFieldsInSearch"> Zobrazit všechna pole
       </label>
-      <span v-if="viewMode === 'table' && hasActions" style="font-size: 12px; color: #6B7280; display: flex; align-items: center; gap: 4px;">
+      <span v-if="hasActions" style="font-size: 12px; color: #6B7280; display: flex; align-items: center; gap: 4px;">
         Akce:
         <span class="action-filter">
           <button v-for="a in ['', '1', '2', '3', '4', '8']" :key="a" @click="actionFilter = a" :class="{ active: actionFilter === a }">{{ a ? 'A' + a : 'Vše' }}</button>
@@ -229,7 +229,11 @@ window.JMHZ_VIEWER_TEMPLATE = `<!-- Toolbar -->
                   <tr v-for="field in getVisibleFields(item.emp, section, item.matched)" :key="fieldKey(field, section._instanceIndex)"
                       class="field-row" :class="{ 'has-error': hasFieldError(item.emp, field, section), 'field-match': item.matched && isFieldMatch(item.emp, field, section) }" :data-field-id="field.csszId" :data-err-id="'e' + item.emp._index + '-' + fieldKey(field, section._instanceIndex)">
                     <td class="field-id">{{ field.csszId || '' }}</td>
-                    <td class="field-label">{{ field.label }}<span class="xpath">{{ fieldXpath(field) }}</span></td>
+                    <td class="field-label">
+                      {{ field.label }}
+                      <span v-if="actionFilter && getFieldReq(field, actionFilter)" class="col-req" :class="reqClass(getFieldReq(field, actionFilter))" :title="REQ_TITLES[getFieldReq(field, actionFilter)] || ''">{{ getFieldReq(field, actionFilter) }}</span>
+                      <span class="xpath">{{ fieldXpath(field) }}</span>
+                    </td>
                     <td class="field-value">
                       <template v-if="editingField === item.emp._index + ':' + fieldKey(field, section._instanceIndex)">
                         <input v-if="field.type === 'date'" type="date" :value="getFieldValue(item.emp, field, section)" @blur="commitEdit(item.emp, field, $event.target.value, section)" @keydown.enter="commitEdit(item.emp, field, $event.target.value, section)" @keydown.escape="cancelEdit" autofocus>

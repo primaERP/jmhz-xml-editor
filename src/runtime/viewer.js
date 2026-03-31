@@ -268,6 +268,8 @@ function mountJmhzViewer(target, options = {}) {
       const vp = splitQuery(valueSearch.value);
       return fp.length > 0 || vp.length > 0;
     });
+    const hasActionFilter = computed(() => !!actionFilter.value);
+    const hasCardFilter = computed(() => hasSearch.value || hasActionFilter.value);
     // Clean up collapsed state when search is cleared (outside computed to avoid side effects)
     watch(hasSearch, (val) => {
       if (!val) { collapsedSections.clear(); collapsedMatchedEmps.clear(); }
@@ -388,7 +390,7 @@ function mountJmhzViewer(target, options = {}) {
     }
 
     function toggleEmployee(index, isMatched) {
-      if (isMatched && hasSearch.value && autoExpandMatched.value) {
+      if (autoExpandMatched.value && (hasActionFilter.value || (isMatched && hasSearch.value))) {
         if (collapsedMatchedEmps.has(index)) collapsedMatchedEmps.delete(index);
         else collapsedMatchedEmps.add(index);
       } else {
@@ -494,7 +496,7 @@ function mountJmhzViewer(target, options = {}) {
     const autoExpandMatched = ref(true);
 
     function isEmployeeExpanded(index, isMatched) {
-      if (isMatched && hasSearch.value && autoExpandMatched.value) {
+      if (autoExpandMatched.value && (hasActionFilter.value || (isMatched && hasSearch.value))) {
         return !collapsedMatchedEmps.has(index);
       }
       return expandedEmployee.value === index;
@@ -513,7 +515,9 @@ function mountJmhzViewer(target, options = {}) {
 
     function getSectionsForEmployee(emp) {
       const result = [];
+      const actSections = ACTION_SECTIONS ? ACTION_SECTIONS[actionFilter.value] : null;
       SECTIONS.forEach(sec => {
+        if (actSections && !showAllFieldsInSearch.value && !actSections.includes(sec.id)) return;
         const fields = FIELDS_BY_SECTION[sec.id] || [];
         if (!fields.length) return;
         const countKey = sec.parentRepeating || sec.id;
@@ -578,8 +582,9 @@ function mountJmhzViewer(target, options = {}) {
     function isSectionExpanded(empIdx, secId, isMatched, section) {
       const key = empIdx + ':' + secId;
       if (collapsedSections.has(key)) return false;
+      if (hasActionFilter.value && autoExpandMatched.value) return true;
       // For matched employees during search: auto-expand sections with matching fields
-      if (isMatched && hasSearch.value && searchMatches.value?.has(empIdx)) {
+      if (isMatched && hasCardFilter.value && searchMatches.value?.has(empIdx)) {
         const matches = searchMatches.value.get(empIdx);
         const baseSec = section?._baseSectionId || secId;
         const sectionFields = FIELDS_BY_SECTION[baseSec] || [];
@@ -601,15 +606,20 @@ function mountJmhzViewer(target, options = {}) {
     function getFieldError(field) { return null; }
 
     function getVisibleFields(emp, section, isMatched) {
-      if (!isMatched || !hasSearch.value) return section.fields;
-      if (showAllFieldsInSearch.value) return section.fields;
+      let fields = section.fields;
+      // Action filter: hide fields forbidden for the selected action
+      if (actionFilter.value && !showAllFieldsInSearch.value) {
+        fields = fields.filter(f => getFieldReq(f, actionFilter.value) !== '/');
+      }
+      if (!isMatched || !hasSearch.value) return fields;
+      if (showAllFieldsInSearch.value) return fields;
       const fqParts = splitQuery(fieldSearch.value);
       if (fqParts.length > 0) {
-        return section.fields.filter(f => fqParts.some(fq => fieldMatchesTerm(f, fq)));
+        return fields.filter(f => fqParts.some(fq => fieldMatchesTerm(f, fq)));
       }
-      if (!searchMatches.value?.has(emp._index)) return section.fields;
+      if (!searchMatches.value?.has(emp._index)) return fields;
       const matches = searchMatches.value.get(emp._index);
-      return section.fields.filter(f => matches.has(fieldKey(f, section._instanceIndex)));
+      return fields.filter(f => matches.has(fieldKey(f, section._instanceIndex)));
     }
 
     function startEdit(emp, field, section) {
@@ -1128,7 +1138,7 @@ function mountJmhzViewer(target, options = {}) {
       actionLabels, formatName, hasActions, rowInfoDefs, rowColumnLabel, getRowLabel, fieldXpath, fieldHint, fieldSecLabel,
       displayList, filteredEmployees, matchedEmployees, unmatchedEmployees, searchMatchInfo, isFieldMatch, isEmployeeExpanded, getEmpMatchCount, sectionHasMatchingFields, sectionMatchesFieldFilter, showAllFieldsInSearch, autoExpandMatched,
       onFieldSearchInput, onValueSearchInput, clearFieldSearch, clearValueSearch,
-      hasSearch, hasValidated, xmlVersion, actionSummary, employerName, datumVyplneni, czForeignerSplit, partialAcceptValue,
+      hasSearch, hasActionFilter, hasCardFilter, hasValidated, xmlVersion, actionSummary, employerName, datumVyplneni, czForeignerSplit, partialAcceptValue,
       employeeCountText, validationCountText,
       viewMode, toggleViewMode, showViewPicker, pickViewMode, visibleColumns, actionFilter, getFieldReq, reqClass, REQ_TITLES,
       currentFormatGroups, applyGroupQuery,
