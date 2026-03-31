@@ -72,9 +72,9 @@ const loader    = read('src/entrypoints/loader.js');
 const embed     = read('src/entrypoints/embed.js');
 const formats   = read('formats.js');
 const uiAssets  = {
-  logo: dataUrl('abra-logo-2026.svg', 'image/svg+xml'),
-  previewTable: dataUrl('preview-table.png', 'image/png'),
-  previewCards: dataUrl('preview-cards.png', 'image/png')
+  logo: dataUrl(path.join('assets-src', 'abra-logo-2026.svg'), 'image/svg+xml'),
+  previewTable: dataUrl(path.join('assets-src', 'preview-table.png'), 'image/png'),
+  previewCards: dataUrl(path.join('assets-src', 'preview-cards.png'), 'image/png')
 };
 
 // ── Build viewer.runtime.js (template + helpers + viewer) ────
@@ -198,7 +198,8 @@ fs.writeFileSync('dist/sample-inline.html', sampleHtml);
 
 // Images (not hashed — loaded at runtime via Vue assetBase)
 ['abra-logo-2026.svg', 'preview-table.png', 'preview-cards.png'].forEach(file => {
-  if (fs.existsSync(file)) copyFile(file, 'dist/images/' + file);
+  const srcPath = path.join('assets-src', file);
+  if (fs.existsSync(srcPath)) copyFile(srcPath, 'dist/images/' + file);
 });
 
 // ── Summary ──────────────────────────────────────────────────
