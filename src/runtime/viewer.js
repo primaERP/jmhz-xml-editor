@@ -964,7 +964,9 @@ function mountJmhzViewer(target, options = {}) {
 
             errors.value.push({
               severity: 'error', empIndex: ei, employeeName, sectionLabel,
-              fieldLabel: attrName, fieldKey, headerKey, message: err.message
+              fieldLabel: attrName, fieldKey, headerKey,
+              canNavigate: Boolean(headerKey || (ei >= 0 && fieldKey)),
+              message: err.message
             });
           });
           showToast(errors.value.length + ' chyb nalezeno');

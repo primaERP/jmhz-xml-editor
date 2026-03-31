@@ -279,7 +279,7 @@ window.JMHZ_VIEWER_TEMPLATE = `<!-- Toolbar -->
         <span class="severity" :class="err.severity || 'error'"></span>
         <span class="path">{{ err.headerKey ? 'Záhlaví' : err.employeeName }} › {{ err.sectionLabel }} ›</span>
         <span class="message">{{ err.fieldLabel }}: {{ err.message }}</span>
-        <span class="goto-btn" @click="navigateToError(err)">Přejít</span>
+        <span v-if="err.canNavigate" class="goto-btn" @click="navigateToError(err)">Přejít</span>
       </div>
     </div>
   </div>
