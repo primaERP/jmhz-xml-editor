@@ -722,11 +722,31 @@ function mountJmhzViewer(target, options = {}) {
     }
     function handleDrop(e) {
       isDragging.value = false;
-      const file = e.dataTransfer?.files[0];
+      const file = e.dataTransfer?.files?.[0] || e.dataTransfer?.items?.[0]?.getAsFile?.();
       if (!file || !file.name.endsWith('.xml')) return;
       const reader = new FileReader();
       reader.onload = (ev) => loadXmlText(ev.target.result, file.name);
       reader.readAsText(file);
+    }
+    function handleWindowDragOver(e) {
+      if (xmlDoc.value) return;
+      const hasFiles = Array.from(e.dataTransfer?.types || []).includes('Files');
+      if (!hasFiles) return;
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+      isDragging.value = true;
+    }
+    function handleWindowDrop(e) {
+      if (xmlDoc.value) return;
+      const hasFiles = Array.from(e.dataTransfer?.types || []).includes('Files');
+      if (!hasFiles) return;
+      e.preventDefault();
+      handleDrop(e);
+    }
+    function handleWindowDragLeave(e) {
+      if (xmlDoc.value) return;
+      if (e.relatedTarget) return;
+      isDragging.value = false;
     }
     async function saveFile() {
       if (!xmlDoc.value) return;
@@ -1090,6 +1110,9 @@ function mountJmhzViewer(target, options = {}) {
         }
       }
     });
+    window.addEventListener('dragover', handleWindowDragOver);
+    window.addEventListener('drop', handleWindowDrop);
+    window.addEventListener('dragleave', handleWindowDragLeave);
     if (runtimeOptions.warnBeforeUnload) {
       window.addEventListener('beforeunload', (e) => { if (isDirty.value) { e.preventDefault(); e.returnValue = ''; } });
     }
