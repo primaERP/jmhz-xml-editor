@@ -281,7 +281,7 @@ window.JMHZ_VIEWER_TEMPLATE = `<!-- Toolbar -->
         <span class="severity" :class="err.severity || 'error'"></span>
         <span class="path">{{ err.headerKey ? 'Záhlaví' : err.employeeName }} › {{ err.sectionLabel }} ›</span>
         <span class="message">{{ err.fieldLabel }}: {{ err.message }}</span>
-        <span class="goto-btn" @click="navigateToError(err)">Přejít</span>
+        <span v-if="err.canNavigate" class="goto-btn" @click="navigateToError(err)">Přejít</span>
       </div>
     </div>
   </div>
@@ -1125,11 +1125,31 @@ function mountJmhzViewer(target, options = {}) {
     }
     function handleDrop(e) {
       isDragging.value = false;
-      const file = e.dataTransfer?.files[0];
+      const file = e.dataTransfer?.files?.[0] || e.dataTransfer?.items?.[0]?.getAsFile?.();
       if (!file || !file.name.endsWith('.xml')) return;
       const reader = new FileReader();
       reader.onload = (ev) => loadXmlText(ev.target.result, file.name);
       reader.readAsText(file);
+    }
+    function handleWindowDragOver(e) {
+      if (xmlDoc.value) return;
+      const hasFiles = Array.from(e.dataTransfer?.types || []).includes('Files');
+      if (!hasFiles) return;
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+      isDragging.value = true;
+    }
+    function handleWindowDrop(e) {
+      if (xmlDoc.value) return;
+      const hasFiles = Array.from(e.dataTransfer?.types || []).includes('Files');
+      if (!hasFiles) return;
+      e.preventDefault();
+      handleDrop(e);
+    }
+    function handleWindowDragLeave(e) {
+      if (xmlDoc.value) return;
+      if (e.relatedTarget) return;
+      isDragging.value = false;
     }
     async function saveFile() {
       if (!xmlDoc.value) return;
@@ -1183,6 +1203,51 @@ function mountJmhzViewer(target, options = {}) {
     function updateTitle() {
       if (!runtimeOptions.manageDocumentTitle) return;
       document.title = (isDirty.value ? '* ' : '') + (filename.value || 'JMHZ Viewer');
+    }
+
+    function buildNodePath(node, stopNode) {
+      const parts = [];
+      let current = node;
+      while (current && current !== stopNode && current.nodeType === 1) {
+        parts.push(current.localName || current.nodeName);
+        current = current.parentNode;
+      }
+      return parts.reverse();
+    }
+
+    function resolveJmhzFieldFromLine(lines, lineNum, elementName, emp) {
+      if (!emp || !elementName || !activeFormat || activeFormat.schemasKey !== 'JMHZ_SCHEMAS') return null;
+      const line = (lines[lineNum - 1] || '').trim();
+      if (!line) return null;
+      const targetLocalName = elementName;
+
+      const candidates = FIELDS.filter(f => {
+        const key = activeFormat.fieldAttrKey(f);
+        return key === targetLocalName || key.endsWith('/' + targetLocalName);
+      });
+      if (candidates.length <= 1) return candidates[0] || null;
+
+      for (const field of candidates) {
+        const fieldRef = Object.values(emp.fields).find(v => v && v._field === field);
+        if (!fieldRef || !fieldRef.el) continue;
+        const fieldNode = fieldRef.el.nodeType === 1 ? fieldRef.el : null;
+        if (!fieldNode) continue;
+
+        const parts = (activeFormat.fieldAttrKey(field) || '').split('/');
+        let targetNode = fieldNode;
+        for (const part of parts) {
+          targetNode = getChildByLocalName(targetNode, part);
+          if (!targetNode) break;
+        }
+        if (!targetNode) continue;
+
+        const pathParts = buildNodePath(targetNode, emp._formRoot);
+        const joined = pathParts.join('/');
+        const expected = field.section + '/' + activeFormat.fieldAttrKey(field);
+        if (joined === expected || joined.endsWith('/' + expected)) return field;
+      }
+
+      return candidates[0] || null;
     }
 
     // === XSD Validation with error mapping ===
@@ -1275,7 +1340,11 @@ function mountJmhzViewer(target, options = {}) {
               }
             } else if (elementName) {
               // JMHZ: error on element itself (element IS the field)
-              const field = FIELDS.find(f => (f.element === elementName || f.attr === elementName));
+              let field = null;
+              if (activeFormat.schemasKey === 'JMHZ_SCHEMAS') {
+                field = resolveJmhzFieldFromLine(lines, lineNum, elementName, emp);
+              }
+              if (!field) field = FIELDS.find(f => (f.element === elementName || f.attr === elementName));
               if (field) {
                 fieldKey = field.section + '/' + (activeFormat ? activeFormat.fieldAttrKey(field) : (field.attr || field.element));
                 const sec = SECTION_MAP[field.section];
@@ -1318,7 +1387,9 @@ function mountJmhzViewer(target, options = {}) {
 
             errors.value.push({
               severity: 'error', empIndex: ei, employeeName, sectionLabel,
-              fieldLabel: attrName, fieldKey, headerKey, message: err.message
+              fieldLabel: attrName, fieldKey, headerKey,
+              canNavigate: Boolean(headerKey || (ei >= 0 && fieldKey)),
+              message: err.message
             });
           });
           showToast(errors.value.length + ' chyb nalezeno');
@@ -1442,6 +1513,9 @@ function mountJmhzViewer(target, options = {}) {
         }
       }
     });
+    window.addEventListener('dragover', handleWindowDragOver);
+    window.addEventListener('drop', handleWindowDrop);
+    window.addEventListener('dragleave', handleWindowDragLeave);
     if (runtimeOptions.warnBeforeUnload) {
       window.addEventListener('beforeunload', (e) => { if (isDirty.value) { e.preventDefault(); e.returnValue = ''; } });
     }

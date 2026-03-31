@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "bundle": "assets/embed_1fe71d59.js",
   "files": {
-    "assets/viewer.runtime.js": "assets/viewer.runtime_e71e6893.js",
+    "assets/viewer.runtime.js": "assets/viewer.runtime_abed673c.js",
     "assets/viewer.css": "assets/viewer_0a4b4691.css",
     "assets/formats.js": "assets/formats_d8b5781e.js",
     "vendor/vue.global.prod.js": "vendor/vue.global.prod_36d52835.js",
