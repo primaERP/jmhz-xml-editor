@@ -782,6 +782,51 @@ function mountJmhzViewer(target, options = {}) {
       document.title = (isDirty.value ? '* ' : '') + (filename.value || 'JMHZ Viewer');
     }
 
+    function buildNodePath(node, stopNode) {
+      const parts = [];
+      let current = node;
+      while (current && current !== stopNode && current.nodeType === 1) {
+        parts.push(current.localName || current.nodeName);
+        current = current.parentNode;
+      }
+      return parts.reverse();
+    }
+
+    function resolveJmhzFieldFromLine(lines, lineNum, elementName, emp) {
+      if (!emp || !elementName || !activeFormat || activeFormat.schemasKey !== 'JMHZ_SCHEMAS') return null;
+      const line = (lines[lineNum - 1] || '').trim();
+      if (!line) return null;
+      const targetLocalName = elementName;
+
+      const candidates = FIELDS.filter(f => {
+        const key = activeFormat.fieldAttrKey(f);
+        return key === targetLocalName || key.endsWith('/' + targetLocalName);
+      });
+      if (candidates.length <= 1) return candidates[0] || null;
+
+      for (const field of candidates) {
+        const fieldRef = Object.values(emp.fields).find(v => v && v._field === field);
+        if (!fieldRef || !fieldRef.el) continue;
+        const fieldNode = fieldRef.el.nodeType === 1 ? fieldRef.el : null;
+        if (!fieldNode) continue;
+
+        const parts = (activeFormat.fieldAttrKey(field) || '').split('/');
+        let targetNode = fieldNode;
+        for (const part of parts) {
+          targetNode = getChildByLocalName(targetNode, part);
+          if (!targetNode) break;
+        }
+        if (!targetNode) continue;
+
+        const pathParts = buildNodePath(targetNode, emp._formRoot);
+        const joined = pathParts.join('/');
+        const expected = field.section + '/' + activeFormat.fieldAttrKey(field);
+        if (joined === expected || joined.endsWith('/' + expected)) return field;
+      }
+
+      return candidates[0] || null;
+    }
+
     // === XSD Validation with error mapping ===
     // validationErrors: Map<empIndex, Map<fieldKey, string[]>> for field-level error lookup
     const validationErrors = ref(new Map());
@@ -872,7 +917,11 @@ function mountJmhzViewer(target, options = {}) {
               }
             } else if (elementName) {
               // JMHZ: error on element itself (element IS the field)
-              const field = FIELDS.find(f => (f.element === elementName || f.attr === elementName));
+              let field = null;
+              if (activeFormat.schemasKey === 'JMHZ_SCHEMAS') {
+                field = resolveJmhzFieldFromLine(lines, lineNum, elementName, emp);
+              }
+              if (!field) field = FIELDS.find(f => (f.element === elementName || f.attr === elementName));
               if (field) {
                 fieldKey = field.section + '/' + (activeFormat ? activeFormat.fieldAttrKey(field) : (field.attr || field.element));
                 const sec = SECTION_MAP[field.section];
