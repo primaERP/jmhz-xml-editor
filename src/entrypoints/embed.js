@@ -60,6 +60,7 @@
     ]);
 
     await loadScript(resolve('assets/formats.js'));
+    await loadScript(resolve('assets/jmhz-kontroly.js'));
 
     await loadScript(resolve('assets/viewer.runtime.js'));
 

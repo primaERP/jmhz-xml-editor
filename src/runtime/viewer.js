@@ -55,6 +55,12 @@ function mountJmhzViewer(target, options = {}) {
     const validationCollapsed = ref(false);
     const validationPanelRef = ref(null);
     const validationDockHeight = ref(0);
+    // Kontroly (business rules) state
+    const kontrolyErrors = ref([]);
+    const kontrolyCollapsed = ref(false);
+    const kontrolyPanelRef = ref(null);
+    const kontrolyDockHeight = ref(0);
+    const kontrolyFieldErrors = ref(new Map()); // Map<empIndex, Map<fieldKey, severity>>
     const editingField = ref(null);
     const editingHeaderKey = ref(null);
     const toastMessage = ref('');
@@ -71,6 +77,7 @@ function mountJmhzViewer(target, options = {}) {
     const redoStack = ref([]);
     const actionLabels = computed(() => { const f = formatRef.value; return f ? (f.actionLabels || {}) : {}; });
     const formatName = computed(() => { const f = formatRef.value; return f ? f.name : ''; });
+    const isJmhz = computed(() => { const f = formatRef.value; return f && f.rootElement === 'jmhz'; });
     const hasActions = computed(() => { const f = formatRef.value; return f ? f.hasActions : false; });
     const rowInfoDefs = computed(() => { const f = formatRef.value; return f ? (f.getRowInfo || []) : []; });
     function getRowLabel(emp) { return activeFormat ? activeFormat.getRowLabel(emp.fields) : (emp.surname + ' ' + emp.firstName); }
@@ -97,6 +104,8 @@ function mountJmhzViewer(target, options = {}) {
       expandedEmployee.value = -1;
       hasValidated.value = false;
       validationErrors.value = new Map();
+      kontrolyErrors.value = [];
+      if (window.JMHZKontroly) window.JMHZKontroly.resetKontrolyIndex();
       sectionBodyEls.clear();
       Object.keys(sectionBodyHeights).forEach(key => delete sectionBodyHeights[key]);
       actionFilter.value = '';
@@ -260,6 +269,28 @@ function mountJmhzViewer(target, options = {}) {
       nextTick(() => updateValidationDockHeight());
     });
     window.addEventListener('resize', updateValidationDockHeight);
+
+    // Kontroly panel dock height management
+    function updateKontrolyDockHeight() {
+      const panelEl = kontrolyPanelRef.value;
+      kontrolyDockHeight.value = panelEl ? Math.ceil(panelEl.getBoundingClientRect().height) : 0;
+    }
+    let kontrolyPanelObserver = null;
+    watch(kontrolyPanelRef, (panelEl) => {
+      if (kontrolyPanelObserver) { kontrolyPanelObserver.disconnect(); kontrolyPanelObserver = null; }
+      if (panelEl && typeof ResizeObserver !== 'undefined') {
+        kontrolyPanelObserver = new ResizeObserver(() => updateKontrolyDockHeight());
+        kontrolyPanelObserver.observe(panelEl);
+      }
+      nextTick(() => updateKontrolyDockHeight());
+    });
+    watch(() => [kontrolyErrors.value.length, kontrolyCollapsed.value], () => {
+      nextTick(() => updateKontrolyDockHeight());
+    });
+    window.addEventListener('resize', updateKontrolyDockHeight);
+
+    const kontrolyErrorCount = computed(() => kontrolyErrors.value.filter(e => e.severity === 'error').length);
+    const kontrolyWarningCount = computed(() => kontrolyErrors.value.filter(e => e.severity === 'warning').length);
 
     function splitQuery(raw) { return raw.split(',').map(s => norm(s.trim())).filter(Boolean); }
 
@@ -1010,10 +1041,74 @@ function mountJmhzViewer(target, options = {}) {
       }
     }
 
+    // === Business Rule Controls (Kontroly) — JMHZ only ===
+    function runKontroly() {
+      if (!xmlDoc.value || !isJmhz.value) return;
+      kontrolyErrors.value = [];
+      kontrolyFieldErrors.value = new Map();
+      documentHeader.value.forEach(h => { h._hasKontrolyError = false; h._hasKontrolyWarning = false; });
+      try {
+        if (typeof window.JMHZKontroly === 'undefined') {
+          showToast('Kontroly nejsou k dispozici');
+          return;
+        }
+        const results = window.JMHZKontroly.runKontroly(
+          xmlDoc.value,
+          employees.value,
+          documentHeader.value,
+          FIELDS,
+          FIELDS_BY_SECTION
+        );
+        kontrolyErrors.value = results;
+        // Build field error map for highlighting
+        const fMap = new Map();
+        results.forEach(r => {
+          if (r.headerKey) {
+            const hdr = documentHeader.value.find(h => h.key === r.headerKey);
+            if (hdr) {
+              if (r.severity === 'error') hdr._hasKontrolyError = true;
+              else hdr._hasKontrolyWarning = true;
+            }
+          }
+          if (r.empIndex >= 0 && r.fieldKey) {
+            if (!fMap.has(r.empIndex)) fMap.set(r.empIndex, new Map());
+            const empMap = fMap.get(r.empIndex);
+            const existing = empMap.get(r.fieldKey);
+            // error takes precedence over warning
+            if (!existing || (r.severity === 'error' && existing === 'warning'))
+              empMap.set(r.fieldKey, r.severity);
+          }
+        });
+        kontrolyFieldErrors.value = fMap;
+        if (results.length > 0) {
+          const errCount = results.filter(e => e.severity === 'error').length;
+          const warnCount = results.filter(e => e.severity === 'warning').length;
+          const parts = [];
+          if (errCount > 0) parts.push(errCount + ' ' + czPlural(errCount, 'chyba', 'chyby', 'chyb'));
+          if (warnCount > 0) parts.push(warnCount + ' varování');
+          showToast('Kontroly: ' + parts.join(', '));
+        } else {
+          showToast('Kontroly OK — žádné nálezy');
+        }
+      } catch (e) {
+        console.error('Kontroly error:', e);
+        kontrolyErrors.value.push({ severity: 'error', controlId: 0, empIndex: -1, employeeName: '', sectionLabel: '', fieldLabel: '', fieldKey: '', headerKey: '', canNavigate: false, message: 'Chyba při spuštění kontrol: ' + String(e) });
+        showToast('Chyba při spuštění kontrol');
+      }
+    }
+
     function hasFieldError(emp, field, section) {
+      const fk = fieldKey(field, section?._instanceIndex);
       const empErrors = validationErrors.value.get(emp._index);
-      if (!empErrors) return false;
-      return empErrors.has(fieldKey(field, section?._instanceIndex));
+      if (empErrors && empErrors.has(fk)) return true;
+      const kErrors = kontrolyFieldErrors.value.get(emp._index);
+      return kErrors ? kErrors.get(fk) === 'error' : false;
+    }
+
+    function hasFieldWarning(emp, field, section) {
+      const kErrors = kontrolyFieldErrors.value.get(emp._index);
+      if (!kErrors) return false;
+      return kErrors.get(fieldKey(field, section?._instanceIndex)) === 'warning';
     }
 
     function getFieldErrorMsg(emp, field, section) {
@@ -1024,18 +1119,25 @@ function mountJmhzViewer(target, options = {}) {
     }
 
     function getSectionErrorCount(empIndex, sectionId, section) {
-      const empErrors = validationErrors.value.get(empIndex);
-      if (!empErrors) return 0;
       let count = 0;
       const baseSec = section?._baseSectionId || sectionId;
       const sectionFields = FIELDS_BY_SECTION[baseSec] || [];
-      sectionFields.forEach(f => { if (empErrors.has(fieldKey(f, section?._instanceIndex))) count++; });
+      const empErrors = validationErrors.value.get(empIndex);
+      const kErrors = kontrolyFieldErrors.value.get(empIndex);
+      sectionFields.forEach(f => {
+        const fk = fieldKey(f, section?._instanceIndex);
+        if ((empErrors && empErrors.has(fk)) || (kErrors && kErrors.has(fk))) count++;
+      });
       return count;
     }
 
     function getEmployeeErrorCount(empIndex) {
       const empErrors = validationErrors.value.get(empIndex);
-      return empErrors ? empErrors.size : 0;
+      const kErrors = kontrolyFieldErrors.value.get(empIndex);
+      const keys = new Set();
+      if (empErrors) empErrors.forEach((_, k) => keys.add(k));
+      if (kErrors) kErrors.forEach((_, k) => keys.add(k));
+      return keys.size;
     }
 
     function navigateToError(err) {
@@ -1135,6 +1237,7 @@ function mountJmhzViewer(target, options = {}) {
       xmlDoc, filename, employees, expandedEmployee, fieldSearch, valueSearch, expandedSections, showAllSections,
       isDirty, isDragging, errors, validationCollapsed, editingField, toastMessage, fileInput, searchInput,
       validationPanelRef, validationDockHeight, tableContentRef,
+      kontrolyErrors, kontrolyCollapsed, kontrolyPanelRef, kontrolyDockHeight, kontrolyErrorCount, kontrolyWarningCount, isJmhz,
       actionLabels, formatName, hasActions, rowInfoDefs, rowColumnLabel, getRowLabel, fieldXpath, fieldHint, fieldSecLabel,
       displayList, filteredEmployees, matchedEmployees, unmatchedEmployees, searchMatchInfo, isFieldMatch, isEmployeeExpanded, getEmpMatchCount, sectionHasMatchingFields, sectionMatchesFieldFilter, showAllFieldsInSearch, autoExpandMatched,
       onFieldSearchInput, onValueSearchInput, clearFieldSearch, clearValueSearch,
@@ -1144,11 +1247,11 @@ function mountJmhzViewer(target, options = {}) {
       currentFormatGroups, applyGroupQuery,
       toggleEmployee, getSectionsForEmployee, toggleSection, toggleAllSections, isSectionExpanded,
       setSectionBodyRef, getSectionBodyStyle,
-      fieldKey, getFieldValue, isFieldModified, getFieldRequirement, hasFieldError, getFieldErrorMsg,
+      fieldKey, getFieldValue, isFieldModified, getFieldRequirement, hasFieldError, hasFieldWarning, getFieldErrorMsg,
       getVisibleFields, startEdit, commitEdit, cancelEdit, addInstance, removeInstance,
       headerExpanded, documentHeader, startHeaderEdit, commitHeaderEdit, cancelHeaderEdit, isEditingHeader,
       xlsDialog, xlsOptTitle, xlsOptId, xlsOptCategory, exportToExcel,
-      loadFile, handleFileSelect, handleDrop, saveFile, validateAll, getSectionErrorCount,
+      loadFile, handleFileSelect, handleDrop, saveFile, validateAll, runKontroly, getSectionErrorCount,
       getEmployeeErrorCount, navigateToError,
       loadXmlText
     };

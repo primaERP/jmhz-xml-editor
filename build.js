@@ -71,6 +71,7 @@ const viewer    = read('src/runtime/viewer.js');
 const loader    = read('src/entrypoints/loader.js');
 const embed     = read('src/entrypoints/embed.js');
 const formats   = read('formats.js');
+const kontroly  = read('jmhz-kontroly.js');
 const inlineExampleFilename = 'regzec-sample-100.xml';
 const inlineExampleXml = read(path.join('samples', inlineExampleFilename)).replace(/<\/script/gi, '<\\/script');
 const uiAssets  = {
@@ -146,6 +147,7 @@ const manifest = { manifestVersion: 1, bundle: null, files: {} };
 manifest.files['assets/viewer.runtime.js'] = writeHashed(viewerRuntime, 'assets/viewer.runtime.js');
 manifest.files['assets/viewer.css']        = writeHashed(css, 'assets/viewer.css');
 manifest.files['assets/formats.js']        = writeHashed(formats, 'assets/formats.js');
+manifest.files['assets/jmhz-kontroly.js'] = writeHashed(kontroly, 'assets/jmhz-kontroly.js');
 
 // Vendor libraries (read as Buffer for binary safety)
 manifest.files['vendor/vue.global.prod.js']     = writeHashed(readBin('vue.global.prod.js'), 'vendor/vue.global.prod.js');
@@ -180,6 +182,7 @@ const standaloneHtml = `<!DOCTYPE html>
 <script src="${f['data/xsd-data.js']}"><\/script>
 <script src="${f['data/jmhz-xsd-data.js']}"><\/script>
 <script src="${f['assets/formats.js']}"><\/script>
+<script src="${f['assets/jmhz-kontroly.js']}"><\/script>
 <link rel="stylesheet" href="${f['assets/viewer.css']}">
 </head>
 <body>

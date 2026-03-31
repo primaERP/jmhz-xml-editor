@@ -11,6 +11,7 @@ window.JMHZ_VIEWER_TEMPLATE = `<!-- Toolbar -->
       <button @click="loadFile" v-if="xmlDoc">Nahrát XML</button>
       <button class="primary" @click="saveFile" v-if="xmlDoc">Uložit XML</button>
       <button @click="validateAll" v-if="xmlDoc">Zkontrolovat</button>
+      <button @click="runKontroly" v-if="xmlDoc && isJmhz">Kontroly</button>
       <button @click="toggleViewMode" v-if="xmlDoc">Zobrazení: {{ viewMode === 'cards' ? 'Karty' : 'Tabulka' }}</button>
       <button @click="xlsDialog = true" v-if="xmlDoc">Export XLS</button>
     </div>
@@ -69,12 +70,12 @@ window.JMHZ_VIEWER_TEMPLATE = `<!-- Toolbar -->
           <div class="section-card">
             <div class="section-body" style="max-height:none;">
               <table class="field-table">
-                <tr v-for="f in documentHeader" :key="f.key" class="field-row" :class="{ 'has-error': f._hasError }" :data-hdr-key="f.key">
+                <tr v-for="f in documentHeader" :key="f.key" class="field-row" :class="{ 'has-error': f._hasError || f._hasKontrolyError, 'has-warning': !f._hasError && !f._hasKontrolyError && f._hasKontrolyWarning }" :data-hdr-key="f.key">
                   <td class="field-id"></td>
                   <td class="field-label">{{ f.label }}</td>
                   <td class="field-value" @click="!isEditingHeader(f.key) && startHeaderEdit(f)">
                     <input v-if="isEditingHeader(f.key)" type="text" :value="f.value" @blur="commitHeaderEdit(f, $event.target.value)" @keydown.enter="commitHeaderEdit(f, $event.target.value)" @keydown.escape="cancelHeaderEdit" autofocus>
-                    <span v-else class="editable-header" :class="{ 'header-modified': f.modified, 'has-error': f._hasError }"><span v-if="f.modified" class="modified-dot"></span>{{ f.value || '—' }}</span>
+                    <span v-else class="editable-header" :class="{ 'header-modified': f.modified, 'has-error': f._hasError || f._hasKontrolyError, 'has-warning': !f._hasError && !f._hasKontrolyError && f._hasKontrolyWarning }"><span v-if="f.modified" class="modified-dot"></span>{{ f.value || '—' }}</span>
                   </td>
                 </tr>
                 <tr v-if="employerName" class="field-row">
@@ -166,7 +167,7 @@ window.JMHZ_VIEWER_TEMPLATE = `<!-- Toolbar -->
                 {{ getRowLabel(item.emp) }}
               </td>
               <td v-for="(field, ci) in visibleColumns" :key="ci"
-                  :class="{ 'has-error': hasFieldError(item.emp, field, field), 'cell-match': item.matched && isFieldMatch(item.emp, field, field) }"
+                  :class="{ 'has-error': hasFieldError(item.emp, field, field), 'has-warning': hasFieldWarning(item.emp, field, field), 'cell-match': item.matched && isFieldMatch(item.emp, field, field) }"
                   :data-err-id="'e' + item.emp._index + '-' + fieldKey(field, field._instanceIndex)"
                   @click="startEdit(item.emp, field, field)">
                 <template v-if="editingField === item.emp._index + ':' + fieldKey(field, field._instanceIndex)">
@@ -227,7 +228,7 @@ window.JMHZ_VIEWER_TEMPLATE = `<!-- Toolbar -->
                    :style="getSectionBodyStyle(item.emp._index + ':' + (section._virtualId || section.id), isSectionExpanded(item.emp._index, section._virtualId || section.id, item.matched, section))">
                 <table class="field-table">
                   <tr v-for="field in getVisibleFields(item.emp, section, item.matched)" :key="fieldKey(field, section._instanceIndex)"
-                      class="field-row" :class="{ 'has-error': hasFieldError(item.emp, field, section), 'field-match': item.matched && isFieldMatch(item.emp, field, section) }" :data-field-id="field.csszId" :data-err-id="'e' + item.emp._index + '-' + fieldKey(field, section._instanceIndex)">
+                      class="field-row" :class="{ 'has-error': hasFieldError(item.emp, field, section), 'has-warning': hasFieldWarning(item.emp, field, section), 'field-match': item.matched && isFieldMatch(item.emp, field, section) }" :data-field-id="field.csszId" :data-err-id="'e' + item.emp._index + '-' + fieldKey(field, section._instanceIndex)">
                     <td class="field-id">{{ field.csszId || '' }}</td>
                     <td class="field-label">
                       {{ field.label }}
@@ -281,6 +282,26 @@ window.JMHZ_VIEWER_TEMPLATE = `<!-- Toolbar -->
     <div class="validation-list" v-if="!validationCollapsed">
       <div v-for="(err, i) in errors" :key="i" class="validation-item">
         <span class="severity" :class="err.severity || 'error'"></span>
+        <span class="path">{{ err.headerKey ? 'Záhlaví' : err.employeeName }} › {{ err.sectionLabel }} ›</span>
+        <span class="message">{{ err.fieldLabel }}: {{ err.message }}</span>
+        <span v-if="err.canNavigate" class="goto-btn" @click="navigateToError(err)">Přejít</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Kontroly Panel (Business Rules - JMHZ only) -->
+  <div class="kontroly-panel-spacer" v-if="kontrolyErrors.length > 0" :style="{ height: kontrolyDockHeight + 'px' }"></div>
+  <div class="kontroly-panel" v-if="kontrolyErrors.length > 0" ref="kontrolyPanelRef" :style="{ bottom: (errors.length > 0 ? validationDockHeight : 0) + 'px' }">
+    <div class="kontroly-header" @click="kontrolyCollapsed = !kontrolyCollapsed">
+      Kontroly ({{ kontrolyErrors.length }} {{ kontrolyErrors.length === 1 ? 'nález' : kontrolyErrors.length < 5 ? 'nálezy' : 'nálezů' }}:
+      {{ kontrolyErrorCount }} {{ kontrolyErrorCount === 1 ? 'chyba' : kontrolyErrorCount < 5 ? 'chyby' : 'chyb' }},
+      {{ kontrolyWarningCount }} {{ kontrolyWarningCount === 1 ? 'varování' : 'varování' }})
+      {{ kontrolyCollapsed ? '▲' : '▼' }}
+    </div>
+    <div class="kontroly-list" v-if="!kontrolyCollapsed">
+      <div v-for="(err, i) in kontrolyErrors" :key="'k'+i" class="validation-item">
+        <span class="severity" :class="err.severity"></span>
+        <span class="control-id">K{{ err.controlId }}</span>
         <span class="path">{{ err.headerKey ? 'Záhlaví' : err.employeeName }} › {{ err.sectionLabel }} ›</span>
         <span class="message">{{ err.fieldLabel }}: {{ err.message }}</span>
         <span v-if="err.canNavigate" class="goto-btn" @click="navigateToError(err)">Přejít</span>
