@@ -13,6 +13,7 @@ window.JMHZ_VIEWER_TEMPLATE = `<!-- Toolbar -->
       <button @click="loadFile" v-if="xmlDoc">Nahrát XML</button>
       <button class="primary" @click="saveFile" v-if="xmlDoc">Uložit XML</button>
       <button @click="validateAll" v-if="xmlDoc">Zkontrolovat</button>
+      <button @click="runKontroly" v-if="xmlDoc && isJmhz">Kontroly</button>
       <button @click="toggleViewMode" v-if="xmlDoc">Zobrazení: {{ viewMode === 'cards' ? 'Karty' : 'Tabulka' }}</button>
       <button @click="xlsDialog = true" v-if="xmlDoc">Export XLS</button>
     </div>
@@ -71,12 +72,12 @@ window.JMHZ_VIEWER_TEMPLATE = `<!-- Toolbar -->
           <div class="section-card">
             <div class="section-body" style="max-height:none;">
               <table class="field-table">
-                <tr v-for="f in documentHeader" :key="f.key" class="field-row" :class="{ 'has-error': f._hasError }" :data-hdr-key="f.key">
+                <tr v-for="f in documentHeader" :key="f.key" class="field-row" :class="{ 'has-error': f._hasError || f._hasKontrolyError, 'has-warning': !f._hasError && !f._hasKontrolyError && f._hasKontrolyWarning }" :data-hdr-key="f.key">
                   <td class="field-id"></td>
                   <td class="field-label">{{ f.label }}</td>
                   <td class="field-value" @click="!isEditingHeader(f.key) && startHeaderEdit(f)">
                     <input v-if="isEditingHeader(f.key)" type="text" :value="f.value" @blur="commitHeaderEdit(f, $event.target.value)" @keydown.enter="commitHeaderEdit(f, $event.target.value)" @keydown.escape="cancelHeaderEdit" autofocus>
-                    <span v-else class="editable-header" :class="{ 'header-modified': f.modified, 'has-error': f._hasError }"><span v-if="f.modified" class="modified-dot"></span>{{ f.value || '—' }}</span>
+                    <span v-else class="editable-header" :class="{ 'header-modified': f.modified, 'has-error': f._hasError || f._hasKontrolyError, 'has-warning': !f._hasError && !f._hasKontrolyError && f._hasKontrolyWarning }"><span v-if="f.modified" class="modified-dot"></span>{{ f.value || '—' }}</span>
                   </td>
                 </tr>
                 <tr v-if="employerName" class="field-row">
@@ -126,14 +127,14 @@ window.JMHZ_VIEWER_TEMPLATE = `<!-- Toolbar -->
       </div>
     </div>
 
-    <div v-if="hasSearch || (viewMode === 'table' && hasActions)" style="display: flex; align-items: center; gap: 16px; padding: 0 36px 6px; max-width: 1000px; margin: 0 auto; width: 100%; font-size: 0.75rem; color: var(--text-muted);">
-      <label v-if="hasSearch && viewMode === 'cards'" style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+    <div v-if="hasSearch || hasActions" style="display: flex; align-items: center; gap: 16px; padding: 0 36px 6px; max-width: 1000px; margin: 0 auto; width: 100%; font-size: 0.75rem; color: var(--text-muted);">
+      <label v-if="hasCardFilter && viewMode === 'cards'" style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
         <input type="checkbox" v-model="autoExpandMatched"> Automaticky rozbalit
       </label>
-      <label v-if="hasSearch && viewMode === 'cards'" style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+      <label v-if="hasCardFilter && viewMode === 'cards'" style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
         <input type="checkbox" v-model="showAllFieldsInSearch"> Zobrazit všechna pole
       </label>
-      <span v-if="viewMode === 'table' && hasActions" style="font-size: 12px; color: #6B7280; display: flex; align-items: center; gap: 4px;">
+      <span v-if="hasActions" style="font-size: 12px; color: #6B7280; display: flex; align-items: center; gap: 4px;">
         Akce:
         <span class="action-filter">
           <button v-for="a in ['', '1', '2', '3', '4', '8']" :key="a" @click="actionFilter = a" :class="{ active: actionFilter === a }">{{ a ? 'A' + a : 'Vše' }}</button>
@@ -168,7 +169,7 @@ window.JMHZ_VIEWER_TEMPLATE = `<!-- Toolbar -->
                 {{ getRowLabel(item.emp) }}
               </td>
               <td v-for="(field, ci) in visibleColumns" :key="ci"
-                  :class="{ 'has-error': hasFieldError(item.emp, field, field), 'cell-match': item.matched && isFieldMatch(item.emp, field, field) }"
+                  :class="{ 'has-error': hasFieldError(item.emp, field, field), 'has-warning': hasFieldWarning(item.emp, field, field), 'cell-match': item.matched && isFieldMatch(item.emp, field, field) }"
                   :data-err-id="'e' + item.emp._index + '-' + fieldKey(field, field._instanceIndex)"
                   @click="startEdit(item.emp, field, field)">
                 <template v-if="editingField === item.emp._index + ':' + fieldKey(field, field._instanceIndex)">
@@ -229,9 +230,13 @@ window.JMHZ_VIEWER_TEMPLATE = `<!-- Toolbar -->
                    :style="getSectionBodyStyle(item.emp._index + ':' + (section._virtualId || section.id), isSectionExpanded(item.emp._index, section._virtualId || section.id, item.matched, section))">
                 <table class="field-table">
                   <tr v-for="field in getVisibleFields(item.emp, section, item.matched)" :key="fieldKey(field, section._instanceIndex)"
-                      class="field-row" :class="{ 'has-error': hasFieldError(item.emp, field, section), 'field-match': item.matched && isFieldMatch(item.emp, field, section) }" :data-field-id="field.csszId" :data-err-id="'e' + item.emp._index + '-' + fieldKey(field, section._instanceIndex)">
+                      class="field-row" :class="{ 'has-error': hasFieldError(item.emp, field, section), 'has-warning': hasFieldWarning(item.emp, field, section), 'field-match': item.matched && isFieldMatch(item.emp, field, section) }" :data-field-id="field.csszId" :data-err-id="'e' + item.emp._index + '-' + fieldKey(field, section._instanceIndex)">
                     <td class="field-id">{{ field.csszId || '' }}</td>
-                    <td class="field-label">{{ field.label }}<span class="xpath">{{ fieldXpath(field) }}</span></td>
+                    <td class="field-label">
+                      {{ field.label }}
+                      <span v-if="actionFilter && getFieldReq(field, actionFilter)" class="col-req" :class="reqClass(getFieldReq(field, actionFilter))" :title="REQ_TITLES[getFieldReq(field, actionFilter)] || ''">{{ getFieldReq(field, actionFilter) }}</span>
+                      <span class="xpath">{{ fieldXpath(field) }}</span>
+                    </td>
                     <td class="field-value">
                       <template v-if="editingField === item.emp._index + ':' + fieldKey(field, section._instanceIndex)">
                         <input v-if="field.type === 'date'" type="date" :value="getFieldValue(item.emp, field, section)" @blur="commitEdit(item.emp, field, $event.target.value, section)" @keydown.enter="commitEdit(item.emp, field, $event.target.value, section)" @keydown.escape="cancelEdit" autofocus>
@@ -279,6 +284,26 @@ window.JMHZ_VIEWER_TEMPLATE = `<!-- Toolbar -->
     <div class="validation-list" v-if="!validationCollapsed">
       <div v-for="(err, i) in errors" :key="i" class="validation-item">
         <span class="severity" :class="err.severity || 'error'"></span>
+        <span class="path">{{ err.headerKey ? 'Záhlaví' : err.employeeName }} › {{ err.sectionLabel }} ›</span>
+        <span class="message">{{ err.fieldLabel }}: {{ err.message }}</span>
+        <span v-if="err.canNavigate" class="goto-btn" @click="navigateToError(err)">Přejít</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Kontroly Panel (Business Rules - JMHZ only) -->
+  <div class="kontroly-panel-spacer" v-if="kontrolyErrors.length > 0" :style="{ height: kontrolyDockHeight + 'px' }"></div>
+  <div class="kontroly-panel" v-if="kontrolyErrors.length > 0" ref="kontrolyPanelRef" :style="{ bottom: (errors.length > 0 ? validationDockHeight : 0) + 'px' }">
+    <div class="kontroly-header" @click="kontrolyCollapsed = !kontrolyCollapsed">
+      Kontroly ({{ kontrolyErrors.length }} {{ kontrolyErrors.length === 1 ? 'nález' : kontrolyErrors.length < 5 ? 'nálezy' : 'nálezů' }}:
+      {{ kontrolyErrorCount }} {{ kontrolyErrorCount === 1 ? 'chyba' : kontrolyErrorCount < 5 ? 'chyby' : 'chyb' }},
+      {{ kontrolyWarningCount }} {{ kontrolyWarningCount === 1 ? 'varování' : 'varování' }})
+      {{ kontrolyCollapsed ? '▲' : '▼' }}
+    </div>
+    <div class="kontroly-list" v-if="!kontrolyCollapsed">
+      <div v-for="(err, i) in kontrolyErrors" :key="'k'+i" class="validation-item">
+        <span class="severity" :class="err.severity"></span>
+        <span class="control-id">K{{ err.controlId }}</span>
         <span class="path">{{ err.headerKey ? 'Záhlaví' : err.employeeName }} › {{ err.sectionLabel }} ›</span>
         <span class="message">{{ err.fieldLabel }}: {{ err.message }}</span>
         <span v-if="err.canNavigate" class="goto-btn" @click="navigateToError(err)">Přejít</span>
@@ -458,6 +483,12 @@ function mountJmhzViewer(target, options = {}) {
     const validationCollapsed = ref(false);
     const validationPanelRef = ref(null);
     const validationDockHeight = ref(0);
+    // Kontroly (business rules) state
+    const kontrolyErrors = ref([]);
+    const kontrolyCollapsed = ref(false);
+    const kontrolyPanelRef = ref(null);
+    const kontrolyDockHeight = ref(0);
+    const kontrolyFieldErrors = ref(new Map()); // Map<empIndex, Map<fieldKey, severity>>
     const editingField = ref(null);
     const editingHeaderKey = ref(null);
     const toastMessage = ref('');
@@ -474,6 +505,7 @@ function mountJmhzViewer(target, options = {}) {
     const redoStack = ref([]);
     const actionLabels = computed(() => { const f = formatRef.value; return f ? (f.actionLabels || {}) : {}; });
     const formatName = computed(() => { const f = formatRef.value; return f ? f.name : ''; });
+    const isJmhz = computed(() => { const f = formatRef.value; return f && f.rootElement === 'jmhz'; });
     const hasActions = computed(() => { const f = formatRef.value; return f ? f.hasActions : false; });
     const rowInfoDefs = computed(() => { const f = formatRef.value; return f ? (f.getRowInfo || []) : []; });
     function getRowLabel(emp) { return activeFormat ? activeFormat.getRowLabel(emp.fields) : (emp.surname + ' ' + emp.firstName); }
@@ -500,6 +532,8 @@ function mountJmhzViewer(target, options = {}) {
       expandedEmployee.value = -1;
       hasValidated.value = false;
       validationErrors.value = new Map();
+      kontrolyErrors.value = [];
+      if (window.JMHZKontroly) window.JMHZKontroly.resetKontrolyIndex();
       sectionBodyEls.clear();
       Object.keys(sectionBodyHeights).forEach(key => delete sectionBodyHeights[key]);
       actionFilter.value = '';
@@ -664,6 +698,28 @@ function mountJmhzViewer(target, options = {}) {
     });
     window.addEventListener('resize', updateValidationDockHeight);
 
+    // Kontroly panel dock height management
+    function updateKontrolyDockHeight() {
+      const panelEl = kontrolyPanelRef.value;
+      kontrolyDockHeight.value = panelEl ? Math.ceil(panelEl.getBoundingClientRect().height) : 0;
+    }
+    let kontrolyPanelObserver = null;
+    watch(kontrolyPanelRef, (panelEl) => {
+      if (kontrolyPanelObserver) { kontrolyPanelObserver.disconnect(); kontrolyPanelObserver = null; }
+      if (panelEl && typeof ResizeObserver !== 'undefined') {
+        kontrolyPanelObserver = new ResizeObserver(() => updateKontrolyDockHeight());
+        kontrolyPanelObserver.observe(panelEl);
+      }
+      nextTick(() => updateKontrolyDockHeight());
+    });
+    watch(() => [kontrolyErrors.value.length, kontrolyCollapsed.value], () => {
+      nextTick(() => updateKontrolyDockHeight());
+    });
+    window.addEventListener('resize', updateKontrolyDockHeight);
+
+    const kontrolyErrorCount = computed(() => kontrolyErrors.value.filter(e => e.severity === 'error').length);
+    const kontrolyWarningCount = computed(() => kontrolyErrors.value.filter(e => e.severity === 'warning').length);
+
     function splitQuery(raw) { return raw.split(',').map(s => norm(s.trim())).filter(Boolean); }
 
     const hasSearch = computed(() => {
@@ -671,6 +727,8 @@ function mountJmhzViewer(target, options = {}) {
       const vp = splitQuery(valueSearch.value);
       return fp.length > 0 || vp.length > 0;
     });
+    const hasActionFilter = computed(() => !!actionFilter.value);
+    const hasCardFilter = computed(() => hasSearch.value || hasActionFilter.value);
     // Clean up collapsed state when search is cleared (outside computed to avoid side effects)
     watch(hasSearch, (val) => {
       if (!val) { collapsedSections.clear(); collapsedMatchedEmps.clear(); }
@@ -791,7 +849,7 @@ function mountJmhzViewer(target, options = {}) {
     }
 
     function toggleEmployee(index, isMatched) {
-      if (isMatched && hasSearch.value && autoExpandMatched.value) {
+      if (autoExpandMatched.value && (hasActionFilter.value || (isMatched && hasSearch.value))) {
         if (collapsedMatchedEmps.has(index)) collapsedMatchedEmps.delete(index);
         else collapsedMatchedEmps.add(index);
       } else {
@@ -897,7 +955,7 @@ function mountJmhzViewer(target, options = {}) {
     const autoExpandMatched = ref(true);
 
     function isEmployeeExpanded(index, isMatched) {
-      if (isMatched && hasSearch.value && autoExpandMatched.value) {
+      if (autoExpandMatched.value && (hasActionFilter.value || (isMatched && hasSearch.value))) {
         return !collapsedMatchedEmps.has(index);
       }
       return expandedEmployee.value === index;
@@ -916,7 +974,9 @@ function mountJmhzViewer(target, options = {}) {
 
     function getSectionsForEmployee(emp) {
       const result = [];
+      const actSections = ACTION_SECTIONS ? ACTION_SECTIONS[actionFilter.value] : null;
       SECTIONS.forEach(sec => {
+        if (actSections && !showAllFieldsInSearch.value && !actSections.includes(sec.id)) return;
         const fields = FIELDS_BY_SECTION[sec.id] || [];
         if (!fields.length) return;
         const countKey = sec.parentRepeating || sec.id;
@@ -981,8 +1041,9 @@ function mountJmhzViewer(target, options = {}) {
     function isSectionExpanded(empIdx, secId, isMatched, section) {
       const key = empIdx + ':' + secId;
       if (collapsedSections.has(key)) return false;
+      if (hasActionFilter.value && autoExpandMatched.value) return true;
       // For matched employees during search: auto-expand sections with matching fields
-      if (isMatched && hasSearch.value && searchMatches.value?.has(empIdx)) {
+      if (isMatched && hasCardFilter.value && searchMatches.value?.has(empIdx)) {
         const matches = searchMatches.value.get(empIdx);
         const baseSec = section?._baseSectionId || secId;
         const sectionFields = FIELDS_BY_SECTION[baseSec] || [];
@@ -1004,15 +1065,20 @@ function mountJmhzViewer(target, options = {}) {
     function getFieldError(field) { return null; }
 
     function getVisibleFields(emp, section, isMatched) {
-      if (!isMatched || !hasSearch.value) return section.fields;
-      if (showAllFieldsInSearch.value) return section.fields;
+      let fields = section.fields;
+      // Action filter: hide fields forbidden for the selected action
+      if (actionFilter.value && !showAllFieldsInSearch.value) {
+        fields = fields.filter(f => getFieldReq(f, actionFilter.value) !== '/');
+      }
+      if (!isMatched || !hasSearch.value) return fields;
+      if (showAllFieldsInSearch.value) return fields;
       const fqParts = splitQuery(fieldSearch.value);
       if (fqParts.length > 0) {
-        return section.fields.filter(f => fqParts.some(fq => fieldMatchesTerm(f, fq)));
+        return fields.filter(f => fqParts.some(fq => fieldMatchesTerm(f, fq)));
       }
-      if (!searchMatches.value?.has(emp._index)) return section.fields;
+      if (!searchMatches.value?.has(emp._index)) return fields;
       const matches = searchMatches.value.get(emp._index);
-      return section.fields.filter(f => matches.has(fieldKey(f, section._instanceIndex)));
+      return fields.filter(f => matches.has(fieldKey(f, section._instanceIndex)));
     }
 
     function startEdit(emp, field, section) {
@@ -1403,10 +1469,74 @@ function mountJmhzViewer(target, options = {}) {
       }
     }
 
+    // === Business Rule Controls (Kontroly) — JMHZ only ===
+    function runKontroly() {
+      if (!xmlDoc.value || !isJmhz.value) return;
+      kontrolyErrors.value = [];
+      kontrolyFieldErrors.value = new Map();
+      documentHeader.value.forEach(h => { h._hasKontrolyError = false; h._hasKontrolyWarning = false; });
+      try {
+        if (typeof window.JMHZKontroly === 'undefined') {
+          showToast('Kontroly nejsou k dispozici');
+          return;
+        }
+        const results = window.JMHZKontroly.runKontroly(
+          xmlDoc.value,
+          employees.value,
+          documentHeader.value,
+          FIELDS,
+          FIELDS_BY_SECTION
+        );
+        kontrolyErrors.value = results;
+        // Build field error map for highlighting
+        const fMap = new Map();
+        results.forEach(r => {
+          if (r.headerKey) {
+            const hdr = documentHeader.value.find(h => h.key === r.headerKey);
+            if (hdr) {
+              if (r.severity === 'error') hdr._hasKontrolyError = true;
+              else hdr._hasKontrolyWarning = true;
+            }
+          }
+          if (r.empIndex >= 0 && r.fieldKey) {
+            if (!fMap.has(r.empIndex)) fMap.set(r.empIndex, new Map());
+            const empMap = fMap.get(r.empIndex);
+            const existing = empMap.get(r.fieldKey);
+            // error takes precedence over warning
+            if (!existing || (r.severity === 'error' && existing === 'warning'))
+              empMap.set(r.fieldKey, r.severity);
+          }
+        });
+        kontrolyFieldErrors.value = fMap;
+        if (results.length > 0) {
+          const errCount = results.filter(e => e.severity === 'error').length;
+          const warnCount = results.filter(e => e.severity === 'warning').length;
+          const parts = [];
+          if (errCount > 0) parts.push(errCount + ' ' + czPlural(errCount, 'chyba', 'chyby', 'chyb'));
+          if (warnCount > 0) parts.push(warnCount + ' varování');
+          showToast('Kontroly: ' + parts.join(', '));
+        } else {
+          showToast('Kontroly OK — žádné nálezy');
+        }
+      } catch (e) {
+        console.error('Kontroly error:', e);
+        kontrolyErrors.value.push({ severity: 'error', controlId: 0, empIndex: -1, employeeName: '', sectionLabel: '', fieldLabel: '', fieldKey: '', headerKey: '', canNavigate: false, message: 'Chyba při spuštění kontrol: ' + String(e) });
+        showToast('Chyba při spuštění kontrol');
+      }
+    }
+
     function hasFieldError(emp, field, section) {
+      const fk = fieldKey(field, section?._instanceIndex);
       const empErrors = validationErrors.value.get(emp._index);
-      if (!empErrors) return false;
-      return empErrors.has(fieldKey(field, section?._instanceIndex));
+      if (empErrors && empErrors.has(fk)) return true;
+      const kErrors = kontrolyFieldErrors.value.get(emp._index);
+      return kErrors ? kErrors.get(fk) === 'error' : false;
+    }
+
+    function hasFieldWarning(emp, field, section) {
+      const kErrors = kontrolyFieldErrors.value.get(emp._index);
+      if (!kErrors) return false;
+      return kErrors.get(fieldKey(field, section?._instanceIndex)) === 'warning';
     }
 
     function getFieldErrorMsg(emp, field, section) {
@@ -1417,18 +1547,25 @@ function mountJmhzViewer(target, options = {}) {
     }
 
     function getSectionErrorCount(empIndex, sectionId, section) {
-      const empErrors = validationErrors.value.get(empIndex);
-      if (!empErrors) return 0;
       let count = 0;
       const baseSec = section?._baseSectionId || sectionId;
       const sectionFields = FIELDS_BY_SECTION[baseSec] || [];
-      sectionFields.forEach(f => { if (empErrors.has(fieldKey(f, section?._instanceIndex))) count++; });
+      const empErrors = validationErrors.value.get(empIndex);
+      const kErrors = kontrolyFieldErrors.value.get(empIndex);
+      sectionFields.forEach(f => {
+        const fk = fieldKey(f, section?._instanceIndex);
+        if ((empErrors && empErrors.has(fk)) || (kErrors && kErrors.has(fk))) count++;
+      });
       return count;
     }
 
     function getEmployeeErrorCount(empIndex) {
       const empErrors = validationErrors.value.get(empIndex);
-      return empErrors ? empErrors.size : 0;
+      const kErrors = kontrolyFieldErrors.value.get(empIndex);
+      const keys = new Set();
+      if (empErrors) empErrors.forEach((_, k) => keys.add(k));
+      if (kErrors) kErrors.forEach((_, k) => keys.add(k));
+      return keys.size;
     }
 
     function navigateToError(err) {
@@ -1528,20 +1665,21 @@ function mountJmhzViewer(target, options = {}) {
       xmlDoc, filename, employees, expandedEmployee, fieldSearch, valueSearch, expandedSections, showAllSections,
       isDirty, isDragging, errors, validationCollapsed, editingField, toastMessage, fileInput, searchInput,
       validationPanelRef, validationDockHeight, tableContentRef,
+      kontrolyErrors, kontrolyCollapsed, kontrolyPanelRef, kontrolyDockHeight, kontrolyErrorCount, kontrolyWarningCount, isJmhz,
       actionLabels, formatName, hasActions, rowInfoDefs, rowColumnLabel, getRowLabel, fieldXpath, fieldHint, fieldSecLabel,
       displayList, filteredEmployees, matchedEmployees, unmatchedEmployees, searchMatchInfo, isFieldMatch, isEmployeeExpanded, getEmpMatchCount, sectionHasMatchingFields, sectionMatchesFieldFilter, showAllFieldsInSearch, autoExpandMatched,
       onFieldSearchInput, onValueSearchInput, clearFieldSearch, clearValueSearch,
-      hasSearch, hasValidated, xmlVersion, actionSummary, employerName, datumVyplneni, czForeignerSplit, partialAcceptValue,
+      hasSearch, hasActionFilter, hasCardFilter, hasValidated, xmlVersion, actionSummary, employerName, datumVyplneni, czForeignerSplit, partialAcceptValue,
       employeeCountText, validationCountText,
       viewMode, toggleViewMode, showViewPicker, pickViewMode, visibleColumns, actionFilter, getFieldReq, reqClass, REQ_TITLES,
       currentFormatGroups, applyGroupQuery,
       toggleEmployee, getSectionsForEmployee, toggleSection, toggleAllSections, isSectionExpanded,
       setSectionBodyRef, getSectionBodyStyle,
-      fieldKey, getFieldValue, isFieldModified, getFieldRequirement, hasFieldError, getFieldErrorMsg,
+      fieldKey, getFieldValue, isFieldModified, getFieldRequirement, hasFieldError, hasFieldWarning, getFieldErrorMsg,
       getVisibleFields, startEdit, commitEdit, cancelEdit, addInstance, removeInstance,
       headerExpanded, documentHeader, startHeaderEdit, commitHeaderEdit, cancelHeaderEdit, isEditingHeader,
       xlsDialog, xlsOptTitle, xlsOptId, xlsOptCategory, exportToExcel,
-      loadFile, handleFileSelect, handleDrop, saveFile, validateAll, getSectionErrorCount,
+      loadFile, handleFileSelect, handleDrop, saveFile, validateAll, runKontroly, getSectionErrorCount,
       getEmployeeErrorCount, navigateToError,
       loadXmlText
     };

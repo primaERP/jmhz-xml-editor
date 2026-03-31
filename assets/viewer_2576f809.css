@@ -199,6 +199,8 @@ body {
 .field-value input:focus, .field-value select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-focus); }
 .field-row.has-error .field-value input { border-color: var(--error); background: var(--error-bg); }
 .field-row.has-error { background: var(--error-bg); }
+.field-row.has-warning .field-value input { border-color: var(--warning); background: var(--warning-bg); }
+.field-row.has-warning { background: var(--warning-bg); }
 .show-all-toggle { padding: var(--sp-1) var(--sp-4); font-size: 0.75rem; color: var(--accent); cursor: pointer; }
 .show-all-toggle:hover { text-decoration: underline; }
 
@@ -214,10 +216,28 @@ body {
 .validation-item { display: flex; align-items: center; padding: var(--sp-1) var(--sp-4); gap: var(--sp-2); font-size: 0.8125rem; border-bottom: 1px solid var(--border-subtle); }
 .validation-item .severity { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 .validation-item .severity.error { background: var(--error); }
+.validation-item .severity.warning { background: #e8a317; }
 .validation-item .path { color: var(--text-muted); }
 .validation-item .message { flex: 1; color: var(--text-secondary); }
 .validation-item .goto-btn { font-size: 0.75rem; color: var(--accent); cursor: pointer; white-space: nowrap; transition: color var(--duration) var(--ease); }
 .validation-item .goto-btn:hover { color: var(--accent-hover); text-decoration: underline; }
+
+/* === Kontroly Panel (Business Rules) === */
+.kontroly-panel-spacer { flex-shrink: 0; }
+.kontroly-panel {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 19;
+  background: var(--bg-elevated); border-top: 1px solid var(--border);
+  box-shadow: 0 -4px 16px oklch(20% 0.02 250 / 0.08);
+}
+.kontroly-header {
+  display: flex; align-items: center; padding: var(--sp-2) var(--sp-4);
+  font-size: 0.8125rem; font-weight: 600; color: var(--text-primary);
+  border-bottom: 1px solid var(--border-subtle); cursor: pointer;
+  transition: background var(--duration) var(--ease);
+}
+.kontroly-header:hover { background: var(--bg-hover); }
+.kontroly-list { padding: 0; max-height: min(40vh, 280px); overflow-y: auto; }
+.kontroly-panel .control-id { font-size: 0.6875rem; color: var(--text-muted); font-family: monospace; min-width: 3em; }
 
 /* === Toast === */
 .toast {
@@ -311,6 +331,7 @@ body {
 .editable-header:hover { text-decoration: underline dotted; cursor: pointer; }
 .header-modified { font-weight: 600; color: var(--accent); }
 .editable-header.has-error { color: var(--error); font-weight: 600; }
+.editable-header.has-warning { color: var(--warning); font-weight: 600; }
 .stats-bar .stat-warn { font-weight: 600; color: var(--warning); }
 
 /* === Global Search === */
@@ -369,6 +390,7 @@ body {
 .table-view tr.matched td.name-cell { }
 .table-view tr.separator-row td { background: var(--bg-base); text-align: center; color: var(--text-faint); font-size: 0.6875rem; border: none; padding: var(--sp-2); }
 .table-view tbody tr td.has-error { background: var(--error-bg); }
+.table-view tbody tr td.has-warning { background: var(--warning-bg); }
 .table-view td.cell-match { }
 .table-view td .cell-empty { color: var(--text-faint); }
 .table-view td input, .table-view td select { width: 100%; padding: 2px var(--sp-1); border: 1px solid var(--accent); border-radius: 2px; font-size: 0.75rem; outline: none; }
