@@ -71,6 +71,8 @@ const viewer    = read('src/runtime/viewer.js');
 const loader    = read('src/entrypoints/loader.js');
 const embed     = read('src/entrypoints/embed.js');
 const formats   = read('formats.js');
+const inlineExampleFilename = 'regzec-sample-100.xml';
+const inlineExampleXml = read(path.join('samples', inlineExampleFilename)).replace(/<\/script/gi, '<\\/script');
 const uiAssets  = {
   logo: dataUrl(path.join('assets-src', 'abra-logo-2026.svg'), 'image/svg+xml'),
   previewTable: dataUrl(path.join('assets-src', 'preview-table.png'), 'image/png'),
@@ -87,7 +89,7 @@ const viewerRuntime = [
 
 // standaloneHtml is generated after hashing — see below
 
-// ── Build sample-inline.html (integration template) ─────────
+// ── Build example-inline.html (integration template) ────────
 const sampleHtml = `<!DOCTYPE html>
 <html lang="cs">
 <head>
@@ -97,7 +99,9 @@ const sampleHtml = `<!DOCTYPE html>
 </head>
 <body>
   <div id="jmhz-viewer-root"></div>
-  <script id="jmhz-data" type="application/xml" data-filename="mesicni-hlaseni-2026-03.xml"><!-- XML dokument --><\/script>
+  <script id="jmhz-data" type="application/xml" data-filename="${inlineExampleFilename}">
+${inlineExampleXml}
+  <\/script>
   <script src="https://support.flexibee.eu/service/jmhz-viewer/embed.js"><\/script>
   <script>
     // mount(target, options) → Promise<handle>
@@ -194,7 +198,7 @@ if (_target) {
 
 // HTML pages
 fs.writeFileSync('dist/index.html', standaloneHtml);
-fs.writeFileSync('dist/sample-inline.html', sampleHtml);
+fs.writeFileSync('dist/example-inline.html', sampleHtml);
 
 // Images (not hashed — loaded at runtime via Vue assetBase)
 ['abra-logo-2026.svg', 'preview-table.png', 'preview-cards.png'].forEach(file => {
@@ -218,7 +222,7 @@ const allFiles = {
   'manifest.json': manifestJson.length,
   'manifest.js': manifestJs.length,
   'index.html': standaloneHtml.length,
-  'sample-inline.html': sampleHtml.length,
+  'example-inline.html': sampleHtml.length,
 };
 Object.entries(manifest.files).forEach(([, hashed]) => {
   allFiles[hashed] = fs.statSync(path.join('dist', hashed.replace(/\//g, path.sep))).size;
