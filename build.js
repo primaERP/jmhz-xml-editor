@@ -143,9 +143,11 @@ manifest.bundle = writeHashed(embed, 'assets/embed.js');
 // Stable loader (not hashed — consumer entry point)
 fs.writeFileSync('dist/embed.js', loader);
 
-// Manifest
+// Manifest (JSON for tooling, JS for CORS-safe runtime loading via <script> tag)
 const manifestJson = JSON.stringify(manifest, null, 2) + '\n';
 fs.writeFileSync('dist/manifest.json', manifestJson);
+const manifestJs = 'window.__JMHZ_MANIFEST__ = ' + JSON.stringify(manifest) + ';\n';
+fs.writeFileSync('dist/manifest.js', manifestJs);
 
 // ── Build dist/index.html (standalone — hashed paths baked in) ─
 const f = manifest.files;
@@ -199,6 +201,7 @@ const allFiles = {
   'embed.js (loader)': loader.length,
   [manifest.bundle + ' (bundle)']: embed.length,
   'manifest.json': manifestJson.length,
+  'manifest.js': manifestJs.length,
   'index.html': standaloneHtml.length,
   'sample-inline.html': sampleHtml.length,
 };
