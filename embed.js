@@ -1,5 +1,6 @@
 // Stable loader for JMHZ Viewer — never changes, safe to cache forever.
-// Fetches manifest.json to discover the current hashed bundle, then loads it.
+// Loads manifest.js (via <script> tag, CORS-safe) to discover the current
+// hashed bundle, then loads it.
 (function () {
   if (window.JMHZViewer) return; // already loaded — prevent double-include clobbering
 
@@ -29,17 +30,18 @@
     }
   };
 
-  fetch(base + 'manifest.json?t=' + Date.now())
-    .then(function (r) {
-      if (!r.ok) throw new Error('manifest.json HTTP ' + r.status);
-      return r.json();
-    })
-    .then(function (m) {
-      window.__JMHZ_MANIFEST__ = m;
-      var s = document.createElement('script');
-      s.src = base + m.bundle;
-      s.onerror = function () { fail(new Error('Failed to load ' + s.src)); };
-      document.head.appendChild(s);
-    })
-    .catch(function (err) { fail(err); });
+  // Load manifest via <script> tag — unlike fetch(), this is not subject
+  // to CORS and works cross-origin and from file:// URLs.
+  var ms = document.createElement('script');
+  ms.src = base + 'manifest.js?t=' + Date.now();
+  ms.onload = function () {
+    var m = window.__JMHZ_MANIFEST__;
+    if (!m) { fail(new Error('manifest.js loaded but __JMHZ_MANIFEST__ not set')); return; }
+    var s = document.createElement('script');
+    s.src = base + m.bundle;
+    s.onerror = function () { fail(new Error('Failed to load ' + s.src)); };
+    document.head.appendChild(s);
+  };
+  ms.onerror = function () { fail(new Error('Failed to load ' + ms.src)); };
+  document.head.appendChild(ms);
 })();
