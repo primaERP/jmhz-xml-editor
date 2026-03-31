@@ -24,6 +24,7 @@ function mountJmhzViewer(target, options = {}) {
   const app = createApp({
   setup() {
     const assetBase = ref(runtimeOptions.assetBase || '');
+    const uiAssets = window.__JMHZ_UI_ASSETS__ || {};
     const xmlDoc = ref(null);
     const filename = ref(runtimeOptions.filename || '');
     const employees = ref([]);
@@ -1046,6 +1047,7 @@ function mountJmhzViewer(target, options = {}) {
 
     return {
       assetBase,
+      uiAssets,
       xmlDoc, filename, employees, expandedEmployee, fieldSearch, valueSearch, expandedSections, showAllSections,
       isDirty, isDragging, errors, validationCollapsed, editingField, toastMessage, fileInput, searchInput,
       validationPanelRef, validationDockHeight, tableContentRef,

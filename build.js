@@ -19,6 +19,10 @@ function readBin(file) {
   return fs.readFileSync(file);
 }
 
+function dataUrl(file, mime) {
+  return `data:${mime};base64,${readBin(file).toString('base64')}`;
+}
+
 function escapeRegex(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -67,9 +71,19 @@ const viewer    = read('src/runtime/viewer.js');
 const loader    = read('src/entrypoints/loader.js');
 const embed     = read('src/entrypoints/embed.js');
 const formats   = read('formats.js');
+const uiAssets  = {
+  logo: dataUrl('abra-logo-2026.svg', 'image/svg+xml'),
+  previewTable: dataUrl('preview-table.png', 'image/png'),
+  previewCards: dataUrl('preview-cards.png', 'image/png')
+};
 
 // ── Build viewer.runtime.js (template + helpers + viewer) ────
-const viewerRuntime = [template, helpers, viewer].join('\n\n');
+const viewerRuntime = [
+  'window.__JMHZ_UI_ASSETS__ = ' + JSON.stringify(uiAssets) + ';',
+  template,
+  helpers,
+  viewer
+].join('\n\n');
 
 // standaloneHtml is generated after hashing — see below
 

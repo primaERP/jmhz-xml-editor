@@ -3,7 +3,7 @@
 window.JMHZ_VIEWER_TEMPLATE = `<!-- Toolbar -->
   <div class="toolbar">
     <div class="toolbar-left">
-      <img :src="assetBase + 'images/abra-logo-2026.svg'" alt="ABRA" style="flex-shrink: 0; height: 28px; width: auto;">
+      <img :src="uiAssets.logo" alt="ABRA" style="flex-shrink: 0; height: 28px; width: auto;">
       <span style="font-weight: 600; font-size: 0.875rem; color: var(--text-primary);">JMHZ Viewer</span>
     </div>
     <div class="toolbar-center"></div>
@@ -40,12 +40,12 @@ window.JMHZ_VIEWER_TEMPLATE = `<!-- Toolbar -->
       <p>Můžete kdykoliv přepnout tlačítkem v horní liště</p>
       <div class="view-picker-options">
         <div class="view-picker-card" @click="pickViewMode('table')">
-          <div class="view-picker-preview"><img :src="assetBase + 'images/preview-table.png'" alt="Tabulka"></div>
+          <div class="view-picker-preview"><img :src="uiAssets.previewTable" alt="Tabulka"></div>
           <h3>Tabulka</h3>
           <span>Přehled všech zaměstnanců a hodnot na jednom místě. Rychlé porovnávání a hromadné kontroly.</span>
         </div>
         <div class="view-picker-card" @click="pickViewMode('cards')">
-          <div class="view-picker-preview"><img :src="assetBase + 'images/preview-cards.png'" alt="Karty"></div>
+          <div class="view-picker-preview"><img :src="uiAssets.previewCards" alt="Karty"></div>
           <h3>Karty</h3>
           <span>Přehledné zobrazení po sekcích. Ideální pro menší soubory a kontrolu jednotlivých záznamů.</span>
         </div>
