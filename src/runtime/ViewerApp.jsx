@@ -1623,15 +1623,17 @@ export default function ViewerApp(props) {
                             <div class="section-header" onClick={(e) => { e.stopPropagation(); toggleSection(item.emp._index + ':' + (section._virtualId || section.id)); }}>
                               <svg class="section-chevron" classList={{ expanded: isSectionExpanded(item.emp._index, section._virtualId || section.id, item.matched, section) }} viewBox="0 0 16 16" fill="currentColor"><path d="M6 3l5 5-5 5V3z"/></svg>
                               <span class="section-title">{section.label}</span>
-                              <Show when={section.repeating && section._instanceIndex === 0}>
-                                <button class="btn-add-instance" onClick={(e) => { e.stopPropagation(); addInstance(item.emp, section); }} title="Přidat instanci" style="margin-left:4px;background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:14px;padding:0 4px;">+</button>
-                              </Show>
-                              <Show when={section._instanceIndex !== undefined}>
-                                <button class="btn-remove-instance" onClick={(e) => { e.stopPropagation(); removeInstance(item.emp, section); }} title="Odebrat instanci" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:14px;padding:0 4px;">&times;</button>
-                              </Show>
-                              <Show when={getSectionErrorCount(item.emp._index, section._virtualId || section.id, section) > 0}>
-                                <span class="section-badge errors" style="margin-left:auto">{getSectionErrorCount(item.emp._index, section._virtualId || section.id, section)}</span>
-                              </Show>
+                              <div style="margin-left:auto; display:flex; align-items:center; gap:4px;">
+                                <Show when={section.repeating && section._instanceIndex === 0}>
+                                  <button class="btn-add-instance" onClick={(e) => { e.stopPropagation(); addInstance(item.emp, section); }} title="Přidat instanci" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:14px;padding:0 4px;">+</button>
+                                </Show>
+                                <Show when={section._instanceIndex !== undefined}>
+                                  <button class="btn-remove-instance" onClick={(e) => { e.stopPropagation(); removeInstance(item.emp, section); }} title="Odebrat instanci" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:14px;padding:0 4px;">&times;</button>
+                                </Show>
+                                <Show when={getSectionErrorCount(item.emp._index, section._virtualId || section.id, section) > 0}>
+                                  <span class="section-badge errors">{getSectionErrorCount(item.emp._index, section._virtualId || section.id, section)}</span>
+                                </Show>
+                              </div>
                             </div>
                             <div class="section-body"
                               classList={{ collapsed: !isSectionExpanded(item.emp._index, section._virtualId || section.id, item.matched, section) }}
