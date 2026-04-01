@@ -17,7 +17,6 @@
     var targetEl = typeof target === 'string' ? document.querySelector(target) : target;
     if (!targetEl) throw new Error('JMHZ Viewer mount target not found');
     targetEl.classList.add('app', 'jmhz-viewer-host');
-    targetEl.innerHTML = window.JMHZ_VIEWER_TEMPLATE;
     return window.JMHZViewerRuntime.mount(targetEl, Object.assign({
       manageDocumentTitle: false,
       warnBeforeUnload: false,
@@ -49,10 +48,7 @@
   async function init() {
     loadCSS(resolve('assets/viewer.css'));
 
-    await Promise.all([
-      loadScript(resolve('vendor/vue.global.prod.js')),
-      loadScript(resolve('vendor/xmllint-wasm-bundle.js'))
-    ]);
+    await loadScript(resolve('vendor/xmllint-wasm-bundle.js'));
 
     await Promise.all([
       loadScript(resolve('data/xsd-data.js')),
