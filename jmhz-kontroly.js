@@ -45,6 +45,34 @@
     '10545': ['slevyZamestnancuOvoZel', 'pojistneSleva'],
   };
 
+  // Central registry for catalog-linked business constants used by implemented controls.
+  // `katalogkontrolMHKonstanty.csv` links the official controls to constant names, but does
+  // not provide the numeric values themselves, so these values preserve current behavior.
+  const KONTROLY_CONSTANTS = {
+    rates: {
+      employerDiscount: 0.05,          // K3 — Sleva na pojistném (uváděno v procentech)
+      employerInsuranceA: 0.248,       // K8, K315 — pojistné za zaměstnavatele (10024, 10478)
+      employerInsuranceB: 0.298,       // K10, K315 — pojistné za zaměstnavatele (10026, 10479)
+      employerInsuranceC: 0.278,       // K167, K315 — pojistné za zaměstnavatele (10484, 10480)
+      employeeInsurance: 0.071,        // K118, K168, K270 — sazba pojistného placená zaměstnancem
+      employeeDiscount: 0.065          // K170 — sazba slevy na pojistném podle § 7a
+    },
+    limits: {
+      maxWorkedHours: 240,             // K15 — maximální možný počet odpracovaných hodin
+      shorterWorkRangeMax: 30,         // K45 — rozsah kratší pracovní/služební doby
+      minMonthlyTaxBonus: 50,          // K74 — výše vyplaceného měsíčního daňového bonusu
+      ovozelVzMax: 48500               // K271 — § 23b odst. 4 ZPSZ threshold
+    },
+    tolerances: {
+      relativeError: 0.01,
+      absoluteAmount: 100,
+      roundedHalf: 0.5,
+      employeeInsuranceUpperRate: 0.07171,
+      employeeDiscountUpperRate: 0.06565,
+      combinedInsuranceDiff: 1
+    }
+  };
+
   // Read a PVPOJ sleva field directly from the XML document
   function readPvpojSleva(xmlDoc, csszId) {
     if (!xmlDoc) return null;
@@ -440,8 +468,8 @@
         const sleva = readPvpojSlevaNum(_xmlDoc, '10032');
         const zaklad = readPvpojSlevaNum(_xmlDoc, '10031');
         if (sleva === null || zaklad === null) return [];
-        const expected = Math.ceil(0.05 * zaklad);
-        if (Math.abs(sleva - expected) > 0.5) return [{ fieldCsszId: '10032', message: ctx.rule.msg }];
+        const expected = Math.ceil(KONTROLY_CONSTANTS.rates.employerDiscount * zaklad);
+        if (Math.abs(sleva - expected) > KONTROLY_CONSTANTS.tolerances.roundedHalf) return [{ fieldCsszId: '10032', message: ctx.rule.msg }];
         return [];
       }},
 
@@ -473,7 +501,7 @@
 
     // K8: Pojistné zaměstnavatele A = ceil(0.248 * základ A)
     { id: 8, scope: 'header', sev: 'error', type: 'pct_eq',
-      target: '10024', base: '10023', rate: 0.248,
+      target: '10024', base: '10023', rate: KONTROLY_CONSTANTS.rates.employerInsuranceA,
       msg: 'Vykázané pojistné neodpovídá vykázanému úhrnu vyměřovacích základů zaměstnanců (nevykonávají rizikové zaměstnání).' },
 
     // K9: Úhrn VZ zaměstnanců (B) = sum of employee 10479
@@ -489,7 +517,7 @@
 
     // K10: Pojistné zaměstnavatele B = ceil(0.298 * základ B)
     { id: 10, scope: 'header', sev: 'error', type: 'pct_eq',
-      target: '10026', base: '10025', rate: 0.298,
+      target: '10026', base: '10025', rate: KONTROLY_CONSTANTS.rates.employerInsuranceB,
       msg: 'Vykázané pojistné neodpovídá vykázanému úhrnu vyměřovacích základů zaměstnanců (zdravotničtí záchranáři nebo členové HZS).' },
 
     // K11: Pojistné zaměstnavatele celkem = A + B + C
@@ -523,7 +551,7 @@
         if (d < 1 || d > 9) return [];
         const hodiny = ctx.getNum('10268');
         if (hodiny === null) return [];
-        if (hodiny > 240) return [{ fieldCsszId: '10268', message: ctx.rule.msg }];
+        if (hodiny > KONTROLY_CONSTANTS.limits.maxWorkedHours) return [{ fieldCsszId: '10268', message: ctx.rule.msg }];
         return [];
       }},
 
@@ -652,7 +680,7 @@
       }},
 
     // K45: Rozsah kratší pracovní doby <= 30
-    { id: 45, scope: 'emp', sev: 'error', type: 'range', field: '10373', max: 30,
+    { id: 45, scope: 'emp', sev: 'error', type: 'range', field: '10373', max: KONTROLY_CONSTANTS.limits.shorterWorkRangeMax,
       msg: 'Uvedený počet hodin překračuje limit stanovený právní úpravou (30 hodin).' },
 
     // K50: Vyměřovací základ >= 0
@@ -797,7 +825,7 @@
       check: function(ctx) {
         const v = ctx.getNum('10306');
         if (v === null) return [];
-        if (v < 0 || (v > 0 && v < 50))
+        if (v < 0 || (v > 0 && v < KONTROLY_CONSTANTS.limits.minMonthlyTaxBonus))
           return [{ fieldCsszId: '10306', message: ctx.rule.msg }];
         return [];
       }},
@@ -1139,7 +1167,7 @@
 
     // K118: Pojistné za zaměstnance = ceil(0.071 * VZ)
     { id: 118, scope: 'emp', sev: 'error', type: 'pct_eq',
-      target: '10370', base: '10477', rate: 0.071,
+      target: '10370', base: '10477', rate: KONTROLY_CONSTANTS.rates.employeeInsurance,
       msg: 'Pojistné za zaměstnance neodpovídá vyměřovacímu základu zaměstnance.' },
 
     // K121: Vyloučené doby celkem = suma dílčích (ELDP)
@@ -1455,7 +1483,7 @@
 
     // K167: Pojistné zaměstnavatele C = ceil(0.278 * základ C)
     { id: 167, scope: 'header', sev: 'error', type: 'pct_eq',
-      target: '10484', base: '10483', rate: 0.278,
+      target: '10484', base: '10483', rate: KONTROLY_CONSTANTS.rates.employerInsuranceC,
       msg: 'Vykázané pojistné neodpovídá vykázanému úhrnu vyměřovacích základů zaměstnanců vykonávajících rizikové zaměstnání.' },
 
     // K168: Pojistné za zaměstnance tolerance check (≈ 7.1% of total VZ)
@@ -1469,12 +1497,12 @@
         const c = ctx.getHeaderNum('10483') || 0;
         const total = a + b + c;
         if (total === 0 && pojistne === 0) return [];
-        const expected = 0.071 * total;
+        const expected = KONTROLY_CONSTANTS.rates.employeeInsurance * total;
         const relErr = expected > 0 ? Math.abs(1 - pojistne / expected) : 1;
         const absErr = Math.abs(expected - pojistne);
-        if (relErr > 0.01 && absErr > 100)
+        if (relErr > KONTROLY_CONSTANTS.tolerances.relativeError && absErr > KONTROLY_CONSTANTS.tolerances.absoluteAmount)
           return [{ fieldCsszId: '10028', message: ctx.rule.msg }];
-        if (pojistne > 0.07171 * total + 0.5)
+        if (pojistne > KONTROLY_CONSTANTS.tolerances.employeeInsuranceUpperRate * total + KONTROLY_CONSTANTS.tolerances.roundedHalf)
           return [{ fieldCsszId: '10028', message: ctx.rule.msg }];
         return [];
       }},
@@ -1487,12 +1515,12 @@
         const uhrnVZ = readPvpojSlevaNum(_xmlDoc, '10486');
         if (uhrnSlev === null || uhrnVZ === null) return [];
         if (uhrnVZ === 0 && uhrnSlev === 0) return [];
-        var expected = 0.065 * uhrnVZ;
+        var expected = KONTROLY_CONSTANTS.rates.employeeDiscount * uhrnVZ;
         var relErr = expected > 0 ? Math.abs(1 - uhrnSlev / expected) : 1;
         var absErr = Math.abs(expected - uhrnSlev);
-        if (relErr > 0.01 && absErr > 100)
+        if (relErr > KONTROLY_CONSTANTS.tolerances.relativeError && absErr > KONTROLY_CONSTANTS.tolerances.absoluteAmount)
           return [{ fieldCsszId: '10487', message: ctx.rule.msg }];
-        if (uhrnSlev > 0.06565 * uhrnVZ + 0.5)
+        if (uhrnSlev > KONTROLY_CONSTANTS.tolerances.employeeDiscountUpperRate * uhrnVZ + KONTROLY_CONSTANTS.tolerances.roundedHalf)
           return [{ fieldCsszId: '10487', message: ctx.rule.msg }];
         return [];
       }},
@@ -1972,12 +2000,12 @@
         var uhrnVZ = readPvpojSlevaNum(_xmlDoc, '10544');
         if (uhrnSlev === null || uhrnVZ === null) return [];
         if (uhrnVZ === 0 && uhrnSlev === 0) return [];
-        var expected = 0.071 * uhrnVZ;
+        var expected = KONTROLY_CONSTANTS.rates.employeeInsurance * uhrnVZ;
         var relErr = expected > 0 ? Math.abs(1 - uhrnSlev / expected) : 1;
         var absErr = Math.abs(expected - uhrnSlev);
-        if (relErr > 0.01 && absErr > 100)
+        if (relErr > KONTROLY_CONSTANTS.tolerances.relativeError && absErr > KONTROLY_CONSTANTS.tolerances.absoluteAmount)
           return [{ fieldCsszId: '10545', message: ctx.rule.msg }];
-        if (uhrnSlev > 0.07171 * uhrnVZ + 0.5)
+        if (uhrnSlev > KONTROLY_CONSTANTS.tolerances.employeeInsuranceUpperRate * uhrnVZ + KONTROLY_CONSTANTS.tolerances.roundedHalf)
           return [{ fieldCsszId: '10545', message: ctx.rule.msg }];
         return [];
       }},
@@ -1987,7 +2015,7 @@
       msg: 'Slevu nelze uplatnit, protože částka vyměřovacího základu zaměstnance překračuje limit dle § 23b odst. 4 ZPSZ.',
       check: function(ctx) {
         var vz = ctx.getNum('10477');
-        if (vz === null || vz <= 48500) return [];
+        if (vz === null || vz <= KONTROLY_CONSTANTS.limits.ovozelVzMax) return [];
         var sleva = ctx.getVal('10546');
         if (sleva === 'true' || sleva === 'ANO')
           return [{ fieldCsszId: '10546', message: ctx.rule.msg }];
@@ -2275,13 +2303,15 @@
         var c = ctx.getNum('10480');
         var expected;
         if (a !== null || b !== null || c !== null) {
-          expected = Math.ceil(0.248 * (a || 0)) + Math.ceil(0.298 * (b || 0)) + Math.ceil(0.278 * (c || 0));
+          expected = Math.ceil(KONTROLY_CONSTANTS.rates.employerInsuranceA * (a || 0))
+            + Math.ceil(KONTROLY_CONSTANTS.rates.employerInsuranceB * (b || 0))
+            + Math.ceil(KONTROLY_CONSTANTS.rates.employerInsuranceC * (c || 0));
         } else {
           var celkem = ctx.getNum('10477');
           if (celkem === null) return [];
-          expected = Math.ceil(0.248 * celkem);
+          expected = Math.ceil(KONTROLY_CONSTANTS.rates.employerInsuranceA * celkem);
         }
-        if (Math.abs(pojistne - expected) > 1)
+        if (Math.abs(pojistne - expected) > KONTROLY_CONSTANTS.tolerances.combinedInsuranceDiff)
           return [{ fieldCsszId: '10481', message: ctx.rule.msg }];
         return [];
       }},
