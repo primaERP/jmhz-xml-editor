@@ -44,6 +44,8 @@ export default function ViewerApp(props) {
   const [parseFailureMessage, setParseFailureMessage] = createSignal('');
   const [isMonacoLoading, setIsMonacoLoading] = createSignal(false);
   const [monacoLoadError, setMonacoLoadError] = createSignal('');
+  const [baselineHeaderValues, setBaselineHeaderValues] = createSignal(new Map());
+  const [baselineFieldValues, setBaselineFieldValues] = createSignal(new Map());
 
   const savedPreferredViewMode = runtimeOptions.initialViewMode ? null : localStorage.getItem('preferredViewMode');
   const [viewMode, setViewMode] = createSignal(runtimeOptions.initialViewMode || savedPreferredViewMode || 'table');
@@ -70,6 +72,7 @@ export default function ViewerApp(props) {
   let monacoEditor = null;
   let monacoModel = null;
   let monacoChangeSubscription = null;
+  let resetModifiedBaselineOnNextParse = false;
 
   // ── Memos (was computed()) ─────────────────────────────────
   const actionLabels = createMemo(() => { const f = formatRef(); return f ? (f.actionLabels || {}) : {}; });
@@ -104,9 +107,86 @@ export default function ViewerApp(props) {
     return { ok: true, doc, format };
   }
 
+  function getRowIdentity(index, fields, format) {
+    const headerSectionId = format?.sections?.[0]?.id;
+    const sqnrValue = headerSectionId ? (fields?.[headerSectionId + '/sqnr']?.value || '') : '';
+    if (sqnrValue) return 'sqnr:' + sqnrValue;
+    return 'row:' + index;
+  }
+
+  function getEmployeeBaselineFieldKey(emp, key) {
+    return (emp?._rowIdentity || getRowIdentity(emp?._index || 0)) + '::' + key;
+  }
+
+  function buildHeaderBaselineMap(headerFields) {
+    const baseline = new Map();
+    headerFields.forEach((field) => {
+      baseline.set(field.key, norm(field.value || ''));
+    });
+    return baseline;
+  }
+
+  function buildFieldBaselineMap(employeeMirrors) {
+    const baseline = new Map();
+    employeeMirrors.forEach((emp) => {
+      for (const key in emp.fields) {
+        const field = emp.fields[key];
+        baseline.set(getEmployeeBaselineFieldKey(emp, key), field?._norm ?? norm(field?.value || ''));
+      }
+    });
+    return baseline;
+  }
+
+  function isHeaderModifiedFromBaseline(key, value, baseline = baselineHeaderValues()) {
+    return (baseline.get(key) ?? '') !== norm(value || '');
+  }
+
+  function isFieldModifiedFromBaseline(emp, key, value, baseline = baselineFieldValues()) {
+    return (baseline.get(getEmployeeBaselineFieldKey(emp, key)) ?? '') !== norm(value || '');
+  }
+
+  function applyModifiedStateToHeader(headerFields, baseline = baselineHeaderValues()) {
+    return headerFields.map(field => ({
+      ...field,
+      modified: isHeaderModifiedFromBaseline(field.key, field.value, baseline)
+    }));
+  }
+
+  function applyModifiedStateToEmployee(emp, baseline = baselineFieldValues()) {
+    const nextFields = {};
+    for (const key in emp.fields) {
+      const field = emp.fields[key];
+      const nextNorm = field?._norm ?? norm(field?.value || '');
+      nextFields[key] = {
+        ...field,
+        _norm: nextNorm,
+        modified: isFieldModifiedFromBaseline(emp, key, field?.value || '', baseline)
+      };
+    }
+    return { ...emp, fields: nextFields };
+  }
+
+  function applyModifiedStateToEmployees(employeeMirrors, baseline = baselineFieldValues()) {
+    return employeeMirrors.map(emp => applyModifiedStateToEmployee(emp, baseline));
+  }
+
+  function captureModifiedBaseline(employeeMirrors, headerFields) {
+    setBaselineFieldValues(buildFieldBaselineMap(employeeMirrors));
+    setBaselineHeaderValues(buildHeaderBaselineMap(headerFields));
+  }
+
   function applyParsedXml(parsed, options = {}) {
     const nextXmlText = options.xmlText || serializeXml(parsed.doc);
     rebuildMetadata(parsed.format);
+    const rowElements = findRows(parsed.doc, activeFormat);
+    const newEmps = [];
+    for (let i = 0; i < rowElements.length; i++) newEmps.push(buildEmployeeMirror(rowElements[i], i));
+    const parsedHeader = activeFormat?.parseDocumentHeader?.(parsed.doc) || [];
+    const shouldResetModifiedBaseline = options.resetModifiedBaseline ?? resetModifiedBaselineOnNextParse;
+    const nextBaselineFields = shouldResetModifiedBaseline ? buildFieldBaselineMap(newEmps) : baselineFieldValues();
+    const nextBaselineHeaders = shouldResetModifiedBaseline ? buildHeaderBaselineMap(parsedHeader) : baselineHeaderValues();
+    const nextEmployees = applyModifiedStateToEmployees(newEmps, nextBaselineFields);
+    const nextHeader = applyModifiedStateToHeader(parsedHeader, nextBaselineHeaders);
     batch(() => {
       setFormatRef(parsed.format);
       setXmlDoc(parsed.doc);
@@ -131,16 +211,18 @@ export default function ViewerApp(props) {
       setValueSearch('');
       if (searchInputEl) searchInputEl.value = '';
       if (valueSearchInputEl) valueSearchInputEl.value = '';
-      const rowElements = findRows(parsed.doc, activeFormat);
-      const newEmps = [];
-      for (let i = 0; i < rowElements.length; i++) newEmps.push(buildEmployeeMirror(rowElements[i], i));
-      setEmployees(reconcile(newEmps));
-      setDocumentHeader(activeFormat?.parseDocumentHeader?.(parsed.doc) || []);
+      if (shouldResetModifiedBaseline) {
+        setBaselineFieldValues(nextBaselineFields);
+        setBaselineHeaderValues(nextBaselineHeaders);
+      }
+      setEmployees(reconcile(nextEmployees));
+      setDocumentHeader(nextHeader);
       setUndoStack([]);
       setRedoStack([]);
       setRawXmlText(nextXmlText);
       setIsDirty(Boolean(options.dirty));
     });
+    if (shouldResetModifiedBaseline) resetModifiedBaselineOnNextParse = false;
     updateTitle();
     return true;
   }
@@ -206,6 +288,21 @@ export default function ViewerApp(props) {
     return applyParsedXml(parsed, { xmlText, dirty: false });
   }
 
+  function resetToInitialLoadState() {
+    batch(() => {
+      setFilename(runtimeOptions.filename || '');
+      setFileHandle(null);
+      setRawXmlText('');
+      setEditorVisible(false);
+      setEditorStatusMessage('');
+      setEditorHasInvalidXml(false);
+      setParseFailureMessage('');
+      setMonacoLoadError('');
+      setErrors([]);
+    });
+    updateTitle();
+  }
+
   function buildEmployeeMirror(rowEl, index) {
     const format = activeFormat;
     const fields = {};
@@ -245,7 +342,7 @@ export default function ViewerApp(props) {
     const label = format.getRowLabel(fields);
     const labelParts = label.split(/\s+/).filter(Boolean);
     return {
-      _index: index, _empEl: rowEl, _formRoot: formRoot, _instanceCounts: instanceCounts, _instanceOrders: instanceOrders,
+      _index: index, _rowIdentity: getRowIdentity(index, fields, format), _empEl: rowEl, _formRoot: formRoot, _instanceCounts: instanceCounts, _instanceOrders: instanceOrders,
       sqnr: fields[format.sections[0]?.id + '/sqnr']?.value || String(index + 1),
       act: fields[format.sections[0]?.id + '/act']?.value || '',
       dat: fields[format.sections[0]?.id + '/dat']?.value || '',
@@ -400,6 +497,44 @@ export default function ViewerApp(props) {
     const base = field.section + '/' + (activeFormat ? activeFormat.fieldAttrKey(field) : (field.attr || field.element));
     if (instanceIndex !== undefined) return field.section + '[' + instanceIndex + ']/' + (activeFormat ? activeFormat.fieldAttrKey(field) : (field.attr || field.element));
     return base;
+  }
+
+  function updateEmployeeDerivedState(empIndex) {
+    const emp = employees[empIndex];
+    if (!emp) return;
+    const label = activeFormat.getRowLabel(emp.fields);
+    const lp = label.split(/\s+/).filter(Boolean);
+    setEmployees(empIndex, 'surname', lp[0] || '');
+    setEmployees(empIndex, 'firstName', lp.slice(1).join(' ') || '');
+    const sqnrKey = activeFormat?.sections[0]?.id ? activeFormat.sections[0].id + '/sqnr' : null;
+    if (sqnrKey && emp.fields[sqnrKey]) setEmployees(empIndex, 'sqnr', emp.fields[sqnrKey].value || String(empIndex + 1));
+    if (Object.prototype.hasOwnProperty.call(emp.fields, 'A/act') || Object.keys(emp.fields).some(key => key.endsWith('/act'))) {
+      const actEntry = Object.entries(emp.fields).find(([key]) => key.endsWith('/act'));
+      if (actEntry) setEmployees(empIndex, 'act', actEntry[1].value || '');
+    }
+    if (Object.prototype.hasOwnProperty.call(emp.fields, 'A/dat') || Object.keys(emp.fields).some(key => key.endsWith('/dat'))) {
+      const datEntry = Object.entries(emp.fields).find(([key]) => key.endsWith('/dat'));
+      if (datEntry) setEmployees(empIndex, 'dat', datEntry[1].value || '');
+    }
+    if (Object.prototype.hasOwnProperty.call(emp.fields, 'A/dep') || Object.keys(emp.fields).some(key => key.endsWith('/dep'))) {
+      const depEntry = Object.entries(emp.fields).find(([key]) => key.endsWith('/dep'));
+      if (depEntry) setEmployees(empIndex, 'dep', depEntry[1].value || '');
+    }
+  }
+
+  function applyEmployeeFieldValue(empIndex, key, newValue) {
+    const emp = employees[empIndex];
+    const fieldRef = emp?.fields[key];
+    if (!fieldRef) return null;
+    setEmployees(empIndex, 'fields', key, 'value', newValue);
+    setEmployees(empIndex, 'fields', key, '_norm', norm(newValue));
+    setEmployees(empIndex, 'fields', key, 'modified', isFieldModifiedFromBaseline(emp, key, newValue));
+    updateEmployeeDerivedState(empIndex);
+    return fieldRef;
+  }
+
+  function applyHeaderFieldValue(headerKey, newValue) {
+    setDocumentHeader(prev => prev.map(h => h.key === headerKey ? { ...h, value: newValue, modified: isHeaderModifiedFromBaseline(headerKey, newValue) } : h));
   }
 
   function errorTargetKey(field, section) {
@@ -739,16 +874,8 @@ export default function ViewerApp(props) {
     const oldValue = fieldRef.value;
     if (oldValue !== newValue) {
       const empIdx = emp._index;
-      setEmployees(empIdx, 'fields', key, 'value', newValue);
-      setEmployees(empIdx, 'fields', key, '_norm', norm(newValue));
-      setEmployees(empIdx, 'fields', key, 'modified', true);
+      applyEmployeeFieldValue(empIdx, key, newValue);
       if (fieldRef.el) { activeFormat.writeField({ ...fieldRef, value: newValue }, newValue); }
-      const newLabel = activeFormat.getRowLabel(emp.fields);
-      const lp = newLabel.split(/\s+/).filter(Boolean);
-      setEmployees(empIdx, 'surname', lp[0] || '');
-      setEmployees(empIdx, 'firstName', lp.slice(1).join(' ') || '');
-      if (key.endsWith('/act')) setEmployees(empIdx, 'act', newValue);
-      if (key.endsWith('/dep')) setEmployees(empIdx, 'dep', newValue);
       setUndoStack(prev => {
         const stack = [...prev, { empIndex: empIdx, key, oldValue, newValue }];
         if (stack.length > 200) stack.shift();
@@ -772,7 +899,7 @@ export default function ViewerApp(props) {
     const oldValue = f.value;
     if (oldValue !== newValue) {
       activeFormat.writeHeaderField(f, newValue);
-      setDocumentHeader(prev => prev.map(h => h.key === f.key ? { ...h, value: newValue, modified: true } : h));
+      applyHeaderFieldValue(f.key, newValue);
       setUndoStack(prev => {
         const stack = [...prev, { isHeader: true, headerRef: f, oldValue, newValue }];
         if (stack.length > 200) stack.shift();
@@ -813,17 +940,18 @@ export default function ViewerApp(props) {
         if (old) {
           nf.value = old.value;
           nf._norm = old._norm;
-          nf.modified = true;
         }
       }
     }
+    const nextMirror = applyModifiedStateToEmployee(newMirror);
     batch(() => {
-      setEmployees(empIndex, 'fields', reconcile(newMirror.fields));
-      setEmployees(empIndex, '_instanceCounts', reconcile(newMirror._instanceCounts));
-      setEmployees(empIndex, '_instanceOrders', reconcile(newMirror._instanceOrders));
-      setEmployees(empIndex, '_empEl', newMirror._empEl);
-      setEmployees(empIndex, '_formRoot', newMirror._formRoot);
+      setEmployees(empIndex, 'fields', reconcile(nextMirror.fields));
+      setEmployees(empIndex, '_instanceCounts', reconcile(nextMirror._instanceCounts));
+      setEmployees(empIndex, '_instanceOrders', reconcile(nextMirror._instanceOrders));
+      setEmployees(empIndex, '_empEl', nextMirror._empEl);
+      setEmployees(empIndex, '_formRoot', nextMirror._formRoot);
     });
+    updateEmployeeDerivedState(empIndex);
   }
   function addInstance(emp, section) {
     const sec = SECTIONS.find(s => s.id === (section._baseSectionId || section.id));
@@ -857,11 +985,18 @@ export default function ViewerApp(props) {
   // ── File I/O ───────────────────────────────────────────────
   function loadXmlText(xmlText, sourceName) {
     if (!xmlText) return;
+    const hadLoadedXml = hasLoadedXml() || hasStructuredData();
+    const parsed = parseXmlDocument(xmlText);
+    if (!parsed.ok) {
+      alert(parsed.errorMessage);
+      if (!hadLoadedXml) resetToInitialLoadState();
+      return;
+    }
     setFilename(sourceName || filename() || 'JMHZ.xml');
     setFileHandle(null);
-    setRawXmlText(xmlText);
-    const parsed = parseXml(xmlText);
-    if (parsed && runtimeOptions.autoValidateOnLoad) {
+    resetModifiedBaselineOnNextParse = true;
+    const applied = applyParsedXml(parsed, { xmlText, dirty: false });
+    if (applied && runtimeOptions.autoValidateOnLoad) {
       queueMicrotask(() => { validateAll(); });
     }
   }
@@ -1473,12 +1608,11 @@ export default function ViewerApp(props) {
           setUndoStack(stack.slice(0, -1));
           if (entry.isHeader) {
             activeFormat.writeHeaderField(entry.headerRef, entry.oldValue);
-            setDocumentHeader(prev => prev.map(h => h.key === entry.headerRef.key ? { ...h, value: entry.oldValue } : h));
+            applyHeaderFieldValue(entry.headerRef.key, entry.oldValue);
           } else {
             const emp = employees[entry.empIndex];
             if (emp?.fields[entry.key]) {
-              setEmployees(entry.empIndex, 'fields', entry.key, 'value', entry.oldValue);
-              const fr = emp.fields[entry.key];
+              const fr = applyEmployeeFieldValue(entry.empIndex, entry.key, entry.oldValue);
               if (fr.el) { activeFormat.writeField({ ...fr, value: entry.oldValue }, entry.oldValue); }
             }
           }
@@ -1497,12 +1631,11 @@ export default function ViewerApp(props) {
           setRedoStack(stack.slice(0, -1));
           if (entry.isHeader) {
             activeFormat.writeHeaderField(entry.headerRef, entry.newValue);
-            setDocumentHeader(prev => prev.map(h => h.key === entry.headerRef.key ? { ...h, value: entry.newValue } : h));
+            applyHeaderFieldValue(entry.headerRef.key, entry.newValue);
           } else {
             const emp = employees[entry.empIndex];
             if (emp?.fields[entry.key]) {
-              setEmployees(entry.empIndex, 'fields', entry.key, 'value', entry.newValue);
-              const fr = emp.fields[entry.key];
+              const fr = applyEmployeeFieldValue(entry.empIndex, entry.key, entry.newValue);
               if (fr.el) { activeFormat.writeField({ ...fr, value: entry.newValue }, entry.newValue); }
             }
           }
