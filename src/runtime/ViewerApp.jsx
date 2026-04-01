@@ -17,9 +17,8 @@ export default function ViewerApp(props) {
   const [errors, setErrors] = createSignal([]);
   const [validationCollapsed, setValidationCollapsed] = createSignal(false);
   const [validationDockHeight, setValidationDockHeight] = createSignal(0);
+  const [validationMenuOpen, setValidationMenuOpen] = createSignal(false);
   const [kontrolyErrors, setKontrolyErrors] = createSignal([]);
-  const [kontrolyCollapsed, setKontrolyCollapsed] = createSignal(false);
-  const [kontrolyDockHeight, setKontrolyDockHeight] = createSignal(0);
   const [kontrolyFieldErrors, setKontrolyFieldErrors] = createSignal(new Map());
   const [editingField, setEditingField] = createSignal(null);
   const [editingHeaderKey, setEditingHeaderKey] = createSignal(null);
@@ -93,6 +92,7 @@ export default function ViewerApp(props) {
       setValidationErrors(new Map());
       setKontrolyErrors([]);
       setKontrolyFieldErrors(new Map());
+      setValidationMenuOpen(false);
       if (window.JMHZKontroly) window.JMHZKontroly.resetKontrolyIndex();
       sectionBodyEls.clear();
       setSectionBodyHeights(reconcile({}));
@@ -237,17 +237,31 @@ export default function ViewerApp(props) {
   }
   const employeeCountText = createMemo(() => employees.length + ' ' + czPlural(employees.length, 'zaměstnanec', 'zaměstnanci', 'zaměstnanců'));
   const validationCountText = createMemo(() => errors().length + ' ' + czPlural(errors().length, 'chyba', 'chyby', 'chyb'));
+  const hasValidationResults = createMemo(() => errors().length > 0 || kontrolyErrors().length > 0);
 
   // ── Validation panel dock ──────────────────────────────────
   function updateValidationDockHeight(panelEl) {
     setValidationDockHeight(panelEl ? Math.ceil(panelEl.getBoundingClientRect().height) : 0);
   }
-  function updateKontrolyDockHeight(panelEl) {
-    setKontrolyDockHeight(panelEl ? Math.ceil(panelEl.getBoundingClientRect().height) : 0);
-  }
-
   const kontrolyErrorCount = createMemo(() => kontrolyErrors().filter(e => e.severity === 'error').length);
   const kontrolyWarningCount = createMemo(() => kontrolyErrors().filter(e => e.severity === 'warning').length);
+  const xsdValidationSummary = createMemo(() => errors().length + ' ' + czPlural(errors().length, 'chyba', 'chyby', 'chyb'));
+  const kontrolyValidationSummary = createMemo(() => {
+    const parts = [];
+    if (kontrolyErrorCount() > 0) parts.push(kontrolyErrorCount() + ' ' + czPlural(kontrolyErrorCount(), 'chyba', 'chyby', 'chyb'));
+    if (kontrolyWarningCount() > 0) parts.push(kontrolyWarningCount() + ' varování');
+    return parts.join(', ');
+  });
+  const validationDrawerSummary = createMemo(() => {
+    const parts = [];
+    if (errors().length > 0) parts.push('XSD ' + xsdValidationSummary());
+    if (kontrolyErrors().length > 0) parts.push('Kontroly ' + kontrolyValidationSummary());
+    return parts.join(' · ');
+  });
+  function closeValidationMenu() { setValidationMenuOpen(false); }
+  function toggleValidationMenu() { if (isJmhz()) setValidationMenuOpen(v => !v); }
+  onMount(() => window.addEventListener('click', closeValidationMenu));
+  onCleanup(() => window.removeEventListener('click', closeValidationMenu));
 
   // ── Search ─────────────────────────────────────────────────
   function splitQuery(raw) { return raw.split(',').map(s => norm(s.trim())).filter(Boolean); }
@@ -892,7 +906,8 @@ export default function ViewerApp(props) {
     return candidates[0] || null;
   }
 
-  async function validateAll() {
+  async function validateAll(options = {}) {
+    const silent = Boolean(options && options.silent);
     if (!xmlDoc()) return;
     batch(() => {
       setErrors([]);
@@ -1035,27 +1050,31 @@ export default function ViewerApp(props) {
           setValidationErrors(newValidationErrors);
           setDocumentHeader(prev => prev.map(h => headerErrorKeys.has(h.key) ? { ...h, _hasError: true } : h));
         });
-        showToast(newErrors.length + ' chyb nalezeno');
+        if (!silent) showToast(newErrors.length + ' chyb nalezeno');
+        return { ok: false, errorCount: newErrors.length };
       } else {
-        showToast('Validace OK — žádné chyby');
+        if (!silent) showToast('Validace OK — žádné chyby');
+        return { ok: true, errorCount: 0 };
       }
     } catch (e) {
       console.error('Validation error:', e);
       setErrors([{ severity: 'error', empIndex: -1, employeeName: '', sectionLabel: '', fieldLabel: '', fieldKey: '', message: 'Chyba validace: ' + String(e) }]);
-      showToast('Chyba při validaci');
+      if (!silent) showToast('Chyba při validaci');
+      return { ok: false, errorCount: 1 };
     }
   }
 
   // ── Kontroly ───────────────────────────────────────────────
-  function runKontroly() {
-    if (!xmlDoc() || !isJmhz()) return;
+  function runKontroly(options = {}) {
+    const silent = Boolean(options && options.silent);
+    if (!xmlDoc() || !isJmhz()) return { ok: true, errorCount: 0, warningCount: 0, totalCount: 0 };
     setKontrolyErrors([]);
     setKontrolyFieldErrors(new Map());
     setDocumentHeader(prev => prev.map(h => ({ ...h, _hasKontrolyError: false, _hasKontrolyWarning: false })));
     try {
       if (typeof window.JMHZKontroly === 'undefined') {
-        showToast('Kontroly nejsou k dispozici');
-        return;
+        if (!silent) showToast('Kontroly nejsou k dispozici');
+        return { ok: false, errorCount: 0, warningCount: 0, totalCount: 0 };
       }
       const results = window.JMHZKontroly.runKontroly(
         xmlDoc(),
@@ -1097,15 +1116,39 @@ export default function ViewerApp(props) {
         const parts = [];
         if (errCount > 0) parts.push(errCount + ' ' + czPlural(errCount, 'chyba', 'chyby', 'chyb'));
         if (warnCount > 0) parts.push(warnCount + ' varování');
-        showToast('Kontroly: ' + parts.join(', '));
+        if (!silent) showToast('Kontroly: ' + parts.join(', '));
+        return { ok: false, errorCount: errCount, warningCount: warnCount, totalCount: results.length };
       } else {
-        showToast('Kontroly OK — žádné nálezy');
+        if (!silent) showToast('Kontroly OK — bez nálezů');
+        return { ok: true, errorCount: 0, warningCount: 0, totalCount: 0 };
       }
     } catch (e) {
       console.error('Kontroly error:', e);
       setKontrolyErrors([{ severity: 'error', controlId: 0, empIndex: -1, employeeName: '', sectionLabel: '', fieldLabel: '', fieldKey: '', headerKey: '', canNavigate: false, message: 'Chyba při spuštění kontrol: ' + String(e) }]);
-      showToast('Chyba při spuštění kontrol');
+      if (!silent) showToast('Chyba při spuštění kontrol');
+      return { ok: false, errorCount: 1, warningCount: 0, totalCount: 1 };
     }
+  }
+
+  async function runValidation(mode = 'all') {
+    closeValidationMenu();
+    if (mode === 'xsd') return validateAll();
+    if (mode === 'kontroly') return runKontroly();
+
+    const xsd = await validateAll({ silent: true }) || { ok: true, errorCount: 0 };
+    const kontroly = isJmhz()
+      ? (runKontroly({ silent: true }) || { ok: true, errorCount: 0, warningCount: 0, totalCount: 0 })
+      : { ok: true, errorCount: 0, warningCount: 0, totalCount: 0 };
+
+    const parts = [];
+    if (xsd.errorCount > 0) parts.push('XSD ' + xsd.errorCount + ' ' + czPlural(xsd.errorCount, 'chyba', 'chyby', 'chyb'));
+    if (kontroly.errorCount > 0) parts.push('Kontroly ' + kontroly.errorCount + ' ' + czPlural(kontroly.errorCount, 'chyba', 'chyby', 'chyb'));
+    if (kontroly.warningCount > 0) parts.push(kontroly.warningCount + ' varování');
+
+    if (parts.length > 0) showToast(parts.join(', '));
+    else showToast('Validace OK — bez chyb a varování');
+
+    return { xsd, kontroly };
   }
 
   // ── Error helpers ──────────────────────────────────────────
@@ -1286,8 +1329,26 @@ export default function ViewerApp(props) {
         <div class="toolbar-actions">
           <Show when={xmlDoc()}><button onClick={loadFile}>Nahrát XML</button></Show>
           <Show when={xmlDoc()}><button class="primary" onClick={saveFile}>Uložit XML</button></Show>
-          <Show when={xmlDoc()}><button onClick={validateAll}>Zkontrolovat</button></Show>
-          <Show when={xmlDoc() && isJmhz()}><button onClick={runKontroly}>Kontroly</button></Show>
+          <Show when={xmlDoc()}>
+            <div class="split-button" onClick={(e) => e.stopPropagation()}>
+              <button onClick={() => runValidation('all')}>Zkontrolovat</button>
+              <Show when={isJmhz()}>
+                <button
+                  class="split-button-toggle"
+                  onClick={(e) => { e.stopPropagation(); toggleValidationMenu(); }}
+                  aria-expanded={validationMenuOpen() ? 'true' : 'false'}
+                  aria-haspopup="menu"
+                  title="Možnosti validace"
+                >▾</button>
+              </Show>
+              <Show when={validationMenuOpen() && isJmhz()}>
+                <div class="validation-menu" role="menu">
+                  <button onClick={() => runValidation('xsd')} role="menuitem">Jen XSD</button>
+                  <button onClick={() => runValidation('kontroly')} role="menuitem">Jen Kontroly</button>
+                </div>
+              </Show>
+            </div>
+          </Show>
           <Show when={xmlDoc()}><button onClick={toggleViewMode}>Zobrazení: {viewMode() === 'cards' ? 'Karty' : 'Tabulka'}</button></Show>
           <Show when={xmlDoc()}><button onClick={() => setXlsDialog(true)}>Export XLS</button></Show>
         </div>
@@ -1684,37 +1745,52 @@ export default function ViewerApp(props) {
         })()}
       </Show>
 
-      {/* Kontroly Panel */}
-      <Show when={kontrolyErrors().length > 0}>
+      <Show when={hasValidationResults()}>
         {(() => {
-          let kPanelEl;
+          let vPanelEl;
           onMount(() => {
-            const observer = new ResizeObserver(() => updateKontrolyDockHeight(kPanelEl));
-            observer.observe(kPanelEl);
+            const observer = new ResizeObserver(() => updateValidationDockHeight(vPanelEl));
+            observer.observe(vPanelEl);
             onCleanup(() => observer.disconnect());
-            updateKontrolyDockHeight(kPanelEl);
+            updateValidationDockHeight(vPanelEl);
           });
           return (
             <>
-              <div class="kontroly-panel-spacer" style={{ height: kontrolyDockHeight() + 'px' }}></div>
-              <div class="kontroly-panel" ref={kPanelEl} style={{ bottom: (errors().length > 0 ? validationDockHeight() : 0) + 'px' }}>
-                <div class="kontroly-header" onClick={() => setKontrolyCollapsed(!kontrolyCollapsed())}>
-                  Kontroly ({kontrolyErrors().length} {kontrolyErrors().length === 1 ? 'nález' : kontrolyErrors().length < 5 ? 'nálezy' : 'nálezů'}:
-                  {' '}{kontrolyErrorCount()} {kontrolyErrorCount() === 1 ? 'chyba' : kontrolyErrorCount() < 5 ? 'chyby' : 'chyb'},
-                  {' '}{kontrolyWarningCount()} {kontrolyWarningCount() === 1 ? 'varování' : 'varování'})
-                  {kontrolyCollapsed() ? ' ▲' : ' ▼'}
+              <div class="validation-panel-spacer" style={{ height: validationDockHeight() + 'px' }}></div>
+              <div class="validation-panel" ref={vPanelEl}>
+                <div class="validation-header" onClick={() => setValidationCollapsed(!validationCollapsed())}>
+                  Validace<Show when={validationDrawerSummary()}>{' · '}{validationDrawerSummary()}</Show>
+                  {validationCollapsed() ? ' ▲' : ' ▼'}
                 </div>
-                <Show when={!kontrolyCollapsed()}>
-                  <div class="kontroly-list">
-                    <For each={kontrolyErrors()}>{(err, i) =>
-                      <div class="validation-item">
-                        <span class={"severity " + err.severity}></span>
-                        <span class="control-id">K{err.controlId}</span>
-                        <span class="path">{err.headerKey ? 'Záhlaví' : err.employeeName} › {err.sectionLabel} ›</span>
-                        <span class="message">{err.fieldLabel}: {err.message}</span>
-                        <Show when={err.canNavigate}><span class="goto-btn" onClick={() => navigateToError(err)}>Přejít</span></Show>
+                <Show when={!validationCollapsed()}>
+                  <div class="validation-list">
+                    <Show when={errors().length > 0}>
+                      <div class="validation-group">
+                        <div class="validation-group-header">XSD validace · {xsdValidationSummary()}</div>
+                        <For each={errors()}>{(err) =>
+                          <div class="validation-item">
+                            <span class={"severity " + (err.severity || 'error')}></span>
+                            <span class="path">{err.headerKey ? 'Záhlaví' : err.employeeName} › {err.sectionLabel} ›</span>
+                            <span class="message">{err.fieldLabel}: {err.message}</span>
+                            <Show when={err.canNavigate}><span class="goto-btn" onClick={() => navigateToError(err)}>Přejít</span></Show>
+                          </div>
+                        }</For>
                       </div>
-                    }</For>
+                    </Show>
+                    <Show when={kontrolyErrors().length > 0}>
+                      <div class="validation-group">
+                        <div class="validation-group-header">Kontroly · {kontrolyValidationSummary()}</div>
+                        <For each={kontrolyErrors()}>{(err) =>
+                          <div class="validation-item">
+                            <span class={"severity " + err.severity}></span>
+                            <span class="control-id">K{err.controlId}</span>
+                            <span class="path">{err.headerKey ? 'Záhlaví' : err.employeeName} › {err.sectionLabel} ›</span>
+                            <span class="message">{err.fieldLabel}: {err.message}</span>
+                            <Show when={err.canNavigate}><span class="goto-btn" onClick={() => navigateToError(err)}>Přejít</span></Show>
+                          </div>
+                        }</For>
+                      </div>
+                    </Show>
                   </div>
                 </Show>
               </div>
