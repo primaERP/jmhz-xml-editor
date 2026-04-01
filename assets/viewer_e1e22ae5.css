@@ -92,6 +92,88 @@ body {
 .toolbar-actions {
   display: flex; align-items: center; gap: var(--sp-3); justify-self: end; min-width: max-content; position: relative; z-index: 1;
 }
+.split-button {
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+}
+.split-button:hover {
+  background: var(--bg-hover);
+}
+.split-button:active {
+  background: var(--bg-active);
+}
+.split-button > button {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+.split-button > button:first-child {
+  border-top-left-radius: var(--radius-md);
+  border-bottom-left-radius: var(--radius-md);
+}
+.split-button > .split-button-toggle ~ button:first-child,
+.split-button > button:first-child:not(:last-child) {
+  padding-right: 2px;
+}
+.split-button > button:first-child:last-child {
+  border-top-right-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
+}
+.split-button-toggle {
+  border-left: 1px solid var(--border);
+  border-top-right-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
+  overflow: hidden;
+  background-clip: padding-box;
+  width: 6px;
+  min-width: 6px;
+  max-width: 6px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 6px;
+  font-size: 0.5rem;
+  color: var(--text-muted);
+}
+.split-button-toggle:hover,
+.split-button-toggle:active {
+  border-top-right-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
+  background-clip: padding-box;
+}
+.split-button > button:hover {
+  color: var(--text-primary);
+}
+.split-button > button:active {
+  color: var(--text-primary);
+}
+.validation-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: max-content;
+  padding: var(--sp-1);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px oklch(20% 0.02 250 / 0.10);
+  z-index: 30;
+}
+.validation-menu button {
+  width: 100%;
+  text-align: left;
+  border-radius: var(--radius-sm);
+  padding: var(--sp-1) var(--sp-3);
+  white-space: nowrap;
+}
 .toolbar .privacy-note {
   max-width: 100%;
   overflow: hidden;
@@ -213,6 +295,15 @@ body {
 }
 .validation-header:hover { background: var(--bg-hover); }
 .validation-list { padding: 0; max-height: min(40vh, 280px); overflow-y: auto; }
+.validation-group + .validation-group { border-top: 1px solid var(--border); }
+.validation-group-header {
+  padding: var(--sp-2) var(--sp-4);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+}
 .validation-item { display: flex; align-items: center; padding: var(--sp-1) var(--sp-4); gap: var(--sp-2); font-size: 0.8125rem; border-bottom: 1px solid var(--border-subtle); }
 .validation-item .severity { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 .validation-item .severity.error { background: var(--error); }
@@ -222,22 +313,7 @@ body {
 .validation-item .goto-btn { font-size: 0.75rem; color: var(--accent); cursor: pointer; white-space: nowrap; transition: color var(--duration) var(--ease); }
 .validation-item .goto-btn:hover { color: var(--accent-hover); text-decoration: underline; }
 
-/* === Kontroly Panel (Business Rules) === */
-.kontroly-panel-spacer { flex-shrink: 0; }
-.kontroly-panel {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 19;
-  background: var(--bg-elevated); border-top: 1px solid var(--border);
-  box-shadow: 0 -4px 16px oklch(20% 0.02 250 / 0.08);
-}
-.kontroly-header {
-  display: flex; align-items: center; padding: var(--sp-2) var(--sp-4);
-  font-size: 0.8125rem; font-weight: 600; color: var(--text-primary);
-  border-bottom: 1px solid var(--border-subtle); cursor: pointer;
-  transition: background var(--duration) var(--ease);
-}
-.kontroly-header:hover { background: var(--bg-hover); }
-.kontroly-list { padding: 0; max-height: min(40vh, 280px); overflow-y: auto; }
-.kontroly-panel .control-id { font-size: 0.6875rem; color: var(--text-muted); font-family: monospace; min-width: 3em; }
+.control-id { font-size: 0.6875rem; color: var(--text-muted); font-family: monospace; min-width: 3em; }
 
 /* === Toast === */
 .toast {

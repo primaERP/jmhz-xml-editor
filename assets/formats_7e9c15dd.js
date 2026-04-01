@@ -385,6 +385,7 @@ const JMHZ_CONFIG = {
   schemasKey: 'JMHZ_SCHEMAS',
   mainSchema: 'jmhzPodani.xsd',
   sections: [
+    { id: 'hlavickaFormulare', label: 'Hlavička formuláře', _resolvePath: 'hlavicka' },
     { id: 'identifikace', label: 'Identifikace zaměstnance' },
     { id: 'souhrnDataZec/prijmy', label: 'Příjmy' },
     { id: 'souhrnDataZec/prijmy/prispevekZamestnavatele', label: 'Příspěvek zaměstnavatele (z osvobozených příjmů)' },
@@ -530,6 +531,9 @@ const JMHZ_CONFIG = {
     return fields;
   },
   fields: [
+    { section: 'hlavickaFormulare', element: 'typFormulare', csszId: '10016', label: 'Typ formuláře', type: 'text' },
+    { section: 'hlavickaFormulare', element: 'primarniPpv', csszId: '10495', label: 'Primární pracovněprávní vztah', type: 'boolean' },
+
     { section: 'identifikace', element: 'ikMpsv', csszId: '10051', label: 'IK MPSV', type: 'text' },
     { section: 'identifikace', element: 'idPpv', csszId: '10228', label: 'ID pracovněprávního vztahu', type: 'text' },
     { section: 'identifikace', element: 'prijmeni', csszId: '10053', label: 'Příjmení zaměstnance', type: 'text' },
@@ -804,7 +808,9 @@ const JMHZ_CONFIG = {
       instances.sort((a, b) => {
         const aVal = getChildByLocalName(a, orderEl)?.textContent || '';
         const bVal = getChildByLocalName(b, orderEl)?.textContent || '';
-        return (parseInt(aVal, 10) || 0) - (parseInt(bVal, 10) || 0);
+        const aNum = aVal ? (parseInt(aVal, 10) || 0) : Infinity;
+        const bNum = bVal ? (parseInt(bVal, 10) || 0) : Infinity;
+        return aNum - bNum;
       });
     }
     if (sec.parentRepeating) {
@@ -840,6 +846,22 @@ const JMHZ_CONFIG = {
     return newEl;
   },
   headerFields: [],
+  normalizeBooleanForUi: function(value) {
+    if (value == null) return '';
+    const normalized = String(value).trim().toLowerCase();
+    if (!normalized) return '';
+    if (normalized === 'true' || normalized === '1') return 'A';
+    if (normalized === 'false' || normalized === '0') return 'N';
+    return value;
+  },
+  normalizeBooleanForXml: function(value) {
+    if (value == null) return '';
+    const normalized = String(value).trim().toUpperCase();
+    if (!normalized) return '';
+    if (normalized === 'A') return 'true';
+    if (normalized === 'N') return 'false';
+    return value;
+  },
   readField: function(targetEl, field) {
     if (!targetEl) return '';
     const elName = field.element || field.attr;
@@ -849,7 +871,8 @@ const JMHZ_CONFIG = {
       el = getChildByLocalName(el, part);
       if (!el) return '';
     }
-    return el.textContent || '';
+    const value = el.textContent || '';
+    return field.type === 'boolean' ? this.normalizeBooleanForUi(value) : value;
   },
   writeField: function(fieldRef, value) {
     const elName = fieldRef._field?.element || fieldRef._field?.attr || fieldRef.attr;
@@ -859,7 +882,8 @@ const JMHZ_CONFIG = {
       el = getChildByLocalName(el, part);
       if (!el) return;
     }
-    el.textContent = value;
+    const xmlValue = fieldRef._field?.type === 'boolean' ? this.normalizeBooleanForXml(value) : value;
+    el.textContent = xmlValue;
   },
   writeHeaderField: function(headerRef, value) {
     if (headerRef._writeBack === 'attribute') {
