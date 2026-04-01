@@ -37,6 +37,13 @@ export default function ViewerApp(props) {
   const [autoExpandMatched, setAutoExpandMatched] = createSignal(true);
   const [actionFilter, setActionFilter] = createSignal('');
   const [validationErrors, setValidationErrors] = createSignal(new Map());
+  const [editorVisible, setEditorVisible] = createSignal(false);
+  const [rawXmlText, setRawXmlText] = createSignal('');
+  const [editorStatusMessage, setEditorStatusMessage] = createSignal('');
+  const [editorHasInvalidXml, setEditorHasInvalidXml] = createSignal(false);
+  const [parseFailureMessage, setParseFailureMessage] = createSignal('');
+  const [isMonacoLoading, setIsMonacoLoading] = createSignal(false);
+  const [monacoLoadError, setMonacoLoadError] = createSignal('');
 
   const savedPreferredViewMode = runtimeOptions.initialViewMode ? null : localStorage.getItem('preferredViewMode');
   const [viewMode, setViewMode] = createSignal(runtimeOptions.initialViewMode || savedPreferredViewMode || 'table');
@@ -56,7 +63,13 @@ export default function ViewerApp(props) {
   let searchInputEl;
   let valueSearchInputEl;
   let tableContentEl;
+  let editorHostEl;
   let _searchTimer = null;
+  let monacoApi = null;
+  let monacoLoader = null;
+  let monacoEditor = null;
+  let monacoModel = null;
+  let monacoChangeSubscription = null;
 
   // ── Memos (was computed()) ─────────────────────────────────
   const actionLabels = createMemo(() => { const f = formatRef(); return f ? (f.actionLabels || {}) : {}; });
@@ -65,6 +78,114 @@ export default function ViewerApp(props) {
   const hasActions = createMemo(() => { const f = formatRef(); return f ? f.hasActions : false; });
   const rowInfoDefs = createMemo(() => { const f = formatRef(); return f ? (f.getRowInfo || []) : []; });
   const rowColumnLabel = createMemo(() => { const f = formatRef(); return f ? (f.rowColumnLabel || 'Jméno') : 'Jméno'; });
+  const hasLoadedXml = createMemo(() => rawXmlText().trim().length > 0);
+  const hasStructuredData = createMemo(() => !!xmlDoc() && employees.length > 0);
+  const showParseFailureScreen = createMemo(() => hasLoadedXml() && !editorVisible() && !hasStructuredData() && !!parseFailureMessage());
+
+  function serializeXml(doc = xmlDoc()) {
+    if (!doc) return '';
+    const serializer = new XMLSerializer();
+    let xmlString = serializer.serializeToString(doc);
+    if (!xmlString.startsWith('<?xml')) xmlString = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + xmlString;
+    return xmlString;
+  }
+
+  function parseXmlDocument(xmlText) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xmlText, 'application/xml');
+    const parserError = doc.querySelector('parsererror');
+    if (parserError) {
+      return { ok: false, errorMessage: 'Chyba při parsování XML:\n' + parserError.textContent };
+    }
+    const format = detectFormat(doc);
+    if (!format) {
+      return { ok: false, errorMessage: 'Neznámý formát XML' };
+    }
+    return { ok: true, doc, format };
+  }
+
+  function applyParsedXml(parsed, options = {}) {
+    const nextXmlText = options.xmlText || serializeXml(parsed.doc);
+    rebuildMetadata(parsed.format);
+    batch(() => {
+      setFormatRef(parsed.format);
+      setXmlDoc(parsed.doc);
+      setErrors([]);
+      setExpandedEmployee(-1);
+      setHasValidated(false);
+      setValidationErrors(new Map());
+      setKontrolyErrors([]);
+      setKontrolyFieldErrors(new Map());
+      setValidationMenuOpen(false);
+      setEditorHasInvalidXml(false);
+      setParseFailureMessage('');
+      setEditorStatusMessage('');
+      if (window.JMHZKontroly) window.JMHZKontroly.resetKontrolyIndex();
+      sectionBodyEls.clear();
+      setSectionBodyHeights(reconcile({}));
+      setExpandedSections(reconcile({}));
+      setCollapsedSections(reconcile({}));
+      setCollapsedMatchedEmps(reconcile({}));
+      setActionFilter('');
+      setFieldSearch('');
+      setValueSearch('');
+      if (searchInputEl) searchInputEl.value = '';
+      if (valueSearchInputEl) valueSearchInputEl.value = '';
+      const rowElements = findRows(parsed.doc, activeFormat);
+      const newEmps = [];
+      for (let i = 0; i < rowElements.length; i++) newEmps.push(buildEmployeeMirror(rowElements[i], i));
+      setEmployees(reconcile(newEmps));
+      setDocumentHeader(activeFormat?.parseDocumentHeader?.(parsed.doc) || []);
+      setUndoStack([]);
+      setRedoStack([]);
+      setRawXmlText(nextXmlText);
+      setIsDirty(Boolean(options.dirty));
+    });
+    updateTitle();
+    return true;
+  }
+
+  function clearStructuredState(errorMessage, options = {}) {
+    batch(() => {
+      setXmlDoc(null);
+      setFormatRef(null);
+      activeFormat = null;
+      SECTIONS = [];
+      FIELDS = [];
+      FIELDS_BY_SECTION = {};
+      SECTION_MAP = {};
+      FIELD_META = [];
+      FOREIGN_KEYWORDS = [];
+      ACTION_LABELS = {};
+      ACTION_SECTIONS = null;
+      FIELD_RULES = {};
+      setEmployees(reconcile([]));
+      setDocumentHeader([]);
+      setErrors([]);
+      setValidationErrors(new Map());
+      setKontrolyErrors([]);
+      setKontrolyFieldErrors(new Map());
+      setHasValidated(false);
+      setExpandedEmployee(-1);
+      setExpandedSections(reconcile({}));
+      setCollapsedSections(reconcile({}));
+      setCollapsedMatchedEmps(reconcile({}));
+      setSectionBodyHeights(reconcile({}));
+      setActionFilter('');
+      setFieldSearch('');
+      setValueSearch('');
+      setUndoStack([]);
+      setRedoStack([]);
+      setValidationMenuOpen(false);
+      setEditorHasInvalidXml(true);
+      setParseFailureMessage(errorMessage || 'XML se nepodařilo naparsovat. Opravte XML v editoru.');
+      setEditorStatusMessage('XML se nepodařilo naparsovat. Karty ani tabulka nejsou k dispozici.');
+      if (searchInputEl) searchInputEl.value = '';
+      if (valueSearchInputEl) valueSearchInputEl.value = '';
+      setIsDirty(options.dirty !== undefined ? Boolean(options.dirty) : isDirty());
+    });
+    updateTitle();
+  }
 
   function getRowLabel(emp) { return activeFormat ? activeFormat.getRowLabel(emp.fields) : (emp.surname + ' ' + emp.firstName); }
   function fieldXpath(field) { return activeFormat ? activeFormat.fieldXpath(field) : (field.section + '/@' + (field.attr || field.element)); }
@@ -77,42 +198,12 @@ export default function ViewerApp(props) {
 
   // ── XML Parsing ────────────────────────────────────────────
   function parseXml(xmlText) {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(xmlText, 'application/xml');
-    if (doc.querySelector('parsererror')) { alert('Chyba při parsování XML:\n' + doc.querySelector('parsererror').textContent); return false; }
-    const format = detectFormat(doc);
-    if (!format) return false;
-    rebuildMetadata(format);
-    batch(() => {
-      setFormatRef(format);
-      setXmlDoc(doc);
-      setErrors([]);
-      setExpandedEmployee(-1);
-      setHasValidated(false);
-      setValidationErrors(new Map());
-      setKontrolyErrors([]);
-      setKontrolyFieldErrors(new Map());
-      setValidationMenuOpen(false);
-      if (window.JMHZKontroly) window.JMHZKontroly.resetKontrolyIndex();
-      sectionBodyEls.clear();
-      setSectionBodyHeights(reconcile({}));
-      setExpandedSections(reconcile({}));
-      setCollapsedSections(reconcile({}));
-      setCollapsedMatchedEmps(reconcile({}));
-      setActionFilter('');
-      setFieldSearch('');
-      setValueSearch('');
-      if (searchInputEl) searchInputEl.value = '';
-      if (valueSearchInputEl) valueSearchInputEl.value = '';
-      const rowElements = findRows(doc, activeFormat);
-      const newEmps = [];
-      for (let i = 0; i < rowElements.length; i++) newEmps.push(buildEmployeeMirror(rowElements[i], i));
-      setEmployees(reconcile(newEmps));
-      setDocumentHeader(activeFormat?.parseDocumentHeader?.(doc) || []);
-      setIsDirty(false);
-    });
-    updateTitle();
-    return true;
+    const parsed = parseXmlDocument(xmlText);
+    if (!parsed.ok) {
+      alert(parsed.errorMessage);
+      return false;
+    }
+    return applyParsedXml(parsed, { xmlText, dirty: false });
   }
 
   function buildEmployeeMirror(rowEl, index) {
@@ -447,6 +538,9 @@ export default function ViewerApp(props) {
   createEffect(on(() => headerExpanded(), () => requestAnimationFrame(updateTableContentHeight)));
   createEffect(on(() => validationDockHeight(), updateTableContentHeight));
   createEffect(on(() => [xmlDoc(), employees.length], () => requestAnimationFrame(updateTableContentHeight)));
+  createEffect(() => {
+    if (editorVisible()) setValidationDockHeight(0);
+  });
 
   // ── Visible columns (table view) ──────────────────────────
   const visibleColumns = createMemo(() => {
@@ -663,6 +757,7 @@ export default function ViewerApp(props) {
       setRedoStack([]);
       setIsDirty(true);
       updateTitle();
+      refreshRawXmlFromDoc();
     }
     setEditingField(null);
   }
@@ -685,6 +780,7 @@ export default function ViewerApp(props) {
       });
       setRedoStack([]);
       setIsDirty(true); updateTitle();
+      refreshRawXmlFromDoc();
     }
     setEditingField(null);
     setEditingHeaderKey(null);
@@ -743,6 +839,7 @@ export default function ViewerApp(props) {
       setCollapsedSections(newSecKey, undefined);
     }
     setIsDirty(true);
+    refreshRawXmlFromDoc();
   }
   function removeInstance(emp, section) {
     if (section._instanceIndex === undefined || !activeFormat.resolveSectionInstances) return;
@@ -754,6 +851,7 @@ export default function ViewerApp(props) {
     if (el && el.parentNode) el.parentNode.removeChild(el);
     rebuildSingleEmployee(emp._index);
     setIsDirty(true);
+    refreshRawXmlFromDoc();
   }
 
   // ── File I/O ───────────────────────────────────────────────
@@ -761,6 +859,7 @@ export default function ViewerApp(props) {
     if (!xmlText) return;
     setFilename(sourceName || filename() || 'JMHZ.xml');
     setFileHandle(null);
+    setRawXmlText(xmlText);
     const parsed = parseXml(xmlText);
     if (parsed && runtimeOptions.autoValidateOnLoad) {
       queueMicrotask(() => { validateAll(); });
@@ -817,10 +916,8 @@ export default function ViewerApp(props) {
     setIsDragging(false);
   }
   async function saveFile() {
-    if (!xmlDoc()) return;
-    const serializer = new XMLSerializer();
-    let xmlString = serializer.serializeToString(xmlDoc());
-    if (!xmlString.startsWith('<?xml')) xmlString = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + xmlString;
+    const xmlString = rawXmlText() || serializeXml();
+    if (!xmlString) return;
     const suggestedName = filename() || 'JMHZ.xml';
     if ('showSaveFilePicker' in window) {
       try {
@@ -835,6 +932,10 @@ export default function ViewerApp(props) {
     showToast('Staženo: ' + suggestedName); setIsDirty(false); updateTitle();
   }
   function exportToExcel() {
+    if (!ensureStructuredStateFromEditor({ silent: true })) {
+      showToast('Export XLS vyžaduje validní XML v editoru');
+      return;
+    }
     setXlsDialog(false);
     const cols = visibleColumns();
     const rows = displayList().filter(item => item.type !== 'separator');
@@ -868,6 +969,126 @@ export default function ViewerApp(props) {
   function updateTitle() {
     if (!runtimeOptions.manageDocumentTitle) return;
     document.title = (isDirty() ? '* ' : '') + (filename() || 'JMHZ Viewer');
+  }
+
+  function refreshRawXmlFromDoc() {
+    const xmlString = serializeXml();
+    if (xmlString) {
+      setRawXmlText(xmlString);
+      setEditorHasInvalidXml(false);
+      setParseFailureMessage('');
+      if (!editorVisible()) setEditorStatusMessage('');
+      if (monacoModel && monacoModel.getValue() !== xmlString) monacoModel.setValue(xmlString);
+    }
+  }
+
+  async function ensureMonacoReady() {
+    if (monacoApi) return monacoApi;
+    setIsMonacoLoading(true);
+    setMonacoLoadError('');
+    try {
+      const assetBase = runtimeOptions.assetBase || window.__JMHZ_BASE_URL__ || '';
+      if (!monacoLoader) {
+        monacoLoader = await import('./monacoLoader.js');
+      }
+      monacoApi = await monacoLoader.loadMonaco(assetBase);
+      return monacoApi;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setMonacoLoadError(message);
+      throw error;
+    } finally {
+      setIsMonacoLoading(false);
+    }
+  }
+
+  function syncMonacoModelFromState() {
+    if (!monacoModel) return;
+    const nextValue = rawXmlText() || serializeXml();
+    if (typeof nextValue === 'string' && monacoModel.getValue() !== nextValue) {
+      monacoModel.setValue(nextValue);
+    }
+  }
+
+  async function ensureMonacoEditor() {
+    if (!editorHostEl) return;
+    const monaco = await ensureMonacoReady();
+    if (!monacoModel) {
+      monacoModel = monaco.editor.createModel(rawXmlText() || '', 'xml');
+      monacoChangeSubscription = monacoModel.onDidChangeContent(() => {
+        setRawXmlText(monacoModel.getValue());
+        setIsDirty(true);
+        updateTitle();
+      });
+    } else {
+      syncMonacoModelFromState();
+    }
+    if (!monacoEditor) {
+      monacoEditor = monaco.editor.create(editorHostEl, {
+        model: monacoModel,
+        automaticLayout: true,
+        minimap: { enabled: false },
+        tabSize: 2,
+        insertSpaces: true,
+        wordWrap: 'on',
+        scrollBeyondLastLine: false,
+        theme: 'vs'
+      });
+    } else {
+      if (monacoEditor.getDomNode() !== editorHostEl) {
+        monacoEditor.dispose();
+        monacoEditor = monaco.editor.create(editorHostEl, {
+          model: monacoModel,
+          automaticLayout: true,
+          minimap: { enabled: false },
+          tabSize: 2,
+          insertSpaces: true,
+          wordWrap: 'on',
+          scrollBeyondLastLine: false,
+          theme: 'vs'
+        });
+      }
+      monacoEditor.layout();
+      monacoEditor.focus();
+    }
+  }
+
+  function commitEditorTextToStructuredState(options = {}) {
+    const currentText = rawXmlText();
+    if (!currentText) return true;
+    const parsed = parseXmlDocument(currentText);
+    if (!parsed.ok) {
+      clearStructuredState(parsed.errorMessage, { dirty: true });
+      if (!options.silent) showToast('XML v editoru není validní pro zobrazení');
+      return false;
+    }
+    applyParsedXml(parsed, { xmlText: currentText, dirty: true });
+    return true;
+  }
+
+  function ensureStructuredStateFromEditor(options = {}) {
+    if (!editorVisible()) return true;
+    if (monacoModel) setRawXmlText(monacoModel.getValue());
+    return commitEditorTextToStructuredState(options);
+  }
+
+  async function toggleEditorVisibility() {
+    if (!editorVisible()) {
+      if (!rawXmlText() && xmlDoc()) refreshRawXmlFromDoc();
+      setEditorVisible(true);
+      queueMicrotask(() => {
+        ensureMonacoEditor().catch((error) => {
+          const message = error instanceof Error ? error.message : String(error);
+          showToast('Monaco se nepodařilo načíst');
+          setMonacoLoadError(message);
+          setEditorVisible(false);
+        });
+      });
+      return;
+    }
+    if (monacoModel) setRawXmlText(monacoModel.getValue());
+    commitEditorTextToStructuredState();
+    setEditorVisible(false);
   }
 
   // ── XSD Validation ─────────────────────────────────────────
@@ -913,6 +1134,7 @@ export default function ViewerApp(props) {
 
   async function validateAll(options = {}) {
     const silent = Boolean(options && options.silent);
+    if (!ensureStructuredStateFromEditor({ silent })) return { ok: false, errorCount: 1 };
     if (!xmlDoc()) return;
     batch(() => {
       setErrors([]);
@@ -1072,6 +1294,7 @@ export default function ViewerApp(props) {
   // ── Kontroly ───────────────────────────────────────────────
   function runKontroly(options = {}) {
     const silent = Boolean(options && options.silent);
+    if (!ensureStructuredStateFromEditor({ silent })) return { ok: false, errorCount: 1, warningCount: 0, totalCount: 1 };
     if (!xmlDoc() || !isJmhz()) return { ok: true, errorCount: 0, warningCount: 0, totalCount: 0 };
     setKontrolyErrors([]);
     setKontrolyFieldErrors(new Map());
@@ -1201,6 +1424,7 @@ export default function ViewerApp(props) {
         if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1500); }
       });
     } else if (err.empIndex >= 0) {
+      if (editorVisible()) setEditorVisible(false);
       if (viewMode() === 'table') {
         requestAnimationFrame(() => {
           const el = document.querySelector('[data-err-id="e' + err.empIndex + '-' + (err.fieldKey || '') + '"]');
@@ -1240,6 +1464,7 @@ export default function ViewerApp(props) {
     if (e.ctrlKey && e.key === 'o') { e.preventDefault(); loadFile(); }
     if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveFile(); }
     if (e.ctrlKey && e.key === 'z') {
+      if (editorVisible()) return;
       e.preventDefault();
       const stack = undoStack();
       if (stack.length) {
@@ -1259,9 +1484,11 @@ export default function ViewerApp(props) {
           }
           setRedoStack(prev => [...prev, entry]);
         });
+        refreshRawXmlFromDoc();
       }
     }
     if (e.ctrlKey && e.key === 'y') {
+      if (editorVisible()) return;
       e.preventDefault();
       const stack = redoStack();
       if (stack.length) {
@@ -1281,6 +1508,7 @@ export default function ViewerApp(props) {
           }
           setUndoStack(prev => [...prev, entry]);
         });
+        refreshRawXmlFromDoc();
       }
     }
   }
@@ -1309,20 +1537,25 @@ export default function ViewerApp(props) {
     window.removeEventListener('dragleave', handleWindowDragLeave);
     document.removeEventListener('keydown', handleKeyDown);
     clearTimeout(_searchTimer);
+    monacoChangeSubscription?.dispose?.();
+    monacoEditor?.dispose?.();
+    monacoModel?.dispose?.();
   });
 
   // ── Expose API to handle ───────────────────────────────────
   Object.assign(props.handle, {
     validate: () => validateAll(),
     loadXml: (xml, fn) => loadXmlText(xml, fn),
-    getState: () => ({
-      filename: filename(),
-      isDirty: isDirty(),
-      errorCount: errors().length,
-      employeeCount: employees.length,
-      hasData: !!xmlDoc()
-    })
-  });
+      getState: () => ({
+        filename: filename(),
+        isDirty: isDirty(),
+        errorCount: errors().length,
+        employeeCount: employees.length,
+        hasData: hasLoadedXml(),
+        editorVisible: editorVisible(),
+        editorHasInvalidXml: editorHasInvalidXml()
+      })
+    });
 
   // ── JSX ────────────────────────────────────────────────────
   return (
@@ -1334,33 +1567,42 @@ export default function ViewerApp(props) {
           <span style="font-weight: 600; font-size: 0.875rem; color: var(--text-primary);">JMHZ Viewer</span>
         </div>
         <div class="toolbar-center"></div>
-        <div class="toolbar-actions">
-          <Show when={xmlDoc()}><button onClick={loadFile}>Nahrát XML</button></Show>
-          <Show when={xmlDoc()}><button class="primary" onClick={saveFile}>Uložit XML</button></Show>
-          <Show when={xmlDoc()}>
-            <div class="split-button" onClick={(e) => e.stopPropagation()}>
-              <button onClick={() => runValidation('all')}>Zkontrolovat</button>
-              <Show when={isJmhz()}>
-                <button
-                  class="split-button-toggle"
-                  onClick={(e) => { e.stopPropagation(); toggleValidationMenu(); }}
-                  aria-expanded={validationMenuOpen() ? 'true' : 'false'}
-                  aria-haspopup="menu"
-                  title="Možnosti validace"
-                >▾</button>
-              </Show>
-              <Show when={validationMenuOpen() && isJmhz()}>
-                <div class="validation-menu" role="menu">
-                  <button onClick={() => runValidation('xsd')} role="menuitem">Jen XSD</button>
-                  <button onClick={() => runValidation('kontroly')} role="menuitem">Jen Kontroly</button>
-                </div>
-              </Show>
-            </div>
-          </Show>
-          <Show when={xmlDoc()}><button onClick={toggleViewMode}>Zobrazení: {viewMode() === 'cards' ? 'Karty' : 'Tabulka'}</button></Show>
-          <Show when={xmlDoc()}><button onClick={() => setXlsDialog(true)}>Export XLS</button></Show>
-        </div>
-        <Show when={!xmlDoc()}>
+        <Show when={!showParseFailureScreen()}>
+          <div class="toolbar-actions">
+            <Show when={hasLoadedXml()}><button onClick={loadFile}>Nahrát XML</button></Show>
+            <Show when={hasLoadedXml()}><button class="primary" onClick={saveFile}>Uložit XML</button></Show>
+            <Show when={hasLoadedXml()}>
+              <div class="split-button" onClick={(e) => e.stopPropagation()}>
+                <button onClick={() => runValidation('all')}>Zkontrolovat</button>
+                <Show when={isJmhz()}>
+                  <button
+                    class="split-button-toggle"
+                    onClick={(e) => { e.stopPropagation(); toggleValidationMenu(); }}
+                    aria-expanded={validationMenuOpen() ? 'true' : 'false'}
+                    aria-haspopup="menu"
+                    title="Možnosti validace"
+                  >▾</button>
+                </Show>
+                <Show when={validationMenuOpen() && isJmhz()}>
+                  <div class="validation-menu" role="menu">
+                    <button onClick={() => runValidation('xsd')} role="menuitem">Jen XSD</button>
+                    <button onClick={() => runValidation('kontroly')} role="menuitem">Jen Kontroly</button>
+                  </div>
+                </Show>
+              </div>
+            </Show>
+            <Show when={hasLoadedXml()}><button onClick={toggleViewMode}>Zobrazení: {viewMode() === 'cards' ? 'Karty' : 'Tabulka'}</button></Show>
+            <Show when={hasLoadedXml()}>
+              <button onClick={() => setXlsDialog(true)}>Export XLS</button>
+            </Show>
+            <Show when={hasLoadedXml()}>
+              <button classList={{ primary: editorVisible() }} onClick={toggleEditorVisibility}>
+                Editor XML
+              </button>
+            </Show>
+          </div>
+        </Show>
+        <Show when={!hasLoadedXml()}>
           <span class="privacy-note toolbar-empty-note">Tento nástroj funguje zcela ve vašem prohlížeči, žádná data se nikdy neodesílají na server</span>
         </Show>
       </div>
@@ -1384,7 +1626,7 @@ export default function ViewerApp(props) {
       </Show>
 
       {/* View mode picker (first visit) */}
-      <Show when={showViewPicker() && xmlDoc() && employees.length > 0}>
+      <Show when={showViewPicker() && hasStructuredData() && !editorVisible()}>
         <div class="view-picker-overlay" onClick={(e) => { if (e.target === e.currentTarget) pickViewMode('table'); }}>
           <div class="view-picker-box">
             <h2>Zvolte výchozí zobrazení</h2>
@@ -1406,7 +1648,7 @@ export default function ViewerApp(props) {
       </Show>
 
       {/* Top Controls */}
-      <Show when={xmlDoc() && employees.length > 0}>
+      <Show when={hasStructuredData() && !editorVisible()}>
         <div class="top-controls">
           <div class="global-search">
             <div class="header-card" classList={{ expanded: headerExpanded() }} style="margin-bottom: var(--sp-3);">
@@ -1515,7 +1757,7 @@ export default function ViewerApp(props) {
       </Show>
 
       {/* Table View */}
-      <Show when={xmlDoc() && employees.length > 0 && viewMode() === 'table' && !showViewPicker()}>
+      <Show when={hasStructuredData() && viewMode() === 'table' && !showViewPicker() && !editorVisible()}>
         <div class="table-content" ref={(el) => { tableContentEl = el; requestAnimationFrame(updateTableContentHeight); }}>
           <div class="table-view">
             <table>
@@ -1586,7 +1828,7 @@ export default function ViewerApp(props) {
       </Show>
 
       {/* Card View */}
-      <Show when={xmlDoc() && employees.length > 0 && viewMode() === 'cards' && !showViewPicker()}>
+      <Show when={hasStructuredData() && viewMode() === 'cards' && !showViewPicker() && !editorVisible()}>
         <div class="content"
           onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
           onDragLeave={() => setIsDragging(false)}
@@ -1703,8 +1945,39 @@ export default function ViewerApp(props) {
         </div>
       </Show>
 
+      <Show when={hasLoadedXml() && editorVisible()}>
+        <div class="editor-view">
+          <div class="editor-actions">
+            <button class="editor-close-btn" onClick={toggleEditorVisibility} title="Zavřít editor">
+              <span aria-hidden="true">✕</span>
+            </button>
+          </div>
+          <div class="editor-view-header">
+            <span>{filename() || 'JMHZ.xml'}{isDirty() ? ' *' : ''}</span>
+            <Show when={editorStatusMessage()}>
+              <span class="editor-status editor-status-warning">{editorStatusMessage()}</span>
+            </Show>
+            <Show when={monacoLoadError()}>
+              <span class="editor-status editor-status-error">{monacoLoadError()}</span>
+            </Show>
+          </div>
+          <div class="editor-shell">
+            <Show when={isMonacoLoading()}>
+              <div class="editor-loading">Načítám editor…</div>
+            </Show>
+            <div
+              class="editor-host"
+              ref={(el) => {
+                editorHostEl = el;
+                if (editorVisible()) queueMicrotask(() => { ensureMonacoEditor().catch(() => {}); });
+              }}
+            ></div>
+          </div>
+        </div>
+      </Show>
+
       {/* Empty State */}
-      <Show when={!xmlDoc()}>
+      <Show when={!hasLoadedXml()}>
         <div class="content" style="max-width: 100%;">
           <div class="empty-state">
             <div class="drop-zone" classList={{ dragover: isDragging() }}
@@ -1714,6 +1987,19 @@ export default function ViewerApp(props) {
               onClick={loadFile}>
               <p>Přetáhněte nebo klikněte pro načtení XML souboru měsíčního hlášení</p>
               <button onClick={(e) => { e.stopPropagation(); loadFile(); }} style="margin-top: 16px; padding: 10px 28px; font-size: 15px; font-weight: 500; border: 1px solid #D1D5DB; border-radius: 8px; background: #2563EB; color: #fff; cursor: pointer;">Nahrát XML</button>
+            </div>
+          </div>
+        </div>
+      </Show>
+
+      <Show when={showParseFailureScreen()}>
+        <div class="parse-failure-screen">
+          <div class="parse-failure-box">
+            <h2>XML se nepodařilo naparsovat</h2>
+            <p>{parseFailureMessage()}</p>
+            <div class="parse-failure-actions">
+              <button class="btn primary" onClick={toggleEditorVisibility}>Otevřít editor XML</button>
+              <button class="btn" onClick={loadFile}>Nahrát jiné XML</button>
             </div>
           </div>
         </div>
@@ -1755,7 +2041,7 @@ export default function ViewerApp(props) {
         })()}
       </Show>
 
-      <Show when={hasValidationResults()}>
+      <Show when={hasValidationResults() && !editorVisible()}>
         {(() => {
           let vPanelEl;
           onMount(() => {

@@ -6,6 +6,7 @@
     "dev": "vite dev"
   },
   "dependencies": {
+    "monaco-editor": "^0.55.1",
     "solid-js": "^1.9.12",
     "xmllint-wasm": "^5.1.0"
   },

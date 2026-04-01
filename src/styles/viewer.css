@@ -515,3 +515,124 @@ body {
 
 /* === Content inner wrapper === */
 .content-inner { max-width: 1000px; margin: 0 auto; padding-left: var(--sp-8); padding-right: var(--sp-8); }
+
+/* === Monaco editor view === */
+.editor-view {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+  padding: var(--sp-4) var(--sp-6);
+  gap: var(--sp-3);
+}
+.editor-actions {
+  position: absolute;
+  top: 56px;
+  right: var(--sp-6);
+  z-index: 2;
+}
+.editor-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--duration) var(--ease);
+  box-shadow: 0 2px 8px oklch(20% 0.02 250 / 0.08);
+}
+.editor-close-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.editor-close-btn:active {
+  background: var(--bg-active);
+  transform: scale(0.98);
+}
+.editor-view-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+.editor-status {
+  padding: 2px var(--sp-2);
+  border-radius: 999px;
+  font-size: 0.75rem;
+}
+.editor-status-warning {
+  color: var(--warning);
+  background: var(--warning-bg);
+}
+.editor-status-error {
+  color: var(--error);
+  background: var(--error-bg);
+}
+.editor-shell {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 480px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--bg-elevated);
+}
+.editor-host {
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.editor-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: oklch(99% 0.003 250 / 0.92);
+  z-index: 1;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.parse-failure-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 48px);
+  padding: var(--sp-8);
+}
+
+.parse-failure-box {
+  max-width: 720px;
+  width: 100%;
+  padding: var(--sp-8);
+  border: 1px solid var(--error-border);
+  border-radius: var(--radius-lg);
+  background: var(--error-bg);
+  color: var(--text-primary);
+  box-shadow: 0 4px 16px oklch(20% 0.02 250 / 0.08);
+}
+
+.parse-failure-box h2 {
+  margin-bottom: var(--sp-3);
+  font-size: 1.125rem;
+  color: var(--error);
+}
+
+.parse-failure-box p + p {
+  margin-top: var(--sp-3);
+}
+
+.parse-failure-actions {
+  display: flex;
+  justify-content: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-6);
+}

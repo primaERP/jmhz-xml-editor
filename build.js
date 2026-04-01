@@ -15,6 +15,16 @@ function copyFile(src, dest) {
   fs.copyFileSync(src, dest);
 }
 
+function copyDir(src, dest) {
+  ensureDir(dest);
+  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+    if (entry.isDirectory()) copyDir(srcPath, destPath);
+    else copyFile(srcPath, destPath);
+  }
+}
+
 function readBin(file) {
   return fs.readFileSync(file);
 }
@@ -203,6 +213,9 @@ fs.writeFileSync('dist/example-inline.html', sampleHtml);
   const srcPath = path.join('assets-src', file);
   if (fs.existsSync(srcPath)) copyFile(srcPath, 'dist/images/' + file);
 });
+
+// Monaco assets are copied verbatim and fetched only when editor mode is opened.
+copyDir(path.join('node_modules', 'monaco-editor', 'min', 'vs'), path.join('dist', 'vendor', 'monaco', 'vs'));
 
 // ── Summary ──────────────────────────────────────────────────
 console.log('Built to dist/:');
