@@ -245,6 +245,7 @@ export default function ViewerApp(props) {
   }
   const kontrolyErrorCount = createMemo(() => kontrolyErrors().filter(e => e.severity === 'error').length);
   const kontrolyWarningCount = createMemo(() => kontrolyErrors().filter(e => e.severity === 'warning').length);
+  const totalValidationErrorCount = createMemo(() => errors().length + kontrolyErrorCount());
   const xsdValidationSummary = createMemo(() => errors().length + ' ' + czPlural(errors().length, 'chyba', 'chyby', 'chyb'));
   const kontrolyValidationSummary = createMemo(() => {
     const parts = [];
@@ -254,8 +255,8 @@ export default function ViewerApp(props) {
   });
   const validationDrawerSummary = createMemo(() => {
     const parts = [];
-    if (errors().length > 0) parts.push('XSD ' + xsdValidationSummary());
-    if (kontrolyErrors().length > 0) parts.push('Kontroly ' + kontrolyValidationSummary());
+    if (totalValidationErrorCount() > 0) parts.push(totalValidationErrorCount() + ' ' + czPlural(totalValidationErrorCount(), 'chyba', 'chyby', 'chyb'));
+    if (kontrolyWarningCount() > 0) parts.push(kontrolyWarningCount() + ' varování');
     return parts.join(' · ');
   });
   function closeValidationMenu() { setValidationMenuOpen(false); }
