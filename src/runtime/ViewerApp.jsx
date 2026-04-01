@@ -1,5 +1,5 @@
 import { createSignal, createMemo, createEffect, on, onMount, onCleanup, For, Show, Switch, Match, batch } from 'solid-js';
-import { createStore, reconcile } from 'solid-js/store';
+import { createStore, reconcile, produce } from 'solid-js/store';
 
 export default function ViewerApp(props) {
   const runtimeOptions = props.options;
@@ -678,13 +678,51 @@ export default function ViewerApp(props) {
     const emp = employees[empIndex];
     if (!emp) return;
     const newMirror = buildEmployeeMirror(emp._empEl, empIndex);
-    setEmployees(empIndex, reconcile(newMirror));
+    // Preserve user-edited values that weren't written to DOM.
+    // JMHZ writeField can't create missing child elements in new instances,
+    // so edits only exist in the store. Match old→new by DOM element + attr
+    // to handle index shifts after add/remove.
+    const oldFields = emp.fields;
+    const oldByEl = new Map();
+    for (const key in oldFields) {
+      const old = oldFields[key];
+      if (old && old.modified && old.el) {
+        if (!oldByEl.has(old.el)) oldByEl.set(old.el, new Map());
+        oldByEl.get(old.el).set(old.attr, old);
+      }
+    }
+    for (const key in newMirror.fields) {
+      const nf = newMirror.fields[key];
+      if (nf && nf.el && oldByEl.has(nf.el)) {
+        const old = oldByEl.get(nf.el).get(nf.attr);
+        if (old) {
+          nf.value = old.value;
+          nf._norm = old._norm;
+          nf.modified = true;
+        }
+      }
+    }
+    batch(() => {
+      setEmployees(empIndex, 'fields', reconcile(newMirror.fields));
+      setEmployees(empIndex, '_instanceCounts', reconcile(newMirror._instanceCounts));
+      setEmployees(empIndex, '_instanceOrders', reconcile(newMirror._instanceOrders));
+      setEmployees(empIndex, '_empEl', newMirror._empEl);
+      setEmployees(empIndex, '_formRoot', newMirror._formRoot);
+    });
   }
   function addInstance(emp, section) {
     const sec = SECTIONS.find(s => s.id === (section._baseSectionId || section.id));
     if (!sec || !activeFormat.createRepeatingInstance) return;
     activeFormat.createRepeatingInstance(emp._formRoot, sec);
     rebuildSingleEmployee(emp._index);
+    // Auto-expand the newly added instance (last one after rebuild)
+    const countKey = sec.parentRepeating || sec.id;
+    const newCount = employees[emp._index]?._instanceCounts?.[countKey] || 0;
+    if (newCount > 0) {
+      const newSecKey = emp._index + ':' + sec.id + '[' + (newCount - 1) + ']';
+      setExpandedSections(newSecKey, true);
+      setCollapsedSections(newSecKey, undefined);
+    }
     setIsDirty(true);
   }
   function removeInstance(emp, section) {

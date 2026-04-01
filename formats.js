@@ -804,7 +804,9 @@ const JMHZ_CONFIG = {
       instances.sort((a, b) => {
         const aVal = getChildByLocalName(a, orderEl)?.textContent || '';
         const bVal = getChildByLocalName(b, orderEl)?.textContent || '';
-        return (parseInt(aVal, 10) || 0) - (parseInt(bVal, 10) || 0);
+        const aNum = aVal ? (parseInt(aVal, 10) || 0) : Infinity;
+        const bNum = bVal ? (parseInt(bVal, 10) || 0) : Infinity;
+        return aNum - bNum;
       });
     }
     if (sec.parentRepeating) {
