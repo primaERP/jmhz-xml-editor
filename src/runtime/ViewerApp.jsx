@@ -1760,7 +1760,9 @@ export default function ViewerApp(props) {
               <div class="validation-panel-spacer" style={{ height: validationDockHeight() + 'px' }}></div>
               <div class="validation-panel" ref={vPanelEl}>
                 <div class="validation-header" onClick={() => setValidationCollapsed(!validationCollapsed())}>
-                  Validace<Show when={validationDrawerSummary()}>{' · '}{validationDrawerSummary()}</Show>
+                  <Show when={validationDrawerSummary()} fallback={'Validace'}>
+                    {validationDrawerSummary()}
+                  </Show>
                   {validationCollapsed() ? ' ▲' : ' ▼'}
                 </div>
                 <Show when={!validationCollapsed()}>
