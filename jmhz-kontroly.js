@@ -130,6 +130,54 @@
     return '';
   }
 
+  // Read ELDP období data from odložený příjem forms
+  // Returns null for non-odložený příjem, or array of { mesic, rok, eldpEls: [Element] }
+  function getOdlozenyEldpObdobi(emp) {
+    if (!emp?._formRoot || emp._formRoot.localName !== 'odlozenyPrijem') return null;
+    var pojisteni = findChildEl(emp._formRoot, 'pojisteni');
+    if (!pojisteni) return null;
+    var eldpObdobi = findChildEl(pojisteni, 'eldpObdobi');
+    if (!eldpObdobi) return null;
+    var result = [];
+    for (var i = 0; i < eldpObdobi.children.length; i++) {
+      var obd = eldpObdobi.children[i];
+      if (obd.localName !== 'obdobi') continue;
+      var mEl = findChildEl(obd, 'mesic');
+      var rEl = findChildEl(obd, 'rok');
+      var mesic = mEl ? parseInt(mEl.textContent, 10) : null;
+      var rok = rEl ? parseInt(rEl.textContent, 10) : null;
+      var eldpSez = findChildEl(obd, 'eldpSeznam');
+      var eldpEls = [];
+      if (eldpSez) {
+        for (var j = 0; j < eldpSez.children.length; j++) {
+          if (eldpSez.children[j].localName === 'eldp') eldpEls.push(eldpSez.children[j]);
+        }
+      }
+      result.push({ mesic: mesic, rok: rok, eldpEls: eldpEls });
+    }
+    return result.length > 0 ? result : null;
+  }
+
+  // Read a numeric field from a raw ELDP XML element by csszId
+  function readEldpElNum(eldpEl, csszId) {
+    var def = _csszIdToField?.get(csszId);
+    if (!def) return null;
+    var el = findChildEl(eldpEl, def.attr);
+    if (!el) return null;
+    var txt = el.textContent.trim();
+    if (txt === '') return null;
+    var n = parseFloat(txt.replace(/\s/g, '').replace(',', '.'));
+    return isNaN(n) ? null : n;
+  }
+
+  // Read a string field from a raw ELDP XML element by csszId
+  function readEldpElVal(eldpEl, csszId) {
+    var def = _csszIdToField?.get(csszId);
+    if (!def) return '';
+    var el = findChildEl(eldpEl, def.attr);
+    return el ? el.textContent.trim() : '';
+  }
+
   // Get numeric value (0 if empty/NaN)
   function getNum(emp, csszId, instanceIndex) {
     const v = getVal(emp, csszId, instanceIndex);
@@ -632,15 +680,31 @@
     { id: 58, scope: 'emp', sev: 'error', type: 'custom',
       msg: 'Neodpovídá možnému počtu dnů v kalendářním měsíci.',
       check: function(ctx) {
-        const mesic = ctx.getHeaderNum('10010');
-        const rok = ctx.getHeaderNum('10011');
+        var errors = [];
+        // Check odložený příjem ELDP období (10537/10538 per období)
+        var obdobi = getOdlozenyEldpObdobi(ctx.emp);
+        if (obdobi) {
+          for (var oi = 0; oi < obdobi.length; oi++) {
+            var m = obdobi[oi].mesic, r = obdobi[oi].rok;
+            if (m === null || r === null) continue;
+            var dim = new Date(r, m, 0).getDate();
+            for (var ei = 0; ei < obdobi[oi].eldpEls.length; ei++) {
+              var dny = readEldpElNum(obdobi[oi].eldpEls[ei], '10356');
+              if (dny !== null && dny > dim)
+                errors.push({ fieldCsszId: '10356', message: ctx.rule.msg });
+            }
+          }
+          return errors;
+        }
+        // Standard form: use header 10010/10011
+        var mesic = ctx.getHeaderNum('10010');
+        var rok = ctx.getHeaderNum('10011');
         if (mesic === null || rok === null) return [];
-        const daysInMonth = new Date(rok, mesic, 0).getDate();
-        const n = ctx.getRepeatCount('pojisteni/eldpSeznam/eldp');
-        const errors = [];
-        for (let i = 0; i < n; i++) {
-          const dny = ctx.getNum('10356', i);
-          if (dny !== null && dny > daysInMonth)
+        var daysInMonth = new Date(rok, mesic, 0).getDate();
+        var n = ctx.getRepeatCount('pojisteni/eldpSeznam/eldp');
+        for (var i = 0; i < n; i++) {
+          var dny2 = ctx.getNum('10356', i);
+          if (dny2 !== null && dny2 > daysInMonth)
             errors.push({ fieldCsszId: '10356', message: ctx.rule.msg });
         }
         return errors;
@@ -650,16 +714,16 @@
     { id: 59, scope: 'emp', sev: 'error', type: 'custom',
       msg: 'Chybně uvedený vyměřovací základ.',
       check: function(ctx) {
-        const n = ctx.getRepeatCount('pojisteni/eldpSeznam/eldp');
-        const errors = [];
-        for (let i = 0; i < n; i++) {
-          const kod = ctx.getVal('10240', i) || '';
-          const vz = ctx.getNum('10245', i);
-          const dny = ctx.getNum('10356', i);
-          const vylDoby = ctx.getNum('10357', i);
-          const odecDoby = ctx.getNum('10375', i);
+        var n = ctx.getRepeatCount('pojisteni/eldpSeznam/eldp');
+        var errors = [];
+        for (var i = 0; i < n; i++) {
+          var kod = ctx.getVal('10240', i) || '';
+          var vz = ctx.getNum('10245', i);
+          var dny = ctx.getNum('10356', i);
+          var vylDoby = ctx.getNum('10357', i);
+          var odecDoby = ctx.getNum('10375', i);
           if (kod.length < 2) continue;
-          const druhaPozice = kod.charAt(1);
+          var druhaPozice = kod.charAt(1);
           // Rule 1: if 2nd position = P → VZ must be filled
           if (druhaPozice === 'P' && (vz === null || vz === undefined))
             errors.push({ fieldCsszId: '10245', message: 'Kód ELDP obsahuje P, vyměřovací základ musí být uveden.' });
@@ -668,14 +732,37 @@
             if (vz !== null && vz !== 0)
               errors.push({ fieldCsszId: '10245', message: ctx.rule.msg });
           }
-          // Rule 5: if 2nd ≠ D and ≠ P and dny = 0 → VZ = 0
-          if (druhaPozice !== 'D' && druhaPozice !== 'P' && dny !== null && dny === 0) {
-            if (vz !== null && vz !== 0)
-              errors.push({ fieldCsszId: '10245', message: ctx.rule.msg });
+          // Rule 3: Pension age transition — pre-pension record must have VZ=0
+          // if consecutive ELDP pair with same 1st pos, one has D, dates connect
+          if (druhaPozice !== 'D' && n >= 2) {
+            for (var j = 0; j < n; j++) {
+              if (i === j) continue;
+              var kodJ = ctx.getVal('10240', j) || '';
+              if (kodJ.length < 2 || kodJ.charAt(1) !== 'D') continue;
+              var dnyJ = ctx.getNum('10356', j);
+              if (dnyJ === null) continue;
+              if (kod.charAt(0) !== kodJ.charAt(0)) continue; // same activity type
+              var doI = ctx.getVal('10242', i);
+              var odJ = ctx.getVal('10241', j);
+              if (!doI || !odJ) continue;
+              var dEnd = new Date(doI.substring(0, 10));
+              var dStart = new Date(odJ.substring(0, 10));
+              dEnd.setDate(dEnd.getDate() + 1);
+              if (dEnd.getTime() === dStart.getTime()) {
+                if (vz !== null && vz !== 0)
+                  errors.push({ fieldCsszId: '10245', message: ctx.rule.msg });
+                break;
+              }
+            }
           }
           // Rule 4: if 2nd = D and dny = 0 and odecDoby = vylDoby → VZ = 0
           if (druhaPozice === 'D' && dny !== null && dny === 0
               && odecDoby !== null && vylDoby !== null && odecDoby === vylDoby) {
+            if (vz !== null && vz !== 0)
+              errors.push({ fieldCsszId: '10245', message: ctx.rule.msg });
+          }
+          // Rule 5: if 2nd ≠ D and ≠ P and dny = 0 → VZ = 0
+          if (druhaPozice !== 'D' && druhaPozice !== 'P' && dny !== null && dny === 0) {
             if (vz !== null && vz !== 0)
               errors.push({ fieldCsszId: '10245', message: ctx.rule.msg });
           }
@@ -692,7 +779,7 @@
         const datVypl = ctx.getHeaderVal('10005');
         if (!datVypl) return [];
         if (datum >= datVypl.substring(0, 10))
-          return [{ fieldCsszId: '10005', message: ctx.rule.msg }];
+          return [{ fieldCsszId: '10409', message: ctx.rule.msg }];
         return [];
       }},
 
@@ -842,20 +929,38 @@
     { id: 98, scope: 'emp', sev: 'error', type: 'custom',
       msg: 'Hodnota nesmí být vyšší než počet dní v daném měsíci.',
       check: function(ctx) {
-        const mesic = ctx.getHeaderNum('10010');
-        const rok = ctx.getHeaderNum('10011');
+        var dayFields = ['10357','10358','10359','10360','10362','10536','10366',
+                         '10473','10474','10475','10375','10462','10463','10464',
+                         '10465','10466','10468','10469'];
+        var errors = [];
+        // Check odložený příjem ELDP období
+        var obdobi = getOdlozenyEldpObdobi(ctx.emp);
+        if (obdobi) {
+          for (var oi = 0; oi < obdobi.length; oi++) {
+            var m = obdobi[oi].mesic, r = obdobi[oi].rok;
+            if (m === null || r === null) continue;
+            var dim = new Date(r, m, 0).getDate();
+            for (var ei = 0; ei < obdobi[oi].eldpEls.length; ei++) {
+              for (var fi = 0; fi < dayFields.length; fi++) {
+                var v = readEldpElNum(obdobi[oi].eldpEls[ei], dayFields[fi]);
+                if (v !== null && v > dim)
+                  errors.push({ fieldCsszId: dayFields[fi], message: ctx.rule.msg });
+              }
+            }
+          }
+          return errors;
+        }
+        // Standard form
+        var mesic = ctx.getHeaderNum('10010');
+        var rok = ctx.getHeaderNum('10011');
         if (mesic === null || rok === null) return [];
-        const dim = new Date(rok, mesic, 0).getDate();
-        const dayFields = ['10357','10358','10359','10360','10362','10536','10366',
-                           '10473','10474','10475','10375','10462','10463','10464',
-                           '10465','10466','10468','10469'];
-        const n = ctx.getRepeatCount('pojisteni/eldpSeznam/eldp');
-        const errors = [];
-        for (let i = 0; i < n; i++) {
-          for (const fid of dayFields) {
-            const v = ctx.getNum(fid, i);
-            if (v !== null && v > dim)
-              errors.push({ fieldCsszId: fid, message: ctx.rule.msg });
+        var dim2 = new Date(rok, mesic, 0).getDate();
+        var n = ctx.getRepeatCount('pojisteni/eldpSeznam/eldp');
+        for (var i = 0; i < n; i++) {
+          for (var fi2 = 0; fi2 < dayFields.length; fi2++) {
+            var v2 = ctx.getNum(dayFields[fi2], i);
+            if (v2 !== null && v2 > dim2)
+              errors.push({ fieldCsszId: dayFields[fi2], message: ctx.rule.msg });
           }
         }
         return errors;
@@ -865,18 +970,37 @@
     { id: 99, scope: 'emp', sev: 'error', type: 'custom',
       msg: 'Datum je mimo měsíc, za který je podáváno.',
       check: function(ctx) {
-        const mesic = ctx.getHeaderNum('10010');
-        const rok = ctx.getHeaderNum('10011');
+        var errors = [];
+        // Check odložený příjem ELDP období
+        var obdobi = getOdlozenyEldpObdobi(ctx.emp);
+        if (obdobi) {
+          for (var oi = 0; oi < obdobi.length; oi++) {
+            var m = obdobi[oi].mesic, r = obdobi[oi].rok;
+            if (m === null || r === null) continue;
+            var mStr = String(r) + '-' + String(m).padStart(2, '0');
+            for (var ei = 0; ei < obdobi[oi].eldpEls.length; ei++) {
+              var od = readEldpElVal(obdobi[oi].eldpEls[ei], '10241');
+              var doo = readEldpElVal(obdobi[oi].eldpEls[ei], '10242');
+              if (od && od.substring(0, 7) > mStr)
+                errors.push({ fieldCsszId: '10241', message: ctx.rule.msg });
+              if (doo && doo.substring(0, 7) < mStr)
+                errors.push({ fieldCsszId: '10242', message: ctx.rule.msg });
+            }
+          }
+          return errors;
+        }
+        // Standard form
+        var mesic = ctx.getHeaderNum('10010');
+        var rok = ctx.getHeaderNum('10011');
         if (mesic === null || rok === null) return [];
-        const mStr = String(rok) + '-' + String(mesic).padStart(2, '0');
-        const n = ctx.getRepeatCount('pojisteni/eldpSeznam/eldp');
-        const errors = [];
-        for (let i = 0; i < n; i++) {
-          const od = ctx.getVal('10241', i);
-          const doo = ctx.getVal('10242', i);
-          if (od && od.substring(0, 7) > mStr)
+        var mStr2 = String(rok) + '-' + String(mesic).padStart(2, '0');
+        var n = ctx.getRepeatCount('pojisteni/eldpSeznam/eldp');
+        for (var i = 0; i < n; i++) {
+          var od2 = ctx.getVal('10241', i);
+          var doo2 = ctx.getVal('10242', i);
+          if (od2 && od2.substring(0, 7) > mStr2)
             errors.push({ fieldCsszId: '10241', message: ctx.rule.msg });
-          if (doo && doo.substring(0, 7) < mStr)
+          if (doo2 && doo2.substring(0, 7) < mStr2)
             errors.push({ fieldCsszId: '10242', message: ctx.rule.msg });
         }
         return errors;
@@ -897,7 +1021,7 @@
         return errors;
       }},
 
-    // K103: Dočasné přidělení — identifikace uživatele
+    // K103: Dočasné přidělení — identifikace uživatele (XOR: exactly one of 3 options)
     { id: 103, scope: 'emp', sev: 'error', type: 'custom',
       msg: 'Není uvedena identifikace dočasného přidělení.',
       check: function(ctx) {
@@ -906,7 +1030,8 @@
         const ico = ctx.isFilled('10252');
         const rc = ctx.isFilled('10457');
         const zahr = ctx.isFilled('10492') && ctx.isFilled('10493') && ctx.isFilled('10494');
-        if (!ico && !rc && !zahr)
+        var count = (ico ? 1 : 0) + (rc ? 1 : 0) + (zahr ? 1 : 0);
+        if (count !== 1)
           return [{ fieldCsszId: '10251', message: ctx.rule.msg }];
         return [];
       }},
@@ -1041,7 +1166,7 @@
         const typ = readSouhrnField(_xmlDoc, ['souhrn', 'specifickaSkutecnost', 'typ']);
         if (!typ) return [];
         const datum = readSouhrnField(_xmlDoc, ['souhrn', 'specifickaSkutecnost', 'datum']);
-        if (!datum) return [{ fieldCsszId: '10005', message: ctx.rule.msg }];
+        if (!datum) return [{ fieldCsszId: '10409', message: ctx.rule.msg }];
         return [];
       }},
 
@@ -1131,6 +1256,8 @@
             return [{ fieldCsszId: '10437', message: ctx.rule.msg }];
           if (!ctx.isFilled('10440', i))
             return [{ fieldCsszId: '10440', message: ctx.rule.msg }];
+          if (!ctx.isFilled('10439', i))
+            return [{ fieldCsszId: '10439', message: ctx.rule.msg }];
         }
         return [];
       }},
@@ -1364,9 +1491,9 @@
         var relErr = expected > 0 ? Math.abs(1 - uhrnSlev / expected) : 1;
         var absErr = Math.abs(expected - uhrnSlev);
         if (relErr > 0.01 && absErr > 100)
-          return [{ fieldCsszId: '10028', message: ctx.rule.msg }];
+          return [{ fieldCsszId: '10487', message: ctx.rule.msg }];
         if (uhrnSlev > 0.06565 * uhrnVZ + 0.5)
-          return [{ fieldCsszId: '10028', message: ctx.rule.msg }];
+          return [{ fieldCsszId: '10487', message: ctx.rule.msg }];
         return [];
       }},
 
@@ -1414,7 +1541,8 @@
       check: function(ctx) {
         var mesic = ctx.getHeaderNum('10010');
         if (mesic !== null && mesic >= 1 && mesic <= 3) return [];
-        var roFields = ['10321','10322','10323','10420','10454','10455',
+        var roFields = ['10036','10037','10320','10321','10322','10323','10420','10421','10422',
+          '10423','10424','10425','10426','10430','10454','10455',
           '10441','10442','10443','10444','10445','10446','10447','10448','10449','10450','10451'];
         for (var j = 0; j < roFields.length; j++) {
           if (ctx.isFilled(roFields[j]))
@@ -1449,20 +1577,28 @@
       }},
 
     // K194: Prosincové atributy jen v prosinci
-    { id: 194, scope: 'emp', sev: 'error', type: 'custom',
+    { id: 194, scope: 'cross', sev: 'error', type: 'custom',
       msg: 'Atribut může být uveden jen v prosincovém podání.',
       check: function(ctx) {
         var mesic = ctx.getHeaderNum('10010');
         if (mesic === 12) return [];
-        // These are souhrn-level fields, check via XML
-        var decFields = ['zamestnavatelUdajeRok'];
+        // Fields 10452, 10038, 10039, 10220, 10214 live under souhrn/zamestnavatelUdajeRok
         var souhrn = findChildEl(_xmlDoc ? _xmlDoc.documentElement : null, 'souhrn');
-        if (souhrn) {
-          for (var j = 0; j < decFields.length; j++) {
-            if (findChildEl(souhrn, decFields[j]))
-              return [{ fieldCsszId: '10005', message: ctx.rule.msg }];
-          }
+        if (!souhrn) return [];
+        var zur = findChildEl(souhrn, 'zamestnavatelUdajeRok');
+        if (!zur) return [];
+        // Check individual attrs: 10220 (formaVlastnictvi), 10038/10039/10452 (zamestnavaniOzp), 10214 (typKolektSmlouvy)
+        var found = [];
+        if (findChildEl(zur, 'formaVlastnictvi')) found.push('10220');
+        var ozp = findChildEl(zur, 'zamestnavaniOzp');
+        if (ozp) {
+          if (findChildEl(ozp, 'zecPocetPrepRok')) found.push('10038');
+          if (findChildEl(ozp, 'zecPocetPrepOzpRok')) found.push('10039');
+          if (findChildEl(ozp, 'podilZamZtp')) found.push('10452');
         }
+        if (findChildEl(zur, 'kolektivniSmlouvy')) found.push('10214');
+        if (found.length > 0)
+          return [{ fieldCsszId: found[0], message: ctx.rule.msg }];
         return [];
       }},
 
@@ -1607,11 +1743,17 @@
       }},
 
     // K216: VZ celkem (10477) = VZ A (10478) + VZ B (10479) + VZ C (10480)
+    // Skip K/S activity and activity 1-9 with 10502="Pracovní vztah specifické skupiny", and M (pěstoun)
     { id: 216, scope: 'emp', sev: 'error', type: 'custom',
       msg: 'Částka vyměřovacího základu zaměstnance, ze které je placeno pojistné, neodpovídá součtu dílčích částek vyměřovacího základu.',
       check: function(ctx) {
         var druh = ctx.getVal('10239');
         if (druh === 'K' || druh === 'S' || druh === 'M') return [];
+        var druhNum = parseInt(druh, 10);
+        if (druhNum >= 1 && druhNum <= 9) {
+          var spec = ctx.getVal('10502');
+          if (spec) return []; // has special PPV designation — skip
+        }
         var celkem = ctx.getNum('10477');
         if (celkem === null) return [];
         var sum = (ctx.getNum('10478') || 0) + (ctx.getNum('10479') || 0) + (ctx.getNum('10480') || 0);
@@ -1711,10 +1853,19 @@
       check: function(ctx) {
         var prim = ctx.getVal('10495');
         if (prim !== 'NE' && prim !== 'false') return [];
-        var fields = ['10286','10416','10289','10417','10419','10297','10298',
-          '10299','10300','10301','10302','10303','10304','10305','10306',
-          '10307','10308','10309','10310','10344','10116','10347','10348',
-          '10349','10371','10482'];
+        var fields = [
+          '10286','10416','10289','10417','10292','10293','10294','10295','10296',
+          '10418','10419','10297','10298','10299','10300','10301','10302','10303',
+          '10304','10305','10306','10307','10308','10309','10310',
+          '10453','10431','10432','10433','10434','10435','10436','10437','10438','10439','10440',
+          '10344','10116','10347','10348','10349','10350','10351','10352','10353',
+          '10482','10371',
+          '10311','10312','10313','10316','10317','10318','10319','10320',
+          '10321','10322','10323','10420','10454',
+          '10421','10422','10423','10424','10425','10426','10430','10539','10540','10541','10542',
+          '10455','10441','10442','10443','10444','10445',
+          '10446','10447','10448','10449','10450','10451'
+        ];
         for (var j = 0; j < fields.length; j++) {
           if (ctx.isFilled(fields[j]))
             return [{ fieldCsszId: fields[j], message: ctx.rule.msg }];
@@ -1907,7 +2058,7 @@
 
     // K278: Child born in (rok-5) or earlier → too old for § 35bb sleva
     { id: 278, scope: 'emp', sev: 'error', type: 'custom',
-      msg: 'Nelze uvést dítě po dovršení stanoveného věku.',
+      msg: 'Nelze uvést dítě, které se narodilo roku (rok - 5) a nebo dříve.',
       check: function(ctx) {
         var sec = 'souhrnDataZec/rocniUhrny/vysledekRocnihoZuctovani/zvyhodneniNaDeti/vyzivovaneDeti/vyzivovaneDite';
         var n = ctx.getRepeatCount(sec);
@@ -2135,13 +2286,15 @@
         return [];
       }},
 
-    // K321: If primární PPV=ANO, souhrnná data should be filled (basic check)
-    { id: 321, scope: 'emp', sev: 'warning', type: 'custom',
+    // K321: If primární PPV=ANO, souhrnná data must be filled
+    { id: 321, scope: 'emp', sev: 'error', type: 'custom',
       msg: 'Pokud je vyplněn primární pracovněprávní vztah zaměstnance, je nutné doplnit hodnoty z oblasti: Souhrnná data zaměstnance.',
       check: function(ctx) {
         var prim = ctx.getVal('10495');
         if (prim !== 'true' && prim !== 'ANO') return [];
-        if (!ctx.isFilled('10286'))
+        // Check key mandatory souhrnná data fields
+        if (!ctx.isFilled('10286') && !ctx.isFilled('10297') && !ctx.isFilled('10419')
+            && !ctx.isFilled('10344') && !ctx.isFilled('10482') && !ctx.isFilled('10371'))
           return [{ fieldCsszId: '10286', message: ctx.rule.msg }];
         return [];
       }},
