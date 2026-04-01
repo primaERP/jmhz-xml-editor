@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JMHZ Viewer</title>
+</head>
+<body>
+  <div id="jmhz-viewer-root"></div>
+  <script id="jmhz-data" type="application/xml" data-filename="mesicni-hlaseni-2026-03.xml"><!-- XML dokument --></script>
+  <script src="https://support.flexibee.eu/service/jmhz-viewer/embed.js"></script>
+  <script>
+    // mount(target, options) → Promise<handle>
+    //   options:
+    //     initialViewMode      'cards' | 'table'
+    //     autoValidateOnLoad   true/false
+    //     manageDocumentTitle  true/false
+    //     warnBeforeUnload     true/false
+    //     xml                  string (alternativa k <script id="jmhz-data">)
+    //     filename             string (alternativa k data-filename)
+    //     autoBootstrap        true/false (výchozí: true)
+    //     bootstrapScriptId    string (výchozí: 'jmhz-data')
+    //     onReady              function(handle)
+    //
+    //   handle.validate()              → Promise
+    //   handle.loadXml(xml, filename)
+    //   handle.destroy()
+    //   handle.getState()              → { filename, isDirty, errorCount, employeeCount, hasData }
+
+    window.JMHZViewer.mount('#jmhz-viewer-root', {
+      initialViewMode: 'table',
+      autoValidateOnLoad: true,
+      manageDocumentTitle: true
+    }).catch(function (err) {
+      document.getElementById('jmhz-viewer-root').textContent =
+        'Chyba při načítání JMHZ Vieweru: ' + err.message;
+    });
+  </script>
+</body>
+</html>
