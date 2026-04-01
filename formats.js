@@ -385,6 +385,7 @@ const JMHZ_CONFIG = {
   schemasKey: 'JMHZ_SCHEMAS',
   mainSchema: 'jmhzPodani.xsd',
   sections: [
+    { id: 'hlavickaFormulare', label: 'Hlavička formuláře', _resolvePath: 'hlavicka' },
     { id: 'identifikace', label: 'Identifikace zaměstnance' },
     { id: 'souhrnDataZec/prijmy', label: 'Příjmy' },
     { id: 'souhrnDataZec/prijmy/prispevekZamestnavatele', label: 'Příspěvek zaměstnavatele (z osvobozených příjmů)' },
@@ -530,6 +531,9 @@ const JMHZ_CONFIG = {
     return fields;
   },
   fields: [
+    { section: 'hlavickaFormulare', element: 'typFormulare', csszId: '10016', label: 'Typ formuláře', type: 'text' },
+    { section: 'hlavickaFormulare', element: 'primarniPpv', csszId: '10495', label: 'Primární pracovněprávní vztah', type: 'boolean' },
+
     { section: 'identifikace', element: 'ikMpsv', csszId: '10051', label: 'IK MPSV', type: 'text' },
     { section: 'identifikace', element: 'idPpv', csszId: '10228', label: 'ID pracovněprávního vztahu', type: 'text' },
     { section: 'identifikace', element: 'prijmeni', csszId: '10053', label: 'Příjmení zaměstnance', type: 'text' },
@@ -787,6 +791,26 @@ const JMHZ_CONFIG = {
     if (!sec.repeating && !sec.parentRepeating) return null;
     const ns = 'http://schemas.cssz.cz/JMHZ/form/1.0';
     const repeatingSectionId = sec.parentRepeating || sec.id;
+    if (repeatingSectionId === 'pojisteni/eldpSeznam/eldp') {
+      const pojisteni = getChildByLocalNameNS(formRoot, 'pojisteni', ns) || getChildByLocalName(formRoot, 'pojisteni');
+      if (!pojisteni) return [];
+      let instances = getAllChildrenByLocalNameNS(getChildByLocalNameNS(pojisteni, 'eldpSeznam', ns) || getChildByLocalName(pojisteni, 'eldpSeznam'), 'eldp', ns);
+      if (!instances.length) {
+        const eldpObdobi = getChildByLocalNameNS(pojisteni, 'eldpObdobi', ns) || getChildByLocalName(pojisteni, 'eldpObdobi');
+        if (eldpObdobi) {
+          const collected = [];
+          const obdobiEls = getAllChildrenByLocalNameNS(eldpObdobi, 'obdobi', ns).concat(getAllChildrenByLocalNameNS(eldpObdobi, 'obdobi', null));
+          obdobiEls.forEach(obd => {
+            const eldpSeznam = getChildByLocalNameNS(obd, 'eldpSeznam', ns) || getChildByLocalName(obd, 'eldpSeznam');
+            if (!eldpSeznam) return;
+            collected.push(...getAllChildrenByLocalNameNS(eldpSeznam, 'eldp', ns));
+            collected.push(...getAllChildrenByLocalNameNS(eldpSeznam, 'eldp', null));
+          });
+          instances = collected;
+        }
+      }
+      return instances.map((inst, i) => ({ index: i, el: inst, _orderValue: null }));
+    }
     const repeatParts = repeatingSectionId.split('/');
     const repeatElement = repeatParts[repeatParts.length - 1];
     const containerParts = repeatParts.slice(0, -1);
@@ -842,6 +866,22 @@ const JMHZ_CONFIG = {
     return newEl;
   },
   headerFields: [],
+  normalizeBooleanForUi: function(value) {
+    if (value == null) return '';
+    const normalized = String(value).trim().toLowerCase();
+    if (!normalized) return '';
+    if (normalized === 'true' || normalized === '1') return 'A';
+    if (normalized === 'false' || normalized === '0') return 'N';
+    return value;
+  },
+  normalizeBooleanForXml: function(value) {
+    if (value == null) return '';
+    const normalized = String(value).trim().toUpperCase();
+    if (!normalized) return '';
+    if (normalized === 'A') return 'true';
+    if (normalized === 'N') return 'false';
+    return value;
+  },
   readField: function(targetEl, field) {
     if (!targetEl) return '';
     const elName = field.element || field.attr;
@@ -851,7 +891,8 @@ const JMHZ_CONFIG = {
       el = getChildByLocalName(el, part);
       if (!el) return '';
     }
-    return el.textContent || '';
+    const value = el.textContent || '';
+    return field.type === 'boolean' ? this.normalizeBooleanForUi(value) : value;
   },
   writeField: function(fieldRef, value) {
     const elName = fieldRef._field?.element || fieldRef._field?.attr || fieldRef.attr;
@@ -861,7 +902,8 @@ const JMHZ_CONFIG = {
       el = getChildByLocalName(el, part);
       if (!el) return;
     }
-    el.textContent = value;
+    const xmlValue = fieldRef._field?.type === 'boolean' ? this.normalizeBooleanForXml(value) : value;
+    el.textContent = xmlValue;
   },
   writeHeaderField: function(headerRef, value) {
     if (headerRef._writeBack === 'attribute') {

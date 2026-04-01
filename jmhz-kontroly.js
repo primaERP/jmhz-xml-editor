@@ -269,11 +269,12 @@
     const errors = [];
     const sev = rule.sev || 'error';
 
-    function pushError(msg, csszId) {
+    function pushError(msg, csszId, instanceIndex) {
       errors.push({
         severity: sev,
         controlId: rule.id,
         fieldCsszId: csszId || rule.target || (rule.fields && rule.fields[0]) || '',
+        instanceIndex: instanceIndex,
         message: msg || rule.msg
       });
     }
@@ -409,6 +410,7 @@
                 severity: ce.severity || sev,
                 controlId: rule.id,
                 fieldCsszId: ce.fieldCsszId || '',
+                instanceIndex: ce.instanceIndex,
                 message: ce.message || rule.msg
               });
             });
@@ -1010,9 +1012,9 @@
               var od = readEldpElVal(obdobi[oi].eldpEls[ei], '10241');
               var doo = readEldpElVal(obdobi[oi].eldpEls[ei], '10242');
               if (od && od.substring(0, 7) > mStr)
-                errors.push({ fieldCsszId: '10241', message: ctx.rule.msg });
+                errors.push({ fieldCsszId: '10241', instanceIndex: ei, message: ctx.rule.msg });
               if (doo && doo.substring(0, 7) < mStr)
-                errors.push({ fieldCsszId: '10242', message: ctx.rule.msg });
+                errors.push({ fieldCsszId: '10242', instanceIndex: ei, message: ctx.rule.msg });
             }
           }
           return errors;
@@ -1027,9 +1029,9 @@
           var od2 = ctx.getVal('10241', i);
           var doo2 = ctx.getVal('10242', i);
           if (od2 && od2.substring(0, 7) > mStr2)
-            errors.push({ fieldCsszId: '10241', message: ctx.rule.msg });
+            errors.push({ fieldCsszId: '10241', instanceIndex: i, message: ctx.rule.msg });
           if (doo2 && doo2.substring(0, 7) < mStr2)
-            errors.push({ fieldCsszId: '10242', message: ctx.rule.msg });
+            errors.push({ fieldCsszId: '10242', instanceIndex: i, message: ctx.rule.msg });
         }
         return errors;
       }},
@@ -2512,7 +2514,7 @@
           const errs = evalRule(rule, emp, headerFields, employees);
           errs.forEach(e => {
             const fd = getFieldDef(e.fieldCsszId);
-            const fk = fd ? fieldKeyFor(fd) : '';
+            const fk = fd ? fieldKeyFor(fd, e.instanceIndex) : '';
             results.push({
               severity: e.severity, controlId: e.controlId,
               empIndex: empIdx,

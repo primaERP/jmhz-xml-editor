@@ -311,6 +311,10 @@ export default function ViewerApp(props) {
     return base;
   }
 
+  function errorTargetKey(field, section) {
+    return fieldKey(field, section?._instanceIndex);
+  }
+
   const searchMatches = createMemo(() => {
     xmlDoc(); // track dependency
     const fqParts = splitQuery(fieldSearch());
@@ -1154,7 +1158,7 @@ export default function ViewerApp(props) {
 
   // ── Error helpers ──────────────────────────────────────────
   function hasFieldError(emp, field, section) {
-    const fk = fieldKey(field, section?._instanceIndex);
+    const fk = errorTargetKey(field, section);
     const empErrors = validationErrors().get(emp._index);
     if (empErrors && empErrors.has(fk)) return true;
     const kErrors = kontrolyFieldErrors().get(emp._index);
@@ -1164,7 +1168,7 @@ export default function ViewerApp(props) {
   function hasFieldWarning(emp, field, section) {
     const kErrors = kontrolyFieldErrors().get(emp._index);
     if (!kErrors) return false;
-    return kErrors.get(fieldKey(field, section?._instanceIndex)) === 'warning';
+    return kErrors.get(errorTargetKey(field, section)) === 'warning';
   }
 
   function getSectionErrorCount(empIndex, sectionId, section) {
@@ -1174,7 +1178,7 @@ export default function ViewerApp(props) {
     const empErrors = validationErrors().get(empIndex);
     const kErrors = kontrolyFieldErrors().get(empIndex);
     sectionFields.forEach(f => {
-      const fk = fieldKey(f, section?._instanceIndex);
+      const fk = errorTargetKey(f, section);
       if ((empErrors && empErrors.has(fk)) || (kErrors && kErrors.has(fk))) count++;
     });
     return count;
@@ -1212,8 +1216,11 @@ export default function ViewerApp(props) {
           setCollapsedMatchedEmps(err.empIndex, undefined);
           if (err.fieldKey) {
             let sectionId = err.fieldKey.substring(0, err.fieldKey.lastIndexOf('/'));
-            const sec = SECTIONS.find(s => s.id === sectionId);
-            if (sec && (sec.repeating || sec.parentRepeating)) sectionId = sectionId + '[0]';
+            const hasInstance = /\[\d+\]$/.test(sectionId);
+            if (!hasInstance) {
+              const sec = SECTIONS.find(s => s.id === sectionId);
+              if (sec && (sec.repeating || sec.parentRepeating)) sectionId = sectionId + '[0]';
+            }
             const secKey = err.empIndex + ':' + sectionId;
             setExpandedSections(secKey, true);
             setCollapsedSections(secKey, undefined);
@@ -1479,16 +1486,6 @@ export default function ViewerApp(props) {
 
           <Show when={hasSearch() || hasActions()}>
             <div style="display: flex; align-items: center; gap: 16px; padding: 0 36px 6px; max-width: 1000px; margin: 0 auto; width: 100%; font-size: 0.75rem; color: var(--text-muted);">
-              <Show when={hasCardFilter() && viewMode() === 'cards'}>
-                <label style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                  <input type="checkbox" checked={autoExpandMatched()} onChange={(e) => setAutoExpandMatched(e.target.checked)} /> Automaticky rozbalit
-                </label>
-              </Show>
-              <Show when={hasCardFilter() && viewMode() === 'cards'}>
-                <label style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                  <input type="checkbox" checked={showAllFieldsInSearch()} onChange={(e) => setShowAllFieldsInSearch(e.target.checked)} /> Zobrazit všechna pole
-                </label>
-              </Show>
               <Show when={hasActions()}>
                 <span style="font-size: 12px; color: #6B7280; display: flex; align-items: center; gap: 4px;">
                   Akce:
@@ -1498,6 +1495,16 @@ export default function ViewerApp(props) {
                     }</For>
                   </span>
                 </span>
+              </Show>
+              <Show when={hasCardFilter() && viewMode() === 'cards'}>
+                <label style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                  <input type="checkbox" checked={autoExpandMatched()} onChange={(e) => setAutoExpandMatched(e.target.checked)} /> Automaticky rozbalit
+                </label>
+              </Show>
+              <Show when={hasCardFilter() && viewMode() === 'cards'}>
+                <label style="font-size: 12px; color: #6B7280; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                  <input type="checkbox" checked={showAllFieldsInSearch()} onChange={(e) => setShowAllFieldsInSearch(e.target.checked)} /> Zobrazit všechna pole
+                </label>
               </Show>
               <Show when={(fieldSearch() || valueSearch()) && searchMatchInfo()}>
                 <span class="match-count" style="margin-left: auto;">{searchMatchInfo()}</span>
@@ -1538,9 +1545,9 @@ export default function ViewerApp(props) {
                       </td>
                       <For each={visibleColumns()}>{(field, ci) =>
                         <td classList={{ 'has-error': hasFieldError(item.emp, field, field), 'has-warning': hasFieldWarning(item.emp, field, field), 'cell-match': item.matched && isFieldMatch(item.emp, field, field) }}
-                            data-err-id={'e' + item.emp._index + '-' + fieldKey(field, field._instanceIndex)}
+                            data-err-id={'e' + item.emp._index + '-' + errorTargetKey(field, field)}
                             onClick={() => startEdit(item.emp, field, field)}>
-                          <Show when={editingField() === item.emp._index + ':' + fieldKey(field, field._instanceIndex)} fallback={
+                          <Show when={editingField() === item.emp._index + ':' + errorTargetKey(field, field)} fallback={
                             <>{getFieldValue(item.emp, field, field) || <span class="cell-empty"></span>}</>
                           }>
                             <Switch>
@@ -1616,14 +1623,14 @@ export default function ViewerApp(props) {
                             <div class="section-header" onClick={(e) => { e.stopPropagation(); toggleSection(item.emp._index + ':' + (section._virtualId || section.id)); }}>
                               <svg class="section-chevron" classList={{ expanded: isSectionExpanded(item.emp._index, section._virtualId || section.id, item.matched, section) }} viewBox="0 0 16 16" fill="currentColor"><path d="M6 3l5 5-5 5V3z"/></svg>
                               <span class="section-title">{section.label}</span>
-                              <Show when={getSectionErrorCount(item.emp._index, section._virtualId || section.id, section) > 0}>
-                                <span class="section-badge errors">{getSectionErrorCount(item.emp._index, section._virtualId || section.id, section)}</span>
-                              </Show>
-                              <Show when={section._instanceIndex !== undefined}>
-                                <button class="btn-remove-instance" onClick={(e) => { e.stopPropagation(); removeInstance(item.emp, section); }} title="Odebrat instanci" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:14px;padding:0 4px;">&times;</button>
-                              </Show>
                               <Show when={section.repeating && section._instanceIndex === 0}>
                                 <button class="btn-add-instance" onClick={(e) => { e.stopPropagation(); addInstance(item.emp, section); }} title="Přidat instanci" style="margin-left:4px;background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:14px;padding:0 4px;">+</button>
+                              </Show>
+                              <Show when={section._instanceIndex !== undefined}>
+                                <button class="btn-remove-instance" onClick={(e) => { e.stopPropagation(); removeInstance(item.emp, section); }} title="Odebrat instanci" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:14px;padding:0 4px;">&times;</button>
+                              </Show>
+                              <Show when={getSectionErrorCount(item.emp._index, section._virtualId || section.id, section) > 0}>
+                                <span class="section-badge errors" style="margin-left:auto">{getSectionErrorCount(item.emp._index, section._virtualId || section.id, section)}</span>
                               </Show>
                             </div>
                             <div class="section-body"
@@ -1635,7 +1642,7 @@ export default function ViewerApp(props) {
                                   <tr class="field-row"
                                     classList={{ 'has-error': hasFieldError(item.emp, field, section), 'has-warning': hasFieldWarning(item.emp, field, section), 'field-match': item.matched && isFieldMatch(item.emp, field, section) }}
                                     data-field-id={field.csszId}
-                                    data-err-id={'e' + item.emp._index + '-' + fieldKey(field, section._instanceIndex)}>
+                                    data-err-id={'e' + item.emp._index + '-' + errorTargetKey(field, section)}>
                                     <td class="field-id">{field.csszId || ''}</td>
                                     <td class="field-label">
                                       {field.label}
@@ -1645,7 +1652,7 @@ export default function ViewerApp(props) {
                                       <span class="xpath">{fieldXpath(field)}</span>
                                     </td>
                                     <td class="field-value">
-                                      <Show when={editingField() === item.emp._index + ':' + fieldKey(field, section._instanceIndex)} fallback={
+                                      <Show when={editingField() === item.emp._index + ':' + errorTargetKey(field, section)} fallback={
                                         <span onClick={(e) => { e.stopPropagation(); startEdit(item.emp, field, section); }} style="cursor: pointer; display: block; min-height: 24px; padding: 2px 0;">
                                           <Show when={isFieldModified(item.emp, field, section)}><span class="modified-dot"></span></Show>
                                           {getFieldValue(item.emp, field, section) || <span class="empty">—</span>}
