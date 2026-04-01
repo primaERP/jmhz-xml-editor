@@ -65,9 +65,7 @@ function writeHashed(content, logicalPath) {
 
 // ── Source files ──────────────────────────────────────────────
 const css       = read('src/styles/viewer.css');
-const template  = read('src/ui/template.js');
 const helpers   = read('src/runtime/helpers.js');
-const viewer    = read('src/runtime/viewer.js');
 const loader    = read('src/entrypoints/loader.js');
 const embed     = read('src/entrypoints/embed.js');
 const formats   = read('formats.js');
@@ -80,12 +78,12 @@ const uiAssets  = {
   previewCards: dataUrl(path.join('assets-src', 'preview-cards.png'), 'image/png')
 };
 
-// ── Build viewer.runtime.js (template + helpers + viewer) ────
+// ── Build viewer.runtime.js (helpers + Vite-compiled SolidJS bundle) ────
+const viteOutput = read('build-intermediate/viewer.runtime.js');
 const viewerRuntime = [
   'window.__JMHZ_UI_ASSETS__ = ' + JSON.stringify(uiAssets) + ';',
-  template,
   helpers,
-  viewer
+  viteOutput
 ].join('\n\n');
 
 // standaloneHtml is generated after hashing — see below
@@ -150,7 +148,6 @@ manifest.files['assets/formats.js']        = writeHashed(formats, 'assets/format
 manifest.files['assets/jmhz-kontroly.js'] = writeHashed(kontroly, 'assets/jmhz-kontroly.js');
 
 // Vendor libraries (read as Buffer for binary safety)
-manifest.files['vendor/vue.global.prod.js']     = writeHashed(readBin('vue.global.prod.js'), 'vendor/vue.global.prod.js');
 manifest.files['vendor/xmllint-wasm-bundle.js'] = writeHashed(readBin('xmllint-wasm-bundle.js'), 'vendor/xmllint-wasm-bundle.js');
 
 // Schema / data
@@ -177,7 +174,6 @@ const standaloneHtml = `<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>JMHZ Viewer</title>
-<script src="${f['vendor/vue.global.prod.js']}"><\/script>
 <script src="${f['vendor/xmllint-wasm-bundle.js']}"><\/script>
 <script src="${f['data/xsd-data.js']}"><\/script>
 <script src="${f['data/jmhz-xsd-data.js']}"><\/script>
@@ -192,8 +188,7 @@ const standaloneHtml = `<!DOCTYPE html>
 <script>
 var _target = document.getElementById('app');
 if (_target) {
-  _target.innerHTML = window.JMHZ_VIEWER_TEMPLATE;
-  mountJmhzViewer(_target, { manageDocumentTitle: true, warnBeforeUnload: true });
+  window.JMHZViewerRuntime.mount(_target, { manageDocumentTitle: true, warnBeforeUnload: true });
 }
 <\/script>
 </body>
