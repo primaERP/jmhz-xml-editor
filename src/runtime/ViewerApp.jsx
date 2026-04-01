@@ -152,6 +152,33 @@ export default function ViewerApp(props) {
     }));
   }
 
+  function applyValidationStateToHeader(headerFields, options = {}) {
+    const xsdHeaderKeys = options.xsdHeaderKeys || new Set();
+    const kontrolyErrorHeaderKeys = options.kontrolyErrorHeaderKeys || new Set();
+    const kontrolyWarningHeaderKeys = options.kontrolyWarningHeaderKeys || new Set();
+    return headerFields.map(field => ({
+      ...field,
+      _hasError: xsdHeaderKeys.has(field.key),
+      _hasKontrolyError: kontrolyErrorHeaderKeys.has(field.key),
+      _hasKontrolyWarning: !kontrolyErrorHeaderKeys.has(field.key) && kontrolyWarningHeaderKeys.has(field.key)
+    }));
+  }
+
+  function collectHeaderValidationState(validationList = [], kontrolyList = []) {
+    const xsdHeaderKeys = new Set();
+    const kontrolyErrorHeaderKeys = new Set();
+    const kontrolyWarningHeaderKeys = new Set();
+    validationList.forEach((err) => {
+      if (err?.headerKey) xsdHeaderKeys.add(err.headerKey);
+    });
+    kontrolyList.forEach((err) => {
+      if (!err?.headerKey) return;
+      if (err.severity === 'error') kontrolyErrorHeaderKeys.add(err.headerKey);
+      else if (!kontrolyErrorHeaderKeys.has(err.headerKey)) kontrolyWarningHeaderKeys.add(err.headerKey);
+    });
+    return { xsdHeaderKeys, kontrolyErrorHeaderKeys, kontrolyWarningHeaderKeys };
+  }
+
   function applyModifiedStateToEmployee(emp, baseline = baselineFieldValues()) {
     const nextFields = {};
     for (const key in emp.fields) {
@@ -183,19 +210,28 @@ export default function ViewerApp(props) {
     for (let i = 0; i < rowElements.length; i++) newEmps.push(buildEmployeeMirror(rowElements[i], i));
     const parsedHeader = activeFormat?.parseDocumentHeader?.(parsed.doc) || [];
     const shouldResetModifiedBaseline = options.resetModifiedBaseline ?? resetModifiedBaselineOnNextParse;
+    const shouldResetValidationState = options.resetValidationState ?? true;
     const nextBaselineFields = shouldResetModifiedBaseline ? buildFieldBaselineMap(newEmps) : baselineFieldValues();
     const nextBaselineHeaders = shouldResetModifiedBaseline ? buildHeaderBaselineMap(parsedHeader) : baselineHeaderValues();
     const nextEmployees = applyModifiedStateToEmployees(newEmps, nextBaselineFields);
-    const nextHeader = applyModifiedStateToHeader(parsedHeader, nextBaselineHeaders);
+    const preservedHeaderValidationState = shouldResetValidationState
+      ? collectHeaderValidationState([], [])
+      : collectHeaderValidationState(errors(), kontrolyErrors());
+    const nextHeader = applyValidationStateToHeader(
+      applyModifiedStateToHeader(parsedHeader, nextBaselineHeaders),
+      preservedHeaderValidationState
+    );
     batch(() => {
       setFormatRef(parsed.format);
       setXmlDoc(parsed.doc);
-      setErrors([]);
       setExpandedEmployee(-1);
-      setHasValidated(false);
-      setValidationErrors(new Map());
-      setKontrolyErrors([]);
-      setKontrolyFieldErrors(new Map());
+      if (shouldResetValidationState) {
+        setErrors([]);
+        setHasValidated(false);
+        setValidationErrors(new Map());
+        setKontrolyErrors([]);
+        setKontrolyFieldErrors(new Map());
+      }
       setValidationMenuOpen(false);
       setEditorHasInvalidXml(false);
       setParseFailureMessage('');
@@ -1197,7 +1233,7 @@ export default function ViewerApp(props) {
       if (!options.silent) showToast('XML v editoru není validní pro zobrazení');
       return false;
     }
-    applyParsedXml(parsed, { xmlText: currentText, dirty: true });
+    applyParsedXml(parsed, { xmlText: currentText, dirty: true, resetValidationState: false });
     return true;
   }
 
@@ -2139,42 +2175,7 @@ export default function ViewerApp(props) {
       </Show>
 
       {/* Validation Panel */}
-      <Show when={errors().length > 0}>
-        {(() => {
-          let panelEl;
-          onMount(() => {
-            const observer = new ResizeObserver(() => updateValidationDockHeight(panelEl));
-            observer.observe(panelEl);
-            onCleanup(() => observer.disconnect());
-            updateValidationDockHeight(panelEl);
-          });
-          return (
-            <>
-              <div class="validation-panel-spacer" style={{ height: validationDockHeight() + 'px' }}></div>
-              <div class="validation-panel" ref={panelEl}>
-                <div class="validation-header" onClick={() => setValidationCollapsed(!validationCollapsed())}>
-                  Validace ({errors().length} {errors().length === 1 ? 'chyba' : errors().length < 5 ? 'chyby' : 'chyb'})
-                  {validationCollapsed() ? ' ▲' : ' ▼'}
-                </div>
-                <Show when={!validationCollapsed()}>
-                  <div class="validation-list">
-                    <For each={errors()}>{(err, i) =>
-                      <div class="validation-item">
-                        <span class={"severity " + (err.severity || 'error')}></span>
-                        <span class="path">{err.headerKey ? 'Záhlaví' : err.employeeName} › {err.sectionLabel} ›</span>
-                        <span class="message">{err.fieldLabel}: {err.message}</span>
-                        <Show when={err.canNavigate}><span class="goto-btn" onClick={() => navigateToError(err)}>Přejít</span></Show>
-                      </div>
-                    }</For>
-                  </div>
-                </Show>
-              </div>
-            </>
-          );
-        })()}
-      </Show>
-
-      <Show when={hasValidationResults() && !editorVisible()}>
+      <Show when={hasValidationResults()}>
         {(() => {
           let vPanelEl;
           onMount(() => {
