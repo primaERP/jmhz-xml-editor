@@ -2,9 +2,9 @@
   "manifestVersion": 1,
   "bundle": "assets/embed_91eb6cf1.js",
   "files": {
-    "assets/viewer.runtime.js": "assets/viewer.runtime_6771e9b1.js",
-    "assets/viewer.css": "assets/viewer_b31e1a2c.css",
-    "assets/formats.js": "assets/formats_a1c74d3f.js",
+    "assets/viewer.runtime.js": "assets/viewer.runtime_f3b19157.js",
+    "assets/viewer.css": "assets/viewer_ab73b97d.css",
+    "assets/formats.js": "assets/formats_482ce1c6.js",
     "assets/jmhz-kontroly.js": "assets/jmhz-kontroly_7746742c.js",
     "vendor/xmllint-wasm-bundle.js": "vendor/xmllint-wasm-bundle_6ec27969.js",
     "data/xsd-data.js": "data/xsd-data_2dd35cc9.js",

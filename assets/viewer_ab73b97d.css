@@ -314,14 +314,6 @@ body {
 
 .control-id { font-size: 0.6875rem; color: var(--text-muted); font-family: monospace; min-width: 3em; }
 
-/* === Toast === */
-.toast {
-  position: fixed; bottom: 20px; right: 20px; padding: var(--sp-3) var(--sp-4);
-  border-radius: var(--radius-lg); font-size: 0.8125rem; font-weight: 500; z-index: 100;
-  animation: toast-in 300ms var(--ease);
-}
-.toast.success { background: var(--success-bg); color: oklch(28% 0.08 155); border: 1px solid var(--success-border); }
-@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes flash-highlight { 0% { box-shadow: inset 0 0 0 2px var(--accent); } 100% { box-shadow: inset 0 0 0 2px transparent; } }
 .flash { animation: flash-highlight 1.5s var(--ease); }
 
@@ -612,7 +604,7 @@ body {
 .parse-failure-box {
   max-width: 720px;
   width: 100%;
-  padding: var(--sp-8);
+  padding: var(--sp-4);
   border: 1px solid var(--error-border);
   border-radius: var(--radius-lg);
   background: var(--error-bg);
@@ -621,18 +613,194 @@ body {
 }
 
 .parse-failure-box h2 {
-  margin-bottom: var(--sp-3);
+  margin-bottom: var(--sp-1);
   font-size: 1.125rem;
   color: var(--error);
 }
 
 .parse-failure-box p + p {
-  margin-top: var(--sp-3);
+  margin-top: var(--sp-1);
 }
 
 .parse-failure-actions {
   display: flex;
   justify-content: center;
   gap: var(--sp-3);
-  margin-top: var(--sp-6);
+  margin-top: var(--sp-4);
+}
+
+/* === Attachments (Přílohy) === */
+.attachment-list { padding: var(--sp-3); }
+.attachment-empty { color: var(--text-muted); font-style: italic; padding: var(--sp-3) 0; }
+.attachment-row td { padding: var(--sp-1) var(--sp-2); vertical-align: middle; }
+.attachment-row:hover { background: var(--bg-hover); }
+.attachment-name { font-weight: 500; }
+.attachment-size { color: var(--text-muted); font-size: 0.85em; white-space: nowrap; }
+.attachment-actions { white-space: nowrap; text-align: right; }
+.attachment-actions button {
+  background: none; border: none; cursor: pointer; padding: 2px 6px;
+  font-size: 14px; color: var(--text-muted); border-radius: var(--radius-sm);
+}
+.attachment-actions button:hover { background: var(--bg-active); color: var(--text-primary); }
+.btn-add-attachment {
+  display: inline-flex; align-items: center; gap: var(--sp-1);
+  margin-top: var(--sp-2); padding: var(--sp-1) var(--sp-3);
+  background: none; border: 1px dashed var(--border); border-radius: var(--radius-sm);
+  color: var(--text-secondary); cursor: pointer; font-size: 0.875rem;
+}
+.btn-add-attachment:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-subtle); }
+.attachment-list .field-table { width: 100%; }
+.attachment-list .field-table thead th {
+  font-size: 0.75rem; color: var(--text-muted); text-align: left;
+  padding: var(--sp-1) var(--sp-2); border-bottom: 1px solid var(--border-subtle);
+  font-weight: 500; text-transform: uppercase; letter-spacing: 0.03em;
+}
+.attachment-badge {
+  display: inline-block; margin-left: var(--sp-2); font-size: 0.75rem;
+  color: var(--text-muted); vertical-align: middle;
+}
+.attachments-col { width: 70px; text-align: center; white-space: nowrap; }
+.attachments-cell { text-align: center; cursor: pointer; }
+.attachments-cell:hover { background: var(--bg-hover); }
+.attachments-cell .attachment-badge { margin-left: 0; cursor: pointer; }
+
+/* ── Print styles ───────────────────────────────────────── */
+@media screen {
+  .print-container { display: none !important; }
+}
+
+@media print {
+  /* Hide all interactive chrome */
+  .toolbar,
+  .top-controls,
+  .content,
+  .table-content,
+  .editor-panel,
+  .validation-panel,
+  .kontroly-panel,
+  .Toaster,
+  .view-picker-overlay,
+  input[type="file"],
+  .drop-zone,
+  .parse-failure-screen { display: none !important; }
+
+  body, html {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .app, .jmhz-viewer-host {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .print-container {
+    display: block !important;
+    padding: 0;
+    color: #000;
+    font-size: 10pt;
+    line-height: 1.4;
+  }
+
+  .print-header {
+    margin-bottom: 12pt;
+    padding-bottom: 6pt;
+    border-bottom: 1.5pt solid #000;
+  }
+  .print-title {
+    font-size: 14pt;
+    font-weight: 700;
+  }
+  .print-subtitle {
+    font-size: 9pt;
+    color: #555;
+    margin-top: 2pt;
+  }
+
+  .print-emp-card {
+    page-break-inside: avoid;
+    margin-bottom: 10pt;
+    border: 0.75pt solid #aaa;
+    border-radius: 3pt;
+  }
+
+  .print-emp-header {
+    padding: 5pt 8pt;
+    background: #f0f0f0 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    font-weight: 600;
+    font-size: 10pt;
+    display: flex;
+    align-items: baseline;
+    gap: 10pt;
+    flex-wrap: wrap;
+  }
+  .print-emp-name {
+    font-size: 11pt;
+  }
+  .print-info-item {
+    font-size: 8pt;
+    font-weight: 400;
+    color: #444;
+  }
+  .print-info-label {
+    font-weight: 500;
+  }
+
+  .print-section {
+    border-top: 0.5pt solid #ccc;
+  }
+  .print-section-header {
+    padding: 3pt 8pt;
+    font-weight: 600;
+    font-size: 9pt;
+    background: #f8f8f8 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #333;
+  }
+
+  .print-field-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9pt;
+  }
+  .print-field-table th {
+    text-align: left;
+    padding: 2pt 6pt;
+    font-size: 8pt;
+    font-weight: 600;
+    border-bottom: 0.5pt solid #ccc;
+    color: #555;
+    text-transform: uppercase;
+  }
+  .print-field-table tr:nth-child(even) {
+    background: #fafafa !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-field-id {
+    padding: 1.5pt 6pt;
+    width: 60pt;
+    color: #888;
+    font-size: 8pt;
+    font-family: monospace;
+    vertical-align: top;
+  }
+  .print-field-label {
+    padding: 1.5pt 6pt;
+    width: 40%;
+    color: #333;
+    vertical-align: top;
+  }
+  .print-field-value {
+    padding: 1.5pt 6pt;
+    color: #000;
+    font-weight: 500;
+    vertical-align: top;
+  }
 }
