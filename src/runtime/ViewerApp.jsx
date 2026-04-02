@@ -2011,10 +2011,10 @@ export default function ViewerApp(props) {
             </Show>
             <Show when={hasLoadedXml()}><button onClick={toggleViewMode}>Zobrazení: {viewMode() === 'cards' ? 'Karty' : 'Tabulka'}</button></Show>
             <Show when={hasLoadedXml()}>
-              <button onClick={() => setXlsDialog(true)}>Export XLS</button>
+              <button onClick={() => setXlsDialog(true)}>Export do Excelu</button>
             </Show>
             <Show when={hasLoadedXml()}>
-              <button onClick={() => setPrintDialog(true)}>Tisk</button>
+              <button onClick={() => setPrintDialog(true)}>Export do PDF</button>
             </Show>
             <Show when={hasLoadedXml()}>
               <button classList={{ primary: editorVisible() }} onClick={toggleEditorVisibility}>
