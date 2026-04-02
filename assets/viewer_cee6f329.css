@@ -82,6 +82,8 @@ body {
 .toolbar button.primary, .btn.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
 .toolbar button.primary:hover, .btn.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 .toolbar button.primary:active, .btn.primary:active { transform: scale(0.98); }
+.btn-submit-cssz { background: #16a34a !important; color: #fff !important; border-color: #16a34a !important; }
+.btn-submit-cssz:hover { background: #15803d !important; border-color: #15803d !important; }
 .toolbar-left, .toolbar-center, .toolbar-actions { min-width: 0; }
 .toolbar-left {
   display: flex; align-items: center; gap: var(--sp-3); position: relative; z-index: 1;
@@ -90,7 +92,11 @@ body {
   display: flex; align-items: center; justify-content: center; min-width: 0; overflow: hidden;
 }
 .toolbar-actions {
-  display: flex; align-items: center; gap: var(--sp-3); justify-self: end; min-width: max-content; position: relative; z-index: 1;
+  display: flex; align-items: stretch; gap: var(--sp-3); justify-self: end; align-self: stretch; min-width: max-content; position: relative; z-index: 1;
+}
+.toolbar-actions > button,
+.toolbar-actions > .split-button {
+  align-self: center;
 }
 .split-button {
   position: relative;
