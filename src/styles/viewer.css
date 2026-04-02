@@ -314,14 +314,6 @@ body {
 
 .control-id { font-size: 0.6875rem; color: var(--text-muted); font-family: monospace; min-width: 3em; }
 
-/* === Toast === */
-.toast {
-  position: fixed; bottom: 20px; right: 20px; padding: var(--sp-3) var(--sp-4);
-  border-radius: var(--radius-lg); font-size: 0.8125rem; font-weight: 500; z-index: 100;
-  animation: toast-in 300ms var(--ease);
-}
-.toast.success { background: var(--success-bg); color: oklch(28% 0.08 155); border: 1px solid var(--success-border); }
-@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes flash-highlight { 0% { box-shadow: inset 0 0 0 2px var(--accent); } 100% { box-shadow: inset 0 0 0 2px transparent; } }
 .flash { animation: flash-highlight 1.5s var(--ease); }
 
@@ -636,3 +628,38 @@ body {
   gap: var(--sp-3);
   margin-top: var(--sp-6);
 }
+
+/* === Attachments (Přílohy) === */
+.attachment-list { padding: var(--sp-3); }
+.attachment-empty { color: var(--text-muted); font-style: italic; padding: var(--sp-3) 0; }
+.attachment-row td { padding: var(--sp-1) var(--sp-2); vertical-align: middle; }
+.attachment-row:hover { background: var(--bg-hover); }
+.attachment-name { font-weight: 500; }
+.attachment-size { color: var(--text-muted); font-size: 0.85em; white-space: nowrap; }
+.attachment-actions { white-space: nowrap; text-align: right; }
+.attachment-actions button {
+  background: none; border: none; cursor: pointer; padding: 2px 6px;
+  font-size: 14px; color: var(--text-muted); border-radius: var(--radius-sm);
+}
+.attachment-actions button:hover { background: var(--bg-active); color: var(--text-primary); }
+.btn-add-attachment {
+  display: inline-flex; align-items: center; gap: var(--sp-1);
+  margin-top: var(--sp-2); padding: var(--sp-1) var(--sp-3);
+  background: none; border: 1px dashed var(--border); border-radius: var(--radius-sm);
+  color: var(--text-secondary); cursor: pointer; font-size: 0.875rem;
+}
+.btn-add-attachment:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-subtle); }
+.attachment-list .field-table { width: 100%; }
+.attachment-list .field-table thead th {
+  font-size: 0.75rem; color: var(--text-muted); text-align: left;
+  padding: var(--sp-1) var(--sp-2); border-bottom: 1px solid var(--border-subtle);
+  font-weight: 500; text-transform: uppercase; letter-spacing: 0.03em;
+}
+.attachment-badge {
+  display: inline-block; margin-left: var(--sp-2); font-size: 0.75rem;
+  color: var(--text-muted); vertical-align: middle;
+}
+.attachments-col { width: 70px; text-align: center; white-space: nowrap; }
+.attachments-cell { text-align: center; cursor: pointer; }
+.attachments-cell:hover { background: var(--bg-hover); }
+.attachments-cell .attachment-badge { margin-left: 0; cursor: pointer; }

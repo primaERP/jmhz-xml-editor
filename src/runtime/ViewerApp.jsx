@@ -1,5 +1,7 @@
 import { createSignal, createMemo, createEffect, on, onMount, onCleanup, For, Show, Switch, Match, batch } from 'solid-js';
 import { createStore, reconcile, produce } from 'solid-js/store';
+import { Toaster, toast } from 'solid-sonner';
+import 'solid-sonner/styles.css';
 
 export default function ViewerApp(props) {
   const runtimeOptions = props.options;
@@ -22,7 +24,6 @@ export default function ViewerApp(props) {
   const [kontrolyFieldErrors, setKontrolyFieldErrors] = createSignal(new Map());
   const [editingField, setEditingField] = createSignal(null);
   const [editingHeaderKey, setEditingHeaderKey] = createSignal(null);
-  const [toastMessage, setToastMessage] = createSignal('');
   const [fileHandle, setFileHandle] = createSignal(null);
   const [headerExpanded, setHeaderExpanded] = createSignal(false);
   const [xlsDialog, setXlsDialog] = createSignal(false);
@@ -78,6 +79,7 @@ export default function ViewerApp(props) {
   const actionLabels = createMemo(() => { const f = formatRef(); return f ? (f.actionLabels || {}) : {}; });
   const formatName = createMemo(() => { const f = formatRef(); return f ? f.name : ''; });
   const isJmhz = createMemo(() => { const f = formatRef(); return f && f.rootElement === 'jmhz'; });
+  const hasAttachmentSection = createMemo(() => { const f = formatRef(); return f && f.sections.some(s => s._custom === 'attachments'); });
   const hasActions = createMemo(() => { const f = formatRef(); return f ? f.hasActions : false; });
   const rowInfoDefs = createMemo(() => { const f = formatRef(); return f ? (f.getRowInfo || []) : []; });
   const rowColumnLabel = createMemo(() => { const f = formatRef(); return f ? (f.rowColumnLabel || 'Jméno') : 'Jméno'; });
@@ -375,6 +377,27 @@ export default function ViewerApp(props) {
         fields[f.section + '/' + attrKey] = { value: v, _norm: norm(v), el: targetEl, attr: attrKey, modified: false, _field: f };
       });
     });
+    // Parse attachments (REGZEC only)
+    let attachments = [];
+    const attachsSec = format.sections.find(s => s._custom === 'attachments');
+    if (attachsSec) {
+      const attachsEl = formRoot.getElementsByTagNameNS ? 
+        Array.from(formRoot.getElementsByTagNameNS(format.ns || '*', 'attachs'))[0] :
+        getChildByLocalName(formRoot, 'attachs');
+      if (attachsEl) {
+        const attachEls = attachsEl.getElementsByTagNameNS ?
+          Array.from(attachsEl.getElementsByTagNameNS(format.ns || '*', 'attach')) :
+          getAllChildrenByLocalNameNS(attachsEl, 'attach', format.ns);
+        attachEls.forEach(el => {
+          const name = el.getAttribute('name') || '';
+          const desc = el.getAttribute('desc') || '';
+          const dataAttr = el.getAttribute('data') || '';
+          let dataSize = 0;
+          try { dataSize = Math.floor(dataAttr.length * 3 / 4); } catch (_) {}
+          attachments.push({ name, desc, dataSize, el });
+        });
+      }
+    }
     const label = format.getRowLabel(fields);
     const labelParts = label.split(/\s+/).filter(Boolean);
     return {
@@ -386,7 +409,8 @@ export default function ViewerApp(props) {
       surname: labelParts[0] || '',
       firstName: labelParts.slice(1).join(' ') || '',
       empType: format.determineRowType(fields),
-      fields
+      fields,
+      attachments
     };
   }
 
@@ -483,6 +507,10 @@ export default function ViewerApp(props) {
     if (kontrolyWarningCount() > 0) parts.push(kontrolyWarningCount() + ' varování');
     return parts.join(' · ');
   });
+  const validationToastOffset = createMemo(() => ({
+    right: 20,
+    bottom: (validationDockHeight() || 0) + 20
+  }));
   function closeValidationMenu() { setValidationMenuOpen(false); }
   function toggleValidationMenu() { if (isJmhz()) setValidationMenuOpen(v => !v); }
   onMount(() => window.addEventListener('click', closeValidationMenu));
@@ -617,6 +645,17 @@ export default function ViewerApp(props) {
         }
       }
       if (empMatches.size > 0) matches.set(emp._index, empMatches);
+      // Match employees with attachments when field filter matches the attachments section label
+      else if (fqParts.length > 0 && emp.attachments?.length > 0) {
+        const attachsSec = SECTIONS.find(s => s._custom === 'attachments');
+        if (attachsSec) {
+          const nLabel = norm(attachsSec.label);
+          if (fqParts.some(fq => nLabel.includes(fq) || fq.includes(nLabel))) {
+            empMatches.add('_card_');
+            matches.set(emp._index, empMatches);
+          }
+        }
+      }
     });
     return matches;
   });
@@ -785,6 +824,11 @@ export default function ViewerApp(props) {
   function sectionMatchesFieldFilter(section) {
     const fqParts = splitQuery(fieldSearch());
     if (!fqParts.length) return false;
+    // Custom sections (e.g. attachments) match by normalized section label
+    if (section._custom) {
+      const nLabel = norm(section.label);
+      return fqParts.some(fq => nLabel.includes(fq) || fq.includes(nLabel));
+    }
     return section.fields.some(f => fqParts.some(fq => fieldMatchesTerm(f, fq)));
   }
   function sectionHasMatchingFields(emp, section) {
@@ -798,6 +842,10 @@ export default function ViewerApp(props) {
     const actSections = ACTION_SECTIONS ? ACTION_SECTIONS[actionFilter()] : null;
     SECTIONS.forEach(sec => {
       if (actSections && !showAllFieldsInSearch() && !actSections.includes(sec.id)) return;
+      if (sec._custom) {
+        result.push({ ...sec, fields: [] });
+        return;
+      }
       const fields = FIELDS_BY_SECTION[sec.id] || [];
       if (!fields.length) return;
       const countKey = sec.parentRepeating || sec.id;
@@ -863,6 +911,10 @@ export default function ViewerApp(props) {
     if (collapsedSections[key]) return false;
     if (hasActionFilter() && autoExpandMatched()) return true;
     if (isMatched && hasCardFilter() && searchMatches()?.has(empIdx)) {
+      // Custom sections (attachments) auto-expand when their label matches the filter
+      if (section?._custom) {
+        if (sectionMatchesFieldFilter(section)) return true;
+      }
       const matches = searchMatches().get(empIdx);
       const baseSec = section?._baseSectionId || secId;
       const sectionFields = FIELDS_BY_SECTION[baseSec] || [];
@@ -986,6 +1038,7 @@ export default function ViewerApp(props) {
       setEmployees(empIndex, '_instanceOrders', reconcile(nextMirror._instanceOrders));
       setEmployees(empIndex, '_empEl', nextMirror._empEl);
       setEmployees(empIndex, '_formRoot', nextMirror._formRoot);
+      setEmployees(empIndex, 'attachments', reconcile(nextMirror.attachments));
     });
     updateEmployeeDerivedState(empIndex);
   }
@@ -1016,6 +1069,118 @@ export default function ViewerApp(props) {
     rebuildSingleEmployee(emp._index);
     setIsDirty(true);
     refreshRawXmlFromDoc();
+  }
+
+  // ── Attachment management (REGZEC přílohy) ──────────────────
+  const ATTACHMENT_WARN_SIZE = 20 * 1024 * 1024; // 20 MB
+
+  function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  function addAttachments(emp, files) {
+    if (!files || !files.length) return;
+    const current = emp.attachments?.length || 0;
+    const maxNew = 9 - current;
+    if (maxNew <= 0) { alert('Maximální počet příloh (9) byl dosažen.'); return; }
+    const toAdd = Array.from(files).slice(0, maxNew);
+    if (toAdd.length < files.length) {
+      alert('Lze přidat pouze ' + maxNew + ' příloh(y). Zbývající soubory byly vynechány.');
+    }
+    const largeFiles = toAdd.filter(f => f.size > ATTACHMENT_WARN_SIZE);
+    if (largeFiles.length) {
+      const names = largeFiles.map(f => f.name + ' (' + formatBytes(f.size) + ')').join(', ');
+      if (!confirm('Následující soubory jsou velké a jejich zpracování může trvat déle:\n' + names + '\n\nPokračovat?')) return;
+    }
+    let remaining = toAdd.length;
+    toAdd.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result.split(',')[1] || '';
+        const ns = activeFormat.ns;
+        const doc = emp._formRoot.ownerDocument;
+        let attachsEl = getChildByLocalName(emp._formRoot, 'attachs');
+        if (!attachsEl) {
+          attachsEl = ns ? doc.createElementNS(ns, 'attachs') : doc.createElement('attachs');
+          emp._formRoot.appendChild(attachsEl);
+        }
+        const attachEl = ns ? doc.createElementNS(ns, 'attach') : doc.createElement('attach');
+        attachEl.setAttribute('name', file.name.slice(0, 100));
+        attachEl.setAttribute('data', base64);
+        attachsEl.appendChild(attachEl);
+        remaining--;
+        if (remaining === 0) {
+          rebuildSingleEmployee(emp._index);
+          setIsDirty(true);
+          refreshRawXmlFromDoc();
+          requestAnimationFrame(() => measureSectionBody(emp._index + ':attachs'));
+        }
+      };
+      reader.onerror = () => {
+        remaining--;
+        if (remaining === 0) {
+          rebuildSingleEmployee(emp._index);
+          setIsDirty(true);
+          refreshRawXmlFromDoc();
+          requestAnimationFrame(() => measureSectionBody(emp._index + ':attachs'));
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function removeAttachment(emp, attachIndex) {
+    const att = emp.attachments?.[attachIndex];
+    if (!att?.el) return;
+    const parent = att.el.parentNode;
+    if (parent) {
+      parent.removeChild(att.el);
+      if (!parent.children.length) parent.parentNode?.removeChild(parent);
+    }
+    rebuildSingleEmployee(emp._index);
+    setIsDirty(true);
+    refreshRawXmlFromDoc();
+    requestAnimationFrame(() => measureSectionBody(emp._index + ':attachs'));
+  }
+
+  function downloadAttachment(emp, attachIndex) {
+    const att = emp.attachments?.[attachIndex];
+    if (!att?.el) return;
+    const data = att.el.getAttribute('data') || '';
+    const name = att.el.getAttribute('name') || 'attachment';
+    try {
+      const bin = atob(data);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const blob = new Blob([bytes]);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = name; a.click();
+      URL.revokeObjectURL(url);
+    } catch (_) {
+      alert('Poškozená příloha – data nelze dekódovat.');
+    }
+  }
+
+  function commitAttachmentEdit(emp, attachIndex, attr, newValue) {
+    const att = emp.attachments?.[attachIndex];
+    if (!att?.el) return;
+    const oldValue = att.el.getAttribute(attr) || '';
+    if (oldValue === newValue) { setEditingField(null); return; }
+    att.el.setAttribute(attr, newValue);
+    setUndoStack(prev => {
+      const stack = [...prev, { type: 'attachment-meta', empIndex: emp._index, attachIndex, attr, oldValue, newValue }];
+      if (stack.length > 200) stack.shift();
+      return stack;
+    });
+    setRedoStack([]);
+    rebuildSingleEmployee(emp._index);
+    setIsDirty(true);
+    refreshRawXmlFromDoc();
+    setEditingField(null);
   }
 
   // ── File I/O ───────────────────────────────────────────────
@@ -1136,7 +1301,18 @@ export default function ViewerApp(props) {
     a.click();
     URL.revokeObjectURL(url);
   }
-  function showToast(msg) { setToastMessage(msg); setTimeout(() => { setToastMessage(''); }, 2500); }
+  function showToast(msg, options = {}) {
+    const type = options.type || 'success';
+    const toastOptions = {
+      description: options.description,
+      duration: options.duration ?? 2500,
+      position: options.position ?? 'bottom-right'
+    };
+    if (type === 'error') return toast.error(msg, toastOptions);
+    if (type === 'warning') return toast.warning(msg, toastOptions);
+    if (type === 'info') return toast.info(msg, toastOptions);
+    return toast.success(msg, toastOptions);
+  }
   function updateTitle() {
     if (!runtimeOptions.manageDocumentTitle) return;
     document.title = (isDirty() ? '* ' : '') + (filename() || 'JMHZ Viewer');
@@ -1230,7 +1406,7 @@ export default function ViewerApp(props) {
     const parsed = parseXmlDocument(currentText);
     if (!parsed.ok) {
       clearStructuredState(parsed.errorMessage, { dirty: true });
-      if (!options.silent) showToast('XML v editoru není validní pro zobrazení');
+      if (!options.silent) showToast('XML v editoru není validní pro zobrazení', { type: 'error' });
       return false;
     }
     applyParsedXml(parsed, { xmlText: currentText, dirty: true, resetValidationState: false });
@@ -1250,7 +1426,7 @@ export default function ViewerApp(props) {
       queueMicrotask(() => {
         ensureMonacoEditor().catch((error) => {
           const message = error instanceof Error ? error.message : String(error);
-          showToast('Monaco se nepodařilo načíst');
+          showToast('Monaco se nepodařilo načíst', { type: 'error' });
           setMonacoLoadError(message);
           setEditorVisible(false);
         });
@@ -1318,6 +1494,8 @@ export default function ViewerApp(props) {
     const serializer = new XMLSerializer();
     let xmlString = serializer.serializeToString(xmlDoc());
     if (!xmlString.startsWith('<?xml')) xmlString = '<?xml version="1.0" encoding="UTF-8"?>\n' + xmlString;
+    // Replace large base64 attachment data with a small placeholder to avoid xmllint OOM
+    xmlString = xmlString.replace(/(<[a-zA-Z0-9]*:?attach\b[^>]*\bdata=")([^"]{64,})(")/g, '$1AA==$3');
 
     const lines = xmlString.split('\n');
     const empStartLines = [];
@@ -1448,16 +1626,16 @@ export default function ViewerApp(props) {
           setValidationErrors(newValidationErrors);
           setDocumentHeader(prev => prev.map(h => headerErrorKeys.has(h.key) ? { ...h, _hasError: true } : h));
         });
-        if (!silent) showToast(newErrors.length + ' chyb nalezeno');
+        if (!silent) showToast('XSD validace: ' + newErrors.length + ' ' + czPlural(newErrors.length, 'chyba', 'chyby', 'chyb'), { type: 'error', duration: 5000 });
         return { ok: false, errorCount: newErrors.length };
       } else {
-        if (!silent) showToast('Validace OK — žádné chyby');
+        if (!silent) showToast('XSD validace: žádné chyby', { duration: 5000 });
         return { ok: true, errorCount: 0 };
       }
     } catch (e) {
       console.error('Validation error:', e);
       setErrors([{ severity: 'error', empIndex: -1, employeeName: '', sectionLabel: '', fieldLabel: '', fieldKey: '', message: 'Chyba validace: ' + String(e) }]);
-      if (!silent) showToast('Chyba při validaci');
+      if (!silent) showToast('Chyba při validaci', { type: 'error', duration: 5000 });
       return { ok: false, errorCount: 1 };
     }
   }
@@ -1472,7 +1650,7 @@ export default function ViewerApp(props) {
     setDocumentHeader(prev => prev.map(h => ({ ...h, _hasKontrolyError: false, _hasKontrolyWarning: false })));
     try {
       if (typeof window.JMHZKontroly === 'undefined') {
-        if (!silent) showToast('Kontroly nejsou k dispozici');
+        if (!silent) showToast('Kontroly nejsou k dispozici', { type: 'warning', duration: 5000 });
         return { ok: false, errorCount: 0, warningCount: 0, totalCount: 0 };
       }
       const results = window.JMHZKontroly.runKontroly(
@@ -1515,16 +1693,16 @@ export default function ViewerApp(props) {
         const parts = [];
         if (errCount > 0) parts.push(errCount + ' ' + czPlural(errCount, 'chyba', 'chyby', 'chyb'));
         if (warnCount > 0) parts.push(warnCount + ' varování');
-        if (!silent) showToast('Kontroly: ' + parts.join(', '));
+        if (!silent) showToast('Kontroly MH: ' + parts.join(', '), { type: errCount > 0 ? 'error' : 'warning', duration: 5000 });
         return { ok: false, errorCount: errCount, warningCount: warnCount, totalCount: results.length };
       } else {
-        if (!silent) showToast('Kontroly OK — bez nálezů');
+        if (!silent) showToast('Kontroly MH: žádné chyby', { duration: 5000 });
         return { ok: true, errorCount: 0, warningCount: 0, totalCount: 0 };
       }
     } catch (e) {
       console.error('Kontroly error:', e);
       setKontrolyErrors([{ severity: 'error', controlId: 0, empIndex: -1, employeeName: '', sectionLabel: '', fieldLabel: '', fieldKey: '', headerKey: '', canNavigate: false, message: 'Chyba při spuštění kontrol: ' + String(e) }]);
-      if (!silent) showToast('Chyba při spuštění kontrol');
+      if (!silent) showToast('Chyba při spuštění kontrol', { type: 'error', duration: 5000 });
       return { ok: false, errorCount: 1, warningCount: 0, totalCount: 1 };
     }
   }
@@ -1540,12 +1718,21 @@ export default function ViewerApp(props) {
       : { ok: true, errorCount: 0, warningCount: 0, totalCount: 0 };
 
     const parts = [];
-    if (xsd.errorCount > 0) parts.push('XSD ' + xsd.errorCount + ' ' + czPlural(xsd.errorCount, 'chyba', 'chyby', 'chyb'));
-    if (kontroly.errorCount > 0) parts.push('Kontroly ' + kontroly.errorCount + ' ' + czPlural(kontroly.errorCount, 'chyba', 'chyby', 'chyb'));
+    const totalErrorCount = xsd.errorCount + kontroly.errorCount;
+    if (totalErrorCount > 0) parts.push(totalErrorCount + ' ' + czPlural(totalErrorCount, 'chyba', 'chyby', 'chyb'));
     if (kontroly.warningCount > 0) parts.push(kontroly.warningCount + ' varování');
 
-    if (parts.length > 0) showToast(parts.join(', '));
-    else showToast('Validace OK — bez chyb a varování');
+    if (parts.length > 0) {
+      showToast('Základní kontroly: ' + parts.join(', '), {
+        type: totalErrorCount > 0 ? 'error' : 'warning',
+        duration: 8000
+      });
+    } else {
+      showToast('Základní kontroly: žádné chyby', {
+        type: 'success',
+        duration: 8000
+      });
+    }
 
     return { xsd, kontroly };
   }
@@ -1575,6 +1762,10 @@ export default function ViewerApp(props) {
       const fk = errorTargetKey(f, section);
       if ((empErrors && empErrors.has(fk)) || (kErrors && kErrors.has(fk))) count++;
     });
+    // Count attachment-section errors (keys starting with 'attachs')
+    if (baseSec === 'attachs' && empErrors) {
+      empErrors.forEach((_, k) => { if (k.startsWith('attachs')) count++; });
+    }
     return count;
   }
 
@@ -1645,6 +1836,10 @@ export default function ViewerApp(props) {
           if (entry.isHeader) {
             activeFormat.writeHeaderField(entry.headerRef, entry.oldValue);
             applyHeaderFieldValue(entry.headerRef.key, entry.oldValue);
+          } else if (entry.type === 'attachment-meta') {
+            const emp = employees[entry.empIndex];
+            const att = emp?.attachments?.[entry.attachIndex];
+            if (att?.el) { att.el.setAttribute(entry.attr, entry.oldValue); rebuildSingleEmployee(entry.empIndex); }
           } else {
             const emp = employees[entry.empIndex];
             if (emp?.fields[entry.key]) {
@@ -1668,6 +1863,10 @@ export default function ViewerApp(props) {
           if (entry.isHeader) {
             activeFormat.writeHeaderField(entry.headerRef, entry.newValue);
             applyHeaderFieldValue(entry.headerRef.key, entry.newValue);
+          } else if (entry.type === 'attachment-meta') {
+            const emp = employees[entry.empIndex];
+            const att = emp?.attachments?.[entry.attachIndex];
+            if (att?.el) { att.el.setAttribute(entry.attr, entry.newValue); rebuildSingleEmployee(entry.empIndex); }
           } else {
             const emp = employees[entry.empIndex];
             if (emp?.fields[entry.key]) {
@@ -1754,8 +1953,8 @@ export default function ViewerApp(props) {
                 </Show>
                 <Show when={validationMenuOpen() && isJmhz()}>
                   <div class="validation-menu" role="menu">
-                    <button onClick={() => runValidation('xsd')} role="menuitem">Jen XSD</button>
-                    <button onClick={() => runValidation('kontroly')} role="menuitem">Jen Kontroly</button>
+                    <button onClick={() => runValidation('xsd')} role="menuitem">Jen XSD validace</button>
+                    <button onClick={() => runValidation('kontroly')} role="menuitem">Jen kontroly MH</button>
                   </div>
                 </Show>
               </div>
@@ -1933,6 +2132,9 @@ export default function ViewerApp(props) {
               <thead>
                 <tr>
                   <th class="name-col">{rowColumnLabel()}</th>
+                  <Show when={hasAttachmentSection()}>
+                    <th class="attachments-col">Přílohy</th>
+                  </Show>
                   <For each={visibleColumns()}>{(field, ci) =>
                     <th>
                       {field._colLabel || field.label}<span class="col-id">{field.csszId || ''}</span>
@@ -1947,13 +2149,20 @@ export default function ViewerApp(props) {
               <tbody>
                 <For each={displayList()}>{(item) =>
                   <Show when={item.type !== 'separator'} fallback={
-                    <tr class="separator-row"><td colSpan={visibleColumns().length + 1}>{item.count} dalších zaměstnanců</td></tr>
+                    <tr class="separator-row"><td colSpan={visibleColumns().length + 1 + (hasAttachmentSection() ? 1 : 0)}>{item.count} dalších zaměstnanců</td></tr>
                   }>
                     <tr classList={{ matched: item.matched }}>
                       <td class="name-cell">
                         <Show when={getEmployeeErrorCount(item.emp._index) > 0}><span class="error-dot-sm"></span></Show>
                         {getRowLabel(item.emp)}
                       </td>
+                      <Show when={hasAttachmentSection()}>
+                        <td class="attachments-cell" onClick={(e) => { e.stopPropagation(); if (item.emp.attachments?.length) { applyGroupQuery('přílohy'); setViewMode('cards'); } }}>
+                          <Show when={item.emp.attachments?.length > 0}>
+                            <span class="attachment-badge" title="Přílohy">📎 {item.emp.attachments.length}</span>
+                          </Show>
+                        </td>
+                      </Show>
                       <For each={visibleColumns()}>{(field, ci) =>
                         <td classList={{ 'has-error': hasFieldError(item.emp, field, field), 'has-warning': hasFieldWarning(item.emp, field, field), 'cell-match': item.matched && isFieldMatch(item.emp, field, field) }}
                             data-err-id={'e' + item.emp._index + '-' + errorTargetKey(field, field)}
@@ -2050,6 +2259,7 @@ export default function ViewerApp(props) {
                               classList={{ collapsed: !isSectionExpanded(item.emp._index, section._virtualId || section.id, item.matched, section) }}
                               ref={(el) => setSectionBodyRef(item.emp._index + ':' + (section._virtualId || section.id), el)}
                               style={getSectionBodyStyle(item.emp._index + ':' + (section._virtualId || section.id), isSectionExpanded(item.emp._index, section._virtualId || section.id, item.matched, section))}>
+                              <Show when={section._custom === 'attachments'} fallback={
                               <table class="field-table">
                                 <For each={getVisibleFields(item.emp, section, item.matched)}>{(field) =>
                                   <tr class="field-row"
@@ -2101,6 +2311,55 @@ export default function ViewerApp(props) {
                                   </tr>
                                 }</For>
                               </table>
+                              }>
+                                <div class="attachment-list">
+                                  <Show when={item.emp.attachments?.length > 0} fallback={
+                                    <div class="attachment-empty">Žádné přílohy</div>
+                                  }>
+                                    <table class="field-table">
+                                      <thead><tr><th style="width:40%">Název souboru</th><th style="width:35%">Popis</th><th style="width:10%">Velikost</th><th style="width:15%"></th></tr></thead>
+                                      <tbody>
+                                        <For each={item.emp.attachments}>{(att, ai) =>
+                                          <tr class="attachment-row" data-err-id={'e' + item.emp._index + '-attachs[' + ai() + ']'}>
+                                            <td class="attachment-name">
+                                              <Show when={editingField() === item.emp._index + ':att-name-' + ai()} fallback={
+                                                <span onClick={(e) => { e.stopPropagation(); setEditingField(item.emp._index + ':att-name-' + ai()); }} style="cursor:pointer; display:block; min-height:24px; padding:2px 0;">
+                                                  {att.name || <span class="empty">—</span>}
+                                                </span>
+                                              }>
+                                                <input type="text" value={att.name} maxLength={100}
+                                                  onBlur={(e) => commitAttachmentEdit(item.emp, ai(), 'name', e.target.value)}
+                                                  onKeyDown={(e) => { if (e.key === 'Enter') commitAttachmentEdit(item.emp, ai(), 'name', e.target.value); if (e.key === 'Escape') setEditingField(null); }}
+                                                  ref={el => setTimeout(() => el.focus())} />
+                                              </Show>
+                                            </td>
+                                            <td class="attachment-desc">
+                                              <Show when={editingField() === item.emp._index + ':att-desc-' + ai()} fallback={
+                                                <span onClick={(e) => { e.stopPropagation(); setEditingField(item.emp._index + ':att-desc-' + ai()); }} style="cursor:pointer; display:block; min-height:24px; padding:2px 0;">
+                                                  {att.desc || <span class="empty">—</span>}
+                                                </span>
+                                              }>
+                                                <input type="text" value={att.desc} maxLength={100}
+                                                  onBlur={(e) => commitAttachmentEdit(item.emp, ai(), 'desc', e.target.value)}
+                                                  onKeyDown={(e) => { if (e.key === 'Enter') commitAttachmentEdit(item.emp, ai(), 'desc', e.target.value); if (e.key === 'Escape') setEditingField(null); }}
+                                                  ref={el => setTimeout(() => el.focus())} />
+                                              </Show>
+                                            </td>
+                                            <td class="attachment-size">{formatBytes(att.dataSize)}</td>
+                                            <td class="attachment-actions">
+                                              <button class="btn-download-attachment" onClick={() => downloadAttachment(item.emp, ai())} title="Stáhnout přílohu" aria-label={'Stáhnout ' + att.name}>⬇</button>
+                                              <button class="btn-remove-attachment" onClick={() => removeAttachment(item.emp, ai())} title="Odebrat přílohu" aria-label={'Odebrat ' + att.name}>&times;</button>
+                                            </td>
+                                          </tr>
+                                        }</For>
+                                      </tbody>
+                                    </table>
+                                  </Show>
+                                  <Show when={!item.emp.attachments || item.emp.attachments.length < 9}>
+                                    <button class="btn-add-attachment" onClick={() => { const input = document.createElement('input'); input.type = 'file'; input.multiple = true; input.onchange = () => addAttachments(item.emp, input.files); input.click(); }} aria-label="Přidat přílohu">+ Přidat přílohu</button>
+                                  </Show>
+                                </div>
+                              </Show>
                             </div>
                           </div>
                         </Show>
@@ -2181,7 +2440,7 @@ export default function ViewerApp(props) {
           onMount(() => {
             const observer = new ResizeObserver(() => updateValidationDockHeight(vPanelEl));
             observer.observe(vPanelEl);
-            onCleanup(() => observer.disconnect());
+            onCleanup(() => { observer.disconnect(); setValidationDockHeight(0); });
             updateValidationDockHeight(vPanelEl);
           });
           return (
@@ -2231,10 +2490,14 @@ export default function ViewerApp(props) {
         })()}
       </Show>
 
-      {/* Toast */}
-      <Show when={toastMessage()}>
-        <div class="toast success">{toastMessage()}</div>
-      </Show>
+      <Toaster
+        position="bottom-right"
+        duration={2500}
+        visibleToasts={5}
+        expand
+        richColors
+        offset={validationToastOffset()}
+      />
 
       {/* Hidden file input */}
       <input type="file" ref={fileInputEl} accept=".xml" style="display:none" onChange={handleFileSelect} />
