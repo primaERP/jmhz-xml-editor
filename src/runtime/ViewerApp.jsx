@@ -1340,17 +1340,17 @@ export default function ViewerApp(props) {
     const xmlString = rawXmlText() || serializeXml();
     if (!xmlString) return;
     const suggestedName = filename() || 'JMHZ.xml';
-    if ('showSaveFilePicker' in window) {
+    if (typeof window.showSaveFilePicker === 'function') {
       try {
-        const handle = fileHandle() || await window.showSaveFilePicker({ suggestedName, types: [{ description: 'XML', accept: { 'application/xml': ['.xml'] } }] });
-        setFileHandle(handle);
+        const handle = await window.showSaveFilePicker({ suggestedName, types: [{ description: 'XML', accept: { 'application/xml': ['.xml'] } }] });
         const writable = await handle.createWritable(); await writable.write(xmlString); await writable.close();
-        showToast('Uloženo: ' + suggestedName); setIsDirty(false); updateTitle(); return;
+        showToast('Uloženo: ' + handle.name); setIsDirty(false); updateTitle(); return;
       } catch (e) { if (e.name === 'AbortError') return; }
     }
     const blob = new Blob([xmlString], { type: 'application/xml' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = suggestedName; a.click();
-    showToast('Staženo: ' + suggestedName); setIsDirty(false); updateTitle();
+    URL.revokeObjectURL(a.href);
+    showToast('Staženo do složky Stažené soubory: ' + suggestedName); setIsDirty(false); updateTitle();
   }
   function exportToExcel() {
     if (!ensureStructuredStateFromEditor({ silent: true })) {
@@ -2055,6 +2055,10 @@ export default function ViewerApp(props) {
               <button classList={{ primary: editorVisible() }} onClick={toggleEditorVisibility}>
                 Editor XML
               </button>
+              <button class="btn-submit-cssz" onClick={() => {
+                if (!confirm('Otevře se portál ČSSZ v nové záložce. XML se neodešle automaticky — nejprve ho uložte na disk a potom ho nahrajte na portálu. Chcete pokračovat?')) return;
+                window.open('https://eportal.cssz.cz/web/portal/-/sluzby/podani-nahranim-dat-z-ucetniho-systemu', '_blank');
+              }}>Podat na ČSSZ</button>
             </Show>
           </div>
         </Show>
@@ -2066,12 +2070,25 @@ export default function ViewerApp(props) {
       {/* XLS Export Dialog */}
       <Show when={xlsDialog()}>
         <div style="position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35)" onClick={(e) => { if (e.target === e.currentTarget) setXlsDialog(false); }}>
-          <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--sp-6);min-width:280px;display:flex;flex-direction:column;gap:var(--sp-4);">
+          <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--sp-6);min-width:320px;display:flex;flex-direction:column;gap:var(--sp-4);">
             <div style="font-weight:600;font-size:.9375rem;">Možnosti exportu</div>
+            <div style="font-size:0.8125rem;color:var(--text-muted);line-height:1.45;">
+              Vyberte, co se má doplnit do názvů sloupců v Excelu.<br />
+              Hodnoty zaměstnanců se tím nemění, upraví se jen text v hlavičce exportu.
+            </div>
             <div style="display:flex;flex-direction:column;gap:var(--sp-2);">
-              <label style="display:flex;align-items:center;gap:var(--sp-2);cursor:pointer;"><input type="checkbox" checked={xlsOptTitle()} onChange={(e) => setXlsOptTitle(e.target.checked)} /> Název sloupce</label>
-              <label style="display:flex;align-items:center;gap:var(--sp-2);cursor:pointer;"><input type="checkbox" checked={xlsOptId()} onChange={(e) => setXlsOptId(e.target.checked)} /> ID pole</label>
-              <label style="display:flex;align-items:center;gap:var(--sp-2);cursor:pointer;"><input type="checkbox" checked={xlsOptCategory()} onChange={(e) => setXlsOptCategory(e.target.checked)} /> Kategorie</label>
+              <label style="display:flex;align-items:flex-start;gap:var(--sp-2);cursor:pointer;">
+                <input type="checkbox" checked={xlsOptTitle()} onChange={(e) => setXlsOptTitle(e.target.checked)} style="margin-top:2px;" />
+                <span><strong>Název sloupce</strong><br /><span style="font-size:0.8125rem;color:var(--text-muted);">Do hlavičky přidá běžný název pole, např. „Příjmení“.</span></span>
+              </label>
+              <label style="display:flex;align-items:flex-start;gap:var(--sp-2);cursor:pointer;">
+                <input type="checkbox" checked={xlsOptId()} onChange={(e) => setXlsOptId(e.target.checked)} style="margin-top:2px;" />
+                <span><strong>ID pole</strong><br /><span style="font-size:0.8125rem;color:var(--text-muted);">Do hlavičky přidá technické ID z formuláře, např. „10505“.</span></span>
+              </label>
+              <label style="display:flex;align-items:flex-start;gap:var(--sp-2);cursor:pointer;">
+                <input type="checkbox" checked={xlsOptCategory()} onChange={(e) => setXlsOptCategory(e.target.checked)} style="margin-top:2px;" />
+                <span><strong>Kategorie</strong><br /><span style="font-size:0.8125rem;color:var(--text-muted);">Do hlavičky přidá název sekce, ve které se pole nachází.</span></span>
+              </label>
             </div>
             <div style="display:flex;gap:var(--sp-2);justify-content:flex-end;">
               <button class="btn" onClick={() => setXlsDialog(false)}>Zrušit</button>
