@@ -302,8 +302,8 @@ export default function ViewerApp(props) {
       setRedoStack([]);
       setValidationMenuOpen(false);
       setEditorHasInvalidXml(true);
-      setParseFailureMessage(errorMessage || 'XML se nepodařilo naparsovat. Opravte XML v editoru.');
-      setEditorStatusMessage('XML se nepodařilo naparsovat. Karty ani tabulka nejsou k dispozici.');
+      setParseFailureMessage(errorMessage || 'XML se nepodařilo načíst. Opravte XML v editoru.');
+      setEditorStatusMessage('XML se nepodařilo načíst. Karty ani tabulka nejsou k dispozici.');
       if (searchInputEl) searchInputEl.value = '';
       if (valueSearchInputEl) valueSearchInputEl.value = '';
       setIsDirty(options.dirty !== undefined ? Boolean(options.dirty) : isDirty());
@@ -324,7 +324,8 @@ export default function ViewerApp(props) {
   function parseXml(xmlText) {
     const parsed = parseXmlDocument(xmlText);
     if (!parsed.ok) {
-      alert(parsed.errorMessage);
+      setRawXmlText(xmlText);
+      clearStructuredState(parsed.errorMessage);
       return false;
     }
     return applyParsedXml(parsed, { xmlText, dirty: false });
@@ -1237,8 +1238,9 @@ export default function ViewerApp(props) {
     const hadLoadedXml = hasLoadedXml() || hasStructuredData();
     const parsed = parseXmlDocument(xmlText);
     if (!parsed.ok) {
-      alert(parsed.errorMessage);
-      if (!hadLoadedXml) resetToInitialLoadState();
+      setRawXmlText(xmlText);
+      if (sourceName) setFilename(sourceName);
+      clearStructuredState(parsed.errorMessage);
       return;
     }
     setFilename(sourceName || filename() || 'JMHZ.xml');
@@ -1363,7 +1365,7 @@ export default function ViewerApp(props) {
   }
   function updateTitle() {
     if (!runtimeOptions.manageDocumentTitle) return;
-    document.title = (isDirty() ? '* ' : '') + (filename() || 'JMHZ Viewer');
+    document.title = (isDirty() ? '* ' : '') + (filename() || 'Prohlížeč JMHZ');
   }
 
   function refreshRawXmlFromDoc() {
@@ -1980,7 +1982,7 @@ export default function ViewerApp(props) {
       <div class="toolbar">
         <div class="toolbar-left">
           <img src={uiAssets.logo} alt="ABRA" style="flex-shrink: 0; height: 28px; width: auto;" />
-          <span style="font-weight: 600; font-size: 0.875rem; color: var(--text-primary);">JMHZ Viewer</span>
+          <span style="font-weight: 600; font-size: 0.875rem; color: var(--text-primary);">Prohlížeč JMHZ</span>
         </div>
         <div class="toolbar-center"></div>
         <Show when={!showParseFailureScreen()}>
@@ -2503,7 +2505,7 @@ export default function ViewerApp(props) {
       <Show when={showParseFailureScreen()}>
         <div class="parse-failure-screen">
           <div class="parse-failure-box">
-            <h2>XML se nepodařilo naparsovat</h2>
+            <h2>XML se nepodařilo načíst</h2>
             <p>{parseFailureMessage()}</p>
             <div class="parse-failure-actions">
               <button class="btn primary" onClick={toggleEditorVisibility}>Otevřít editor XML</button>
