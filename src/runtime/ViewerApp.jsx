@@ -30,6 +30,10 @@ export default function ViewerApp(props) {
   const [xlsOptTitle, setXlsOptTitle] = createSignal(true);
   const [xlsOptId, setXlsOptId] = createSignal(false);
   const [xlsOptCategory, setXlsOptCategory] = createSignal(false);
+  const [printDialog, setPrintDialog] = createSignal(false);
+  const [printMode, setPrintMode] = createSignal(null); // null | 'all' | 'filtered'
+  const [printDialogChoice, setPrintDialogChoice] = createSignal('all');
+  const [printIncludeEmpty, setPrintIncludeEmpty] = createSignal(false);
   const [undoStack, setUndoStack] = createSignal([]);
   const [redoStack, setRedoStack] = createSignal([]);
   const [hasValidated, setHasValidated] = createSignal(false);
@@ -737,6 +741,50 @@ export default function ViewerApp(props) {
   // ── View mode ──────────────────────────────────────────────
   function toggleViewMode() { setViewMode(viewMode() === 'cards' ? 'table' : 'cards'); }
   function pickViewMode(mode) { setViewMode(mode); localStorage.setItem('preferredViewMode', mode); setShowViewPicker(false); }
+
+  // ── Print ─────────────────────────────────────────────────
+  function handlePrint() {
+    const mode = printDialogChoice();
+    setPrintDialog(false);
+    setPrintMode(mode);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => window.print());
+    });
+  }
+  function onAfterPrint() { setPrintMode(null); }
+  onMount(() => window.addEventListener('afterprint', onAfterPrint));
+  onCleanup(() => window.removeEventListener('afterprint', onAfterPrint));
+
+  function getPrintEmployees() {
+    if (printMode() === 'all') return sortByName([...employees]);
+    // 'filtered' — only currently expanded employees from displayList
+    return displayList()
+      .filter(item => item.type !== 'separator' && isEmployeeExpanded(item.emp._index, item.matched))
+      .map(item => ({ emp: item.emp, matched: item.matched }));
+  }
+  function getPrintSections(emp, matched) {
+    const sections = getSectionsForEmployee(emp);
+    if (printMode() === 'all') return sections;
+    // 'filtered' — only expanded sections
+    return sections.filter(sec => isSectionExpanded(emp._index, sec._virtualId || sec.id, matched, sec));
+  }
+  function getPrintFields(emp, section, matched) {
+    if (printMode() === 'all') {
+      const fields = section.fields;
+      if (printIncludeEmpty()) return fields;
+      return fields.filter(f => {
+        const val = emp.fields[fieldKey(f, section._instanceIndex)]?.value;
+        return val && val.trim() !== '';
+      });
+    }
+    // 'filtered' — use current visibility logic, then optionally strip empty
+    const visible = getVisibleFields(emp, section, matched);
+    if (printIncludeEmpty()) return visible;
+    return visible.filter(f => {
+      const val = emp.fields[fieldKey(f, section._instanceIndex)]?.value;
+      return val && val.trim() !== '';
+    });
+  }
 
   // ── Table height ───────────────────────────────────────────
   function updateTableContentHeight() {
@@ -1964,6 +2012,9 @@ export default function ViewerApp(props) {
               <button onClick={() => setXlsDialog(true)}>Export XLS</button>
             </Show>
             <Show when={hasLoadedXml()}>
+              <button onClick={() => setPrintDialog(true)}>Tisk</button>
+            </Show>
+            <Show when={hasLoadedXml()}>
               <button classList={{ primary: editorVisible() }} onClick={toggleEditorVisibility}>
                 Editor XML
               </button>
@@ -1988,6 +2039,35 @@ export default function ViewerApp(props) {
             <div style="display:flex;gap:var(--sp-2);justify-content:flex-end;">
               <button class="btn" onClick={() => setXlsDialog(false)}>Zrušit</button>
               <button class="btn primary" onClick={exportToExcel}>Exportovat</button>
+            </div>
+          </div>
+        </div>
+      </Show>
+
+      {/* Print Dialog */}
+      <Show when={printDialog()}>
+        <div style="position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35)" onClick={(e) => { if (e.target === e.currentTarget) setPrintDialog(false); }}>
+          <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--sp-6);min-width:300px;display:flex;flex-direction:column;gap:var(--sp-4);">
+            <div style="font-weight:600;font-size:.9375rem;">Možnosti tisku</div>
+            <div style="display:flex;flex-direction:column;gap:var(--sp-2);">
+              <label style="display:flex;align-items:center;gap:var(--sp-2);cursor:pointer;">
+                <input type="radio" name="printMode" value="all" checked={printDialogChoice() === 'all'} onChange={() => setPrintDialogChoice('all')} />
+                <span><strong>Kompletní výpis</strong><br /><span style="font-size:0.8125rem;color:var(--text-muted);">Všichni zaměstnanci, všechna vyplněná pole</span></span>
+              </label>
+              <label style="display:flex;align-items:center;gap:var(--sp-2);cursor:pointer;">
+                <input type="radio" name="printMode" value="filtered" checked={printDialogChoice() === 'filtered'} onChange={() => setPrintDialogChoice('filtered')} />
+                <span><strong>Aktuální zobrazení</strong><br /><span style="font-size:0.8125rem;color:var(--text-muted);">Jen to, co je právě viditelné a rozbalené</span></span>
+              </label>
+            </div>
+            <div style="border-top:1px solid var(--border-subtle);padding-top:var(--sp-2);margin-top:var(--sp-1);">
+              <label style="display:flex;align-items:center;gap:var(--sp-2);cursor:pointer;font-size:0.8125rem;">
+                <input type="checkbox" checked={printIncludeEmpty()} onChange={(e) => setPrintIncludeEmpty(e.target.checked)} />
+                Zahrnout i prázdná pole
+              </label>
+            </div>
+            <div style="display:flex;gap:var(--sp-2);justify-content:flex-end;">
+              <button class="btn" onClick={() => setPrintDialog(false)}>Zrušit</button>
+              <button class="btn primary" onClick={handlePrint}>Tisknout</button>
             </div>
           </div>
         </div>
@@ -2488,6 +2568,68 @@ export default function ViewerApp(props) {
             </>
           );
         })()}
+      </Show>
+
+      {/* Print View — hidden on screen, shown only via @media print */}
+      <Show when={printMode()}>
+        <div class="print-container">
+          <div class="print-header">
+            <div class="print-title">{formatName() || 'JMHZ'} — {filename()}</div>
+            <div class="print-subtitle">{printMode() === 'all' ? 'Kompletní výpis' : 'Aktuální zobrazení'}</div>
+          </div>
+          <For each={getPrintEmployees()}>{(entry) => {
+            const emp = printMode() === 'all' ? entry : entry.emp;
+            const matched = printMode() === 'all' ? false : entry.matched;
+            const sections = getPrintSections(emp, matched);
+            const nonEmptySections = sections.filter(sec => {
+              if (sec._custom === 'attachments') return emp.attachments?.length > 0;
+              return getPrintFields(emp, sec, matched).length > 0;
+            });
+            return (
+              <Show when={nonEmptySections.length > 0}>
+                <div class="print-emp-card">
+                  <div class="print-emp-header">
+                    <span class="print-emp-name">{getRowLabel(emp)}</span>
+                    <For each={rowInfoDefs()}>{(info) =>
+                      <Show when={emp.fields[info.key]?.value}>
+                        <span class="print-info-item"><span class="print-info-label">{info.label}:</span> {emp.fields[info.key]?.value}</span>
+                      </Show>
+                    }</For>
+                  </div>
+                  <For each={nonEmptySections}>{(section) =>
+                    <div class="print-section">
+                      <div class="print-section-header">{section.label}</div>
+                      <Show when={section._custom === 'attachments'} fallback={
+                        <table class="print-field-table">
+                          <For each={getPrintFields(emp, section, matched)}>{(field) =>
+                            <tr>
+                              <td class="print-field-id">{field.csszId || ''}</td>
+                              <td class="print-field-label">{field.label}</td>
+                              <td class="print-field-value">{emp.fields[fieldKey(field, section._instanceIndex)]?.value || ''}</td>
+                            </tr>
+                          }</For>
+                        </table>
+                      }>
+                        <table class="print-field-table">
+                          <thead><tr><th>Název</th><th>Popis</th><th>Velikost</th></tr></thead>
+                          <tbody>
+                            <For each={emp.attachments}>{(att) =>
+                              <tr>
+                                <td>{att.name || '—'}</td>
+                                <td>{att.desc || '—'}</td>
+                                <td>{att.size || '—'}</td>
+                              </tr>
+                            }</For>
+                          </tbody>
+                        </table>
+                      </Show>
+                    </div>
+                  }</For>
+                </div>
+              </Show>
+            );
+          }}</For>
+        </div>
       </Show>
 
       <Toaster

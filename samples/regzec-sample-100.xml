@@ -21,6 +21,10 @@
       <fact highedu="N" ztp="N"/>
       <nocitizen freeacc="N" permfro="2025-04-05" permid="P476417" permto="2027-01-25" permtype="1"/>
       <forinreg juris="N"/>
+      <attachs>
+        <attach name="doklad-totoznosti.pdf" desc="Doklad totožnosti" data="VGhpcyBpcyBhIHRlc3QgUERGIGF0dGFjaG1lbnQgY29udGVudCBmb3IgUkVHWkVDIGVkaXRvciB0ZXN0aW5nLg=="/>
+        <attach name="pracovni-smlouva.docx" desc="Pracovní smlouva" data="U2FtcGxlIERPQ1ggY29udGVudCBmb3IgdGVzdGluZyBwxZnDrWxvaHkgZnVuY3Rpb25hbGl0eS4="/>
+      </attachs>
     </employee>
     <employee act="3" dat="2026-03-16" sqnr="2" dep="502">
       <client bno="9259242291" ikmpsv="1774093639">

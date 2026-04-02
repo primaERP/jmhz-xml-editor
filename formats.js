@@ -58,6 +58,7 @@ const REGZEC_CONFIG = {
     { id: 'fact', label: 'Další údaje', element: 'fact' },
     { id: 'fact/healtrest', label: 'Zdravotní omezení', element: 'fact', child: 'healtrest' },
     { id: 'forinreg', label: 'Cizí právní předpisy', element: 'forinreg' },
+    { id: 'attachs', label: 'Přílohy', element: 'attachs', _custom: 'attachments' },
     // Foreigner/conditional sections (at end)
     { id: 'client/fdr', label: 'Pobyt v ČR', element: 'client', child: 'fdr', _foreign: true },
     { id: 'client/rdr', label: 'Adresa rezidence', element: 'client', child: 'rdr', _foreign: true },
@@ -186,10 +187,10 @@ const REGZEC_CONFIG = {
   actionSections: {
     '': null,
     '1': null,
-    '2': ['employee', 'client', 'client/name', 'comp', 'job', 'unemplcomp'],
-    '3': ['employee', 'client', 'client/name', 'client/birth', 'client/stat', 'client/adr', 'comp', 'job', 'job/prof', 'job/position', 'pens', 'insh', 'fact', 'fact/healtrest', 'forinreg', 'client/fdr', 'client/rdr', 'client/taxidrezid', 'client/proofid', 'nocitizen'],
+    '2': ['employee', 'client', 'client/name', 'comp', 'job', 'unemplcomp', 'attachs'],
+    '3': ['employee', 'client', 'client/name', 'client/birth', 'client/stat', 'client/adr', 'comp', 'job', 'job/prof', 'job/position', 'pens', 'insh', 'fact', 'fact/healtrest', 'forinreg', 'client/fdr', 'client/rdr', 'client/taxidrezid', 'client/proofid', 'nocitizen', 'attachs'],
     '4': null,
-    '8': ['employee', 'client', 'comp', 'job'],
+    '8': ['employee', 'client', 'comp', 'job', 'attachs'],
   },
   fieldRules: {
     // employee header
@@ -368,6 +369,7 @@ const REGZEC_CONFIG = {
     { id: 'termination',label: 'Ukončení',        query: 'podpora v nezamestnanosti' },
     { id: 'health',     label: 'Zdraví',          query: 'dalsi udaje ztp, zdravotni omezeni' },
     { id: 'foreign',    label: 'Cizinec',         query: 'cizozemsky nositel pojisteni, cizi pravni predpisy, cizinec \u2013 pracovni opravneni, danova identifikace, doklad totoznosti' },
+    { id: 'attachments',label: 'Přílohy',         query: 'přílohy' },
   ],
 };
 
