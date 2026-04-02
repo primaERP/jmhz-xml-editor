@@ -222,7 +222,8 @@ body {
 .emp-card-header .spacer { flex: 1; }
 
 /* === Card Body (expanded sections) === */
-.emp-card-body { border-top: 1px solid var(--border-subtle); }
+.emp-card-body { border-top: 1px solid var(--border-subtle); overflow: hidden; transition: max-height 250ms var(--ease); }
+.emp-card-body.card-body-collapsed { max-height: 0 !important; border-top: none; }
 
 /* === Empty State === */
 .empty-state { display: flex; flex-direction: column; align-items: center; padding-top: var(--sp-12); color: var(--text-muted); }
@@ -265,6 +266,8 @@ body {
 .field-table tr:last-child { border-bottom: none; }
 .field-table td { padding: 5px var(--sp-3) 5px var(--sp-4); vertical-align: middle; }
 .field-id { font-family: ui-monospace, "Cascadia Code", "Source Code Pro", monospace; font-size: 0.6875rem; color: var(--text-faint); width: 50px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.field-req { width: 48px; min-width: 48px; max-width: 48px; white-space: nowrap; vertical-align: middle; padding: 5px 0 !important; }
+.field-req .col-req { margin: 0 auto; display: block; width: fit-content; }
 .field-label { font-size: 0.8125rem; color: var(--text-primary); width: 240px; }
 .field-label .xpath { display: block; font-size: 0.625rem; color: var(--text-faint); font-family: ui-monospace, "Cascadia Code", "Source Code Pro", monospace; margin-top: 1px; }
 .field-label .required { color: var(--error); margin-left: 2px; }
@@ -464,7 +467,7 @@ body {
 .table-view .error-dot-sm { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--error); margin-left: var(--sp-1); }
 
 /* === Action filter buttons === */
-.action-filter { display: inline-flex; gap: 2px; margin-left: var(--sp-2); }
+.action-filter { display: inline-flex; gap: 2px; }
 .action-filter button {
   padding: 2px var(--sp-2); font-size: 0.6875rem; border: 1px solid var(--border);
   border-radius: var(--radius-sm); background: var(--bg-elevated); cursor: pointer;
@@ -474,8 +477,8 @@ body {
 .action-filter button.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
 
 /* === Group filter pills === */
-.group-filter-bar { padding: 0 32px 6px; max-width: 1000px; margin: 0 auto; width: 100%; }
-.group-filter-pills { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.group-filter-bar { padding: 0 32px 0; max-width: 1000px; margin: 0 auto 6px; width: 100%; }
+.group-filter-pills { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
 .group-pill {
   padding: 3px 10px; font-size: 0.72rem; font-weight: 500;
   border: 1px solid var(--border); border-radius: 20px;
@@ -484,7 +487,7 @@ body {
   user-select: none; line-height: 1.5;
 }
 .group-pill:hover { background: var(--bg-hover); color: var(--text-primary); }
-.group-pill.active { background: var(--accent-subtle); color: var(--accent); border-color: var(--accent); font-weight: 600; }
+.group-pill.active { background: var(--accent-subtle); color: var(--accent); border-color: var(--accent); }
 
 /* === View mode picker === */
 .view-picker-overlay { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.4); }
@@ -708,6 +711,9 @@ body {
     padding-bottom: 6pt;
     border-bottom: 1.5pt solid #000;
   }
+  .print-records-after-header {
+    break-before: page;
+  }
   .print-title {
     font-size: 14pt;
     font-weight: 700;
@@ -716,6 +722,32 @@ body {
     font-size: 9pt;
     color: #555;
     margin-top: 2pt;
+  }
+
+  .print-header-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8pt;
+    font-size: 9.5pt;
+  }
+  .print-header-label {
+    padding: 2pt 8pt 2pt 0;
+    width: 30%;
+    color: #555;
+    font-weight: 500;
+    vertical-align: top;
+    white-space: nowrap;
+  }
+  .print-header-value {
+    padding: 2pt 0;
+    color: #000;
+    font-weight: 500;
+    vertical-align: top;
+  }
+
+  .col-req {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   .print-emp-card {
@@ -785,11 +817,23 @@ body {
   }
   .print-field-id {
     padding: 1.5pt 6pt;
-    width: 60pt;
+    width: 50pt;
     color: #888;
     font-size: 8pt;
     font-family: monospace;
     vertical-align: top;
+  }
+  .print-field-req {
+    padding: 1.5pt 2pt;
+    width: 30pt;
+    white-space: nowrap;
+    text-align: center;
+    font-size: 7pt;
+    font-weight: 700;
+    color: #c00;
+    vertical-align: top;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
   .print-field-label {
     padding: 1.5pt 6pt;

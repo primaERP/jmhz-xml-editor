@@ -16,6 +16,7 @@
         <xs:complexType>
           <xs:attribute name="EmailNotifikace" type="xs:string"/>
           <xs:attribute name="ISDSreport" type="xs:string"/>
+          <xs:attribute name="ISDSReport" type="xs:string"/>
           <xs:attribute name="VerzeProtokolu" type="xs:string"/>
         </xs:complexType>
       </xs:element>

@@ -34,6 +34,8 @@ export default function ViewerApp(props) {
   const [printMode, setPrintMode] = createSignal(null); // null | 'all' | 'filtered'
   const [printDialogChoice, setPrintDialogChoice] = createSignal('all');
   const [printIncludeEmpty, setPrintIncludeEmpty] = createSignal(false);
+  const [printIncludeHeader, setPrintIncludeHeader] = createSignal(true);
+  const [attachmentModalEmp, setAttachmentModalEmp] = createSignal(null);
   const [undoStack, setUndoStack] = createSignal([]);
   const [redoStack, setRedoStack] = createSignal([]);
   const [hasValidated, setHasValidated] = createSignal(false);
@@ -63,9 +65,13 @@ export default function ViewerApp(props) {
   const [collapsedMatchedEmps, setCollapsedMatchedEmps] = createStore({});
   const [showAllSections, setShowAllSections] = createStore({});
   const [sectionBodyHeights, setSectionBodyHeights] = createStore({});
+  const [cardBodyHeights, setCardBodyHeights] = createStore({});
 
   // ── Non-reactive refs ──────────────────────────────────────
   const sectionBodyEls = new Map();
+  const cardBodyEls = new Map();
+  // Track which cards have been expanded at least once (to keep DOM alive for collapse animation)
+  const [cardEverExpanded, setCardEverExpanded] = createStore({});
   let fileInputEl;
   let searchInputEl;
   let valueSearchInputEl;
@@ -725,10 +731,20 @@ export default function ViewerApp(props) {
   // ── Employee expand/collapse ───────────────────────────────
   function toggleEmployee(index, isMatched) {
     if (autoExpandMatched() && (hasActionFilter() || (isMatched && hasSearch()))) {
-      if (collapsedMatchedEmps[index]) setCollapsedMatchedEmps(index, undefined);
-      else setCollapsedMatchedEmps(index, true);
+      if (collapsedMatchedEmps[index]) {
+        measureCardBody('card:' + index);
+        setCollapsedMatchedEmps(index, undefined);
+      } else {
+        setCollapsedMatchedEmps(index, true);
+      }
     } else {
-      setExpandedEmployee(expandedEmployee() === index ? -1 : index);
+      if (expandedEmployee() === index) {
+        setExpandedEmployee(-1);
+      } else {
+        setCardEverExpanded(index, true);
+        measureCardBody('card:' + index);
+        setExpandedEmployee(index);
+      }
     }
   }
 
@@ -929,6 +945,25 @@ export default function ViewerApp(props) {
   function getSectionBodyStyle(key, isExpanded) {
     if (!isExpanded) return {};
     const height = sectionBodyHeights[key];
+    return height ? { 'max-height': height + 'px' } : { 'max-height': 'none' };
+  }
+
+  function measureCardBody(key) {
+    const el = cardBodyEls.get(key);
+    if (el) setCardBodyHeights(key, el.scrollHeight);
+  }
+  function setCardBodyRef(key, el) {
+    if (el) {
+      cardBodyEls.set(key, el);
+      setCardBodyHeights(key, el.scrollHeight);
+    } else {
+      cardBodyEls.delete(key);
+      setCardBodyHeights(key, undefined);
+    }
+  }
+  function getCardBodyStyle(key, isExpanded) {
+    if (!isExpanded) return {};
+    const height = cardBodyHeights[key];
     return height ? { 'max-height': height + 'px' } : { 'max-height': 'none' };
   }
 
@@ -2061,7 +2096,11 @@ export default function ViewerApp(props) {
                 <span><strong>Aktuální zobrazení</strong><br /><span style="font-size:0.8125rem;color:var(--text-muted);">Jen to, co je právě viditelné a rozbalené</span></span>
               </label>
             </div>
-            <div style="border-top:1px solid var(--border-subtle);padding-top:var(--sp-2);margin-top:var(--sp-1);">
+            <div style="border-top:1px solid var(--border-subtle);padding-top:var(--sp-2);margin-top:var(--sp-1);display:flex;flex-direction:column;gap:var(--sp-2);">
+              <label style="display:flex;align-items:center;gap:var(--sp-2);cursor:pointer;font-size:0.8125rem;">
+                <input type="checkbox" checked={printIncludeHeader()} onChange={(e) => setPrintIncludeHeader(e.target.checked)} />
+                Zahrnout hlavičku dokumentu
+              </label>
               <label style="display:flex;align-items:center;gap:var(--sp-2);cursor:pointer;font-size:0.8125rem;">
                 <input type="checkbox" checked={printIncludeEmpty()} onChange={(e) => setPrintIncludeEmpty(e.target.checked)} />
                 Zahrnout i prázdná pole
@@ -2073,6 +2112,67 @@ export default function ViewerApp(props) {
             </div>
           </div>
         </div>
+      </Show>
+
+      {/* Attachment Modal (table view) */}
+      <Show when={attachmentModalEmp()}>
+        {(() => { const emp = attachmentModalEmp(); return (
+          <div style="position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35)" onClick={(e) => { if (e.target === e.currentTarget) setAttachmentModalEmp(null); }}>
+            <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--sp-6);min-width:520px;max-width:700px;width:90%;display:flex;flex-direction:column;gap:var(--sp-4);">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div style="font-weight:600;font-size:.9375rem;">Přílohy — {getRowLabel(emp)}</div>
+                <button onClick={() => setAttachmentModalEmp(null)} style="background:none;border:none;cursor:pointer;font-size:1.25rem;color:var(--text-muted);padding:0 4px;" aria-label="Zavřít">&times;</button>
+              </div>
+              <div class="attachment-list">
+                <Show when={emp.attachments?.length > 0} fallback={
+                  <div class="attachment-empty">Žádné přílohy</div>
+                }>
+                  <table class="field-table">
+                    <thead><tr><th style="width:40%">Název souboru</th><th style="width:35%">Popis</th><th style="width:10%">Velikost</th><th style="width:15%"></th></tr></thead>
+                    <tbody>
+                      <For each={emp.attachments}>{(att, ai) =>
+                        <tr class="attachment-row">
+                          <td class="attachment-name">
+                            <Show when={editingField() === emp._index + ':att-name-' + ai()} fallback={
+                              <span onClick={(e) => { e.stopPropagation(); setEditingField(emp._index + ':att-name-' + ai()); }} style="cursor:pointer; display:block; min-height:24px; padding:2px 0;">
+                                {att.name || <span class="empty">—</span>}
+                              </span>
+                            }>
+                              <input type="text" value={att.name} maxLength={100}
+                                onBlur={(e) => commitAttachmentEdit(emp, ai(), 'name', e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') commitAttachmentEdit(emp, ai(), 'name', e.target.value); if (e.key === 'Escape') setEditingField(null); }}
+                                ref={el => setTimeout(() => el.focus())} />
+                            </Show>
+                          </td>
+                          <td class="attachment-desc">
+                            <Show when={editingField() === emp._index + ':att-desc-' + ai()} fallback={
+                              <span onClick={(e) => { e.stopPropagation(); setEditingField(emp._index + ':att-desc-' + ai()); }} style="cursor:pointer; display:block; min-height:24px; padding:2px 0;">
+                                {att.desc || <span class="empty">—</span>}
+                              </span>
+                            }>
+                              <input type="text" value={att.desc} maxLength={100}
+                                onBlur={(e) => commitAttachmentEdit(emp, ai(), 'desc', e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') commitAttachmentEdit(emp, ai(), 'desc', e.target.value); if (e.key === 'Escape') setEditingField(null); }}
+                                ref={el => setTimeout(() => el.focus())} />
+                            </Show>
+                          </td>
+                          <td class="attachment-size">{formatBytes(att.dataSize)}</td>
+                          <td class="attachment-actions">
+                            <button class="btn-download-attachment" onClick={() => downloadAttachment(emp, ai())} title="Stáhnout přílohu"><svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M7.25 1v6.44L5.03 5.22a.75.75 0 0 0-1.06 1.06l3.5 3.5a.75.75 0 0 0 1.06 0l3.5-3.5a.75.75 0 0 0-1.06-1.06L8.75 7.44V1h-1.5zM2.5 11v2.5h11V11h1.5v3a1 1 0 0 1-1 1h-12a1 1 0 0 1-1-1v-3h1.5z"/></svg></button>
+                            <button class="btn-remove-attachment" onClick={() => removeAttachment(emp, ai())} title="Odebrat přílohu">&times;</button>
+                          </td>
+                        </tr>
+                      }</For>
+                    </tbody>
+                  </table>
+                </Show>
+                <Show when={!emp.attachments || emp.attachments.length < 9}>
+                  <button class="btn-add-attachment" onClick={() => { const input = document.createElement('input'); input.type = 'file'; input.multiple = true; input.onchange = () => addAttachments(emp, input.files); input.click(); }} aria-label="Přidat přílohu">+ Přidat přílohu</button>
+                </Show>
+              </div>
+            </div>
+          </div>
+        ); })()}
       </Show>
 
       {/* View mode picker (first visit) */}
@@ -2166,6 +2266,10 @@ export default function ViewerApp(props) {
           <Show when={currentFormatGroups().length > 0}>
             <div class="group-filter-bar">
               <div class="group-filter-pills">
+                <button class="group-pill" classList={{ active: !fieldSearch() }}
+                  onClick={() => applyGroupQuery('')}>
+                  Vše
+                </button>
                 <For each={currentFormatGroups()}>{(group) =>
                   <button class="group-pill" classList={{ active: fieldSearch() === group.query }}
                     onClick={() => fieldSearch() === group.query ? applyGroupQuery('') : applyGroupQuery(group.query)}>
@@ -2177,10 +2281,9 @@ export default function ViewerApp(props) {
           </Show>
 
           <Show when={hasSearch() || hasActions()}>
-            <div style="display: flex; align-items: center; gap: 16px; padding: 0 36px 6px; max-width: 1000px; margin: 0 auto; width: 100%; font-size: 0.75rem; color: var(--text-muted);">
+            <div style="display: flex; align-items: center; gap: 16px; padding: 0 32px 6px; max-width: 1000px; margin: 0 auto; width: 100%; font-size: 0.75rem; color: var(--text-muted);">
               <Show when={hasActions()}>
                 <span style="font-size: 12px; color: #6B7280; display: flex; align-items: center; gap: 4px;">
-                  Akce:
                   <span class="action-filter">
                     <For each={['', '1', '2', '3', '4', '8']}>{(a) =>
                       <button onClick={() => setActionFilter(a)} classList={{ active: actionFilter() === a }}>{a ? 'A' + a : 'Vše'}</button>
@@ -2214,9 +2317,6 @@ export default function ViewerApp(props) {
               <thead>
                 <tr>
                   <th class="name-col">{rowColumnLabel()}</th>
-                  <Show when={hasAttachmentSection()}>
-                    <th class="attachments-col">Přílohy</th>
-                  </Show>
                   <For each={visibleColumns()}>{(field, ci) =>
                     <th>
                       {field._colLabel || field.label}<span class="col-id">{field.csszId || ''}</span>
@@ -2226,6 +2326,9 @@ export default function ViewerApp(props) {
                       </Show>
                     </th>
                   }</For>
+                  <Show when={hasAttachmentSection()}>
+                    <th class="attachments-col">Přílohy</th>
+                  </Show>
                 </tr>
               </thead>
               <tbody>
@@ -2238,13 +2341,6 @@ export default function ViewerApp(props) {
                         <Show when={getEmployeeErrorCount(item.emp._index) > 0}><span class="error-dot-sm"></span></Show>
                         {getRowLabel(item.emp)}
                       </td>
-                      <Show when={hasAttachmentSection()}>
-                        <td class="attachments-cell" onClick={(e) => { e.stopPropagation(); if (item.emp.attachments?.length) { applyGroupQuery('přílohy'); setViewMode('cards'); } }}>
-                          <Show when={item.emp.attachments?.length > 0}>
-                            <span class="attachment-badge" title="Přílohy">📎 {item.emp.attachments.length}</span>
-                          </Show>
-                        </td>
-                      </Show>
                       <For each={visibleColumns()}>{(field, ci) =>
                         <td classList={{ 'has-error': hasFieldError(item.emp, field, field), 'has-warning': hasFieldWarning(item.emp, field, field), 'cell-match': item.matched && isFieldMatch(item.emp, field, field) }}
                             data-err-id={'e' + item.emp._index + '-' + errorTargetKey(field, field)}
@@ -2278,6 +2374,11 @@ export default function ViewerApp(props) {
                           </Show>
                         </td>
                       }</For>
+                      <Show when={hasAttachmentSection()}>
+                        <td class="attachments-cell" onClick={(e) => { e.stopPropagation(); setAttachmentModalEmp(item.emp); }}>
+                          <span class="attachment-badge" title="Přílohy">📎 {item.emp.attachments?.length || 0}</span>
+                        </td>
+                      </Show>
                     </tr>
                   </Show>
                 }</For>
@@ -2317,8 +2418,10 @@ export default function ViewerApp(props) {
                       </span>
                     </Show>
                   </div>
-                  <Show when={isEmployeeExpanded(item.emp._index, item.matched)}>
-                    <div class="emp-card-body">
+                  <div class="emp-card-body" classList={{ 'card-body-collapsed': !isEmployeeExpanded(item.emp._index, item.matched) }}
+                    ref={(el) => setCardBodyRef('card:' + item.emp._index, el)}
+                    style={getCardBodyStyle('card:' + item.emp._index, isEmployeeExpanded(item.emp._index, item.matched))}>
+                    <Show when={isEmployeeExpanded(item.emp._index, item.matched) || cardEverExpanded[item.emp._index]}>
                       <For each={getSectionsForEmployee(item.emp)}>{(section) =>
                         <Show when={!item.matched || sectionMatchesFieldFilter(section) || sectionHasMatchingFields(item.emp, section) || showAllFieldsInSearch()}>
                           <div class="section-card">
@@ -2349,11 +2452,9 @@ export default function ViewerApp(props) {
                                     data-field-id={field.csszId}
                                     data-err-id={'e' + item.emp._index + '-' + errorTargetKey(field, section)}>
                                     <td class="field-id">{field.csszId || ''}</td>
+                                    {actionFilter() && (() => { const req = getFieldReq(field, actionFilter()); return <td class="field-req">{req ? <span class={"col-req " + reqClass(req)} title={REQ_TITLES[req] || ''}>{req}</span> : ''}</td>; })()}
                                     <td class="field-label">
                                       {field.label}
-                                      <Show when={actionFilter() && getFieldReq(field, actionFilter())}>
-                                        <span class={"col-req " + reqClass(getFieldReq(field, actionFilter()))} title={REQ_TITLES[getFieldReq(field, actionFilter())] || ''}>{getFieldReq(field, actionFilter())}</span>
-                                      </Show>
                                       <span class="xpath">{fieldXpath(field)}</span>
                                     </td>
                                     <td class="field-value">
@@ -2429,7 +2530,7 @@ export default function ViewerApp(props) {
                                             </td>
                                             <td class="attachment-size">{formatBytes(att.dataSize)}</td>
                                             <td class="attachment-actions">
-                                              <button class="btn-download-attachment" onClick={() => downloadAttachment(item.emp, ai())} title="Stáhnout přílohu" aria-label={'Stáhnout ' + att.name}>⬇</button>
+                                              <button class="btn-download-attachment" onClick={() => downloadAttachment(item.emp, ai())} title="Stáhnout přílohu" aria-label={'Stáhnout ' + att.name}><svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M7.25 1v6.44L5.03 5.22a.75.75 0 0 0-1.06 1.06l3.5 3.5a.75.75 0 0 0 1.06 0l3.5-3.5a.75.75 0 0 0-1.06-1.06L8.75 7.44V1h-1.5zM2.5 11v2.5h11V11h1.5v3a1 1 0 0 1-1 1h-12a1 1 0 0 1-1-1v-3h1.5z"/></svg></button>
                                               <button class="btn-remove-attachment" onClick={() => removeAttachment(item.emp, ai())} title="Odebrat přílohu" aria-label={'Odebrat ' + att.name}>&times;</button>
                                             </td>
                                           </tr>
@@ -2446,8 +2547,8 @@ export default function ViewerApp(props) {
                           </div>
                         </Show>
                       }</For>
-                    </div>
-                  </Show>
+                    </Show>
+                  </div>
                 </div>
               </Show>
             }</For>
@@ -2575,10 +2676,35 @@ export default function ViewerApp(props) {
       {/* Print View — hidden on screen, shown only via @media print */}
       <Show when={printMode()}>
         <div class="print-container">
+          <Show when={printIncludeHeader()}>
           <div class="print-header">
             <div class="print-title">{formatName() || 'JMHZ'} — {filename()}</div>
-            <div class="print-subtitle">{printMode() === 'all' ? 'Kompletní výpis' : 'Aktuální zobrazení'}</div>
+            <div class="print-subtitle">
+              {printMode() === 'all' ? 'Kompletní výpis' : 'Aktuální zobrazení'}
+              <Show when={actionFilter()}>{' · Akce A' + actionFilter()}</Show>
+            </div>
+              <table class="print-header-table">
+                <tbody>
+                  <For each={documentHeader().filter(f => f.value)}>{(f) =>
+                    <tr>
+                      <td class="print-header-label">{f.label}</td>
+                      <td class="print-header-value">{f.value}</td>
+                    </tr>
+                  }</For>
+                  <For each={[
+                    employerName() ? { label: 'Zaměstnavatel', value: employerName() } : null,
+                    datumVyplneni() ? { label: 'Datum', value: datumVyplneni() } : null,
+                    actionSummary() ? { label: 'Akce', value: actionSummary() } : null,
+                    czForeignerSplit() ? { label: 'Rozdělení', value: czForeignerSplit() } : null,
+                    { label: 'Zaměstnanci', value: employeeCountText() }
+                  ].filter(Boolean)}>{(item) =>
+                    <tr><td class="print-header-label">{item.label}</td><td class="print-header-value">{item.value}</td></tr>
+                  }</For>
+                </tbody>
+              </table>
           </div>
+          </Show>
+          <div class={printIncludeHeader() ? "print-records print-records-after-header" : "print-records"}>
           <For each={getPrintEmployees()}>{(entry) => {
             const emp = printMode() === 'all' ? entry : entry.emp;
             const matched = printMode() === 'all' ? false : entry.matched;
@@ -2606,6 +2732,7 @@ export default function ViewerApp(props) {
                           <For each={getPrintFields(emp, section, matched)}>{(field) =>
                             <tr>
                               <td class="print-field-id">{field.csszId || ''}</td>
+                              <td class="print-field-req">{actionFilter() ? (getFieldReq(field, actionFilter()) || '') : ''}</td>
                               <td class="print-field-label">{field.label}</td>
                               <td class="print-field-value">{emp.fields[fieldKey(field, section._instanceIndex)]?.value || ''}</td>
                             </tr>
@@ -2631,6 +2758,7 @@ export default function ViewerApp(props) {
               </Show>
             );
           }}</For>
+          </div>
         </div>
       </Show>
 
